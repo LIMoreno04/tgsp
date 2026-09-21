@@ -29,7 +29,9 @@ const STRIPE_LIFT := 0.001
 static var _material: StandardMaterial3D
 
 var _rebuild_pending := false
-
+@export var structure_id :int:
+	set(value):
+		structure_id = value
 @export var cell := Vector3i.ZERO:
 	set(value):
 		cell = value
