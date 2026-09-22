@@ -7,10 +7,10 @@
 
 [node name="cajas" type="Node3D" parent="." unique_id=1736956119]
 script = ExtResource("1_bl13t")
-displacement = Vector3(0.5, 0.5, 0.5)
 
 [node name="Box1" parent="cajas" unique_id=825564579 instance=ExtResource("1_errlg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+cell = Vector3i(0, 0, 0)
 
 [node name="Box" parent="cajas" unique_id=1320525035 instance=ExtResource("1_errlg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 0.5)

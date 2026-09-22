@@ -2,7 +2,7 @@
 class_name GridEntity
 extends Node3D
 
-@export var displacement := Vector3.ZERO
+@export var displacement := Vector3(0.5,0.5,0.5)
 @export var cell := Vector3i.ZERO:
 	set(value):
 		cell = value

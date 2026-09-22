@@ -1,9 +1,6 @@
 @tool
 extends MeshInstance3D
 
-@export var structure_id :int:
-	set(value):
-		structure_id = value
 
 @onready var box: Box = get_parent()
 

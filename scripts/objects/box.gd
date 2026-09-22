@@ -18,6 +18,10 @@ const SIDE_NORMAL := {
 	Side.NEG_Y: Vector3(0, 0, -1),
 }
 
+@export var structure_id :int:
+	set(value):
+		structure_id = value
+
 @export var walkable := false:
 	set(value):
 		walkable = value

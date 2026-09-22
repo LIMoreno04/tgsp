@@ -18,8 +18,10 @@ _surfaces = [{
 }]
 
 [node name="Box" type="Node3D" unique_id=1123826767]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, -0.5)
 script = ExtResource("1_y1l2d")
-origin = Vector3(0.5, 0.5, 0.5)
+displacement = Vector3(0, 0, 0)
+cell = Vector3i(0, -1, 0)
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=1775709227]
 material_override = SubResource("StandardMaterial3D_y1l2d")
