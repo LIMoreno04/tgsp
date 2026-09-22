@@ -1,11 +1,12 @@
 [gd_scene format=4 uid="uid://prbqftumc4bt"]
 
-[ext_resource type="Script" uid="uid://c6ory3pccr7vf" path="res://scripts/objects/box.gd" id="1_clw8d"]
+[ext_resource type="Script" uid="uid://c6ory3pccr7vf" path="res://scripts/objects/box_mesh.gd" id="1_clw8d"]
+[ext_resource type="Script" uid="uid://cmmo5v2esadxy" path="res://scripts/objects/box.gd" id="1_y1l2d"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_errlg"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y1l2d"]
 vertex_color_use_as_albedo = true
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_clw8d"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_yonip"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
 "attribute_data": PackedByteArray("QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/"),
@@ -16,8 +17,11 @@ _surfaces = [{
 "vertex_data": PackedByteArray("AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+/")
 }]
 
-[node name="Box" type="MeshInstance3D" unique_id=825564579]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
-material_override = SubResource("StandardMaterial3D_errlg")
-mesh = SubResource("ArrayMesh_clw8d")
+[node name="Box" type="Node3D" unique_id=1123826767]
+script = ExtResource("1_y1l2d")
+origin = Vector3(0.5, 0.5, 0.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1775709227]
+material_override = SubResource("StandardMaterial3D_y1l2d")
+mesh = SubResource("ArrayMesh_yonip")
 script = ExtResource("1_clw8d")

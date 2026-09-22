@@ -1,55 +1,149 @@
-[gd_scene format=4 uid="uid://myah3i0lg70k"]
+[gd_scene format=3 uid="uid://myah3i0lg70k"]
 
+[ext_resource type="Script" uid="uid://jwcabsk2nx86" path="res://scripts/core/grid_entity.gd" id="1_bl13t"]
 [ext_resource type="PackedScene" uid="uid://prbqftumc4bt" path="res://scenes/prefabs/box.tscn" id="1_errlg"]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_bl13t"]
-_surfaces = [{
-"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
-"attribute_data": PackedByteArray("QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/"),
-"format": 34359738383,
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 36,
-"vertex_data": PackedByteArray("AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+/")
-}]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_iyx0m"]
-_surfaces = [{
-"aabb": AABB(-0.5, -0.5, -0.5, 1, 1.0009999, 1),
-"attribute_data": PackedByteArray("QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/2HIU/9hyFP/YchT/2HIU/9hyFP/YchT/2HIU/9hyFP/YchT/2HIU/9hyFP/YchT/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/"),
-"format": 34359738383,
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 48,
-"vertex_data": PackedByteArray("AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/NDOzPolBAD8AAAA/NDOzPolBAD8AAAC/AAAAP4lBAD8AAAC/NDOzPolBAD8AAAA/AAAAP4lBAD8AAAC/AAAAP4lBAD8AAAA/AAAAv4lBAD8AAAA/AAAAv4lBAD80M7M+AAAAP4lBAD80M7M+AAAAv4lBAD8AAAA/AAAAP4lBAD80M7M+AAAAP4lBAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+/")
-}]
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_74lek"]
-_surfaces = [{
-"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
-"attribute_data": PackedByteArray("7+/q/+/v6v/v7+r/7+/q/+/v6v/v7+r/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/7+/q/+/v6v/v7+r/7+/q/+/v6v/v7+r/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/7+/q/+/v6v/v7+r/7+/q/+/v6v/v7+r/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/7+/q/+/v6v/v7+r/7+/q/+/v6v/v7+r/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/7+/q/+/v6v/v7+r/7+/q/+/v6v/v7+r/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/np6Z/56emf+enpn/QkJH/0JCR/9CQkf/QkJH/0JCR/9CQkf/"),
-"format": 34359738383,
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 84,
-"vertex_data": PackedByteArray("AAAAPwAAgD4AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAgD4AAAA/AAAAPwAAAD8AAAC/AAAAPwAAgD4AAAC/AAAAPwAAAL8AAAA/AAAAPwAAgD4AAAA/AAAAPwAAgD4AAAC/AAAAPwAAAL8AAAA/AAAAPwAAgD4AAAC/AAAAPwAAAL8AAAC/AAAAvwAAgD4AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAgD4AAAC/AAAAvwAAAD8AAAA/AAAAvwAAgD4AAAA/AAAAvwAAAL8AAAC/AAAAvwAAgD4AAAC/AAAAvwAAgD4AAAA/AAAAvwAAAL8AAAC/AAAAvwAAgD4AAAA/AAAAvwAAAL8AAAA/AAAAvwAAgD4AAAA/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAgD4AAAA/AAAAPwAAAD8AAAA/AAAAPwAAgD4AAAA/AAAAvwAAAL8AAAA/AAAAvwAAgD4AAAA/AAAAPwAAgD4AAAA/AAAAvwAAAL8AAAA/AAAAPwAAgD4AAAA/AAAAPwAAAL8AAAA/AAAAPwAAgD4AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAgD4AAAC/AAAAvwAAAD8AAAC/AAAAvwAAgD4AAAC/AAAAPwAAAL8AAAC/AAAAPwAAgD4AAAC/AAAAvwAAgD4AAAC/AAAAPwAAAL8AAAC/AAAAvwAAgD4AAAC/AAAAvwAAAL8AAAC/H4XrvgAAAD8fhes+H4XrvgAAAD8fheu+H4XrPgAAAD8fheu+H4XrvgAAAD8fhes+H4XrPgAAAD8fheu+H4XrPgAAAD8fhes+AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/IIXrvgAAAD8AAAC/AAAAvwAAAD8AAAA/IIXrvgAAAD8AAAC/IIXrvgAAAD8AAAA/IIXrPgAAAD8AAAA/IIXrPgAAAD8AAAC/AAAAPwAAAD8AAAC/IIXrPgAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/H4XrvgAAAD8gheu+H4XrvgAAAD8AAAC/H4XrPgAAAD8AAAC/H4XrvgAAAD8gheu+H4XrPgAAAD8AAAC/H4XrPgAAAD8gheu+H4XrvgAAAD8AAAA/H4XrvgAAAD8ghes+H4XrPgAAAD8ghes+H4XrvgAAAD8AAAA/H4XrPgAAAD8ghes+H4XrPgAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+/")
-}]
 
 [node name="Node3D" type="Node3D" unique_id=1576238727]
 
-[node name="Box1" parent="." unique_id=825564579 instance=ExtResource("1_errlg")]
-mesh = SubResource("ArrayMesh_bl13t")
+[node name="cajas" type="Node3D" parent="." unique_id=1736956119]
+script = ExtResource("1_bl13t")
+displacement = Vector3(0.5, 0.5, 0.5)
 
-[node name="Box" parent="." unique_id=1320525035 instance=ExtResource("1_errlg")]
+[node name="Box1" parent="cajas" unique_id=825564579 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
+
+[node name="Box" parent="cajas" unique_id=1320525035 instance=ExtResource("1_errlg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 0.5)
-mesh = SubResource("ArrayMesh_iyx0m")
+walkable = true
 cell = Vector3i(1, 0, 0)
-mobility = 3
+
+[node name="Box2" parent="cajas" unique_id=538776252 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 1.5)
+walkable = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box3" parent="cajas" unique_id=93886983 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.5, 0.5)
+mobility = 4
+wall_axis = 1
+cell = Vector3i(2, 0, 1)
+
+[node name="Box4" parent="cajas" unique_id=2099577702 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 0.5)
+mobility = 4
+wall_axis = 1
+cell = Vector3i(2, 0, 0)
+
+[node name="Box5" parent="cajas" unique_id=1402189123 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 2.5)
+walkable = true
 from_pos_x = true
 from_pos_y = true
+cell = Vector3i(0, 2, 0)
 
-[node name="Box2" parent="." unique_id=538776252 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 1.5)
-mesh = SubResource("ArrayMesh_74lek")
-cell = Vector3i(0, 1, 0)
+[node name="Box6" parent="cajas" unique_id=208825648 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 1.5)
 walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box7" parent="cajas" unique_id=2056171315 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 2.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(1, 2, 0)
+
+[node name="Box8" parent="cajas" unique_id=2051642166 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.5, 2.5)
+mobility = 1
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(0, 2, 1)
+
+[node name="Box9" parent="cajas" unique_id=1605085586 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 1.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(2, 1, 0)
+
+[node name="Box10" parent="cajas" unique_id=489672001 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 2.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(2, 2, 0)
+
+[node name="Box11" parent="cajas" unique_id=859764863 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 1.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(3, 1, 0)
+
+[node name="Box12" parent="cajas" unique_id=1232111997 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 0.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(3, 0, 0)
+
+[node name="Box13" parent="cajas" unique_id=1107517186 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 2.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(3, 2, 0)
+
+[node name="Box14" parent="cajas" unique_id=1969544058 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 3.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box15" parent="cajas" unique_id=1722825340 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 3.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(1, 3, 0)
+
+[node name="Box16" parent="cajas" unique_id=1066418845 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 3.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(2, 3, 0)
+
+[node name="Box17" parent="cajas" unique_id=2012574702 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 3.5)
+walkable = true
+from_pos_x = true
+from_pos_y = true
+cell = Vector3i(3, 3, 0)
+
+[node name="Box18" parent="cajas" unique_id=381368038 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.5, 0.5)
+mobility = 4
+cell = Vector3i(0, 0, 1)
+
+[node name="Box19" parent="cajas" unique_id=1011176896 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.5, 3.5)
+mobility = 2
+wall_axis = 1
+from_neg_x = true
+from_pos_y = true
+cell = Vector3i(2, 3, 1)
+
+[node name="Box20" parent="cajas" unique_id=653835581 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 1.5, 0.5)
+walkable = true
+mobility = 3
+wall_axis = 1
+from_pos_x = true
+from_neg_x = true
+from_neg_y = true
+cell = Vector3i(3, 0, 1)
