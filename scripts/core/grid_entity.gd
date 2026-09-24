@@ -5,7 +5,7 @@ extends Node3D
 @export var cell := Vector3i.ZERO:
 	set(value):
 		cell = value
-		position = CoordsProvider.grid_to_godot(cell)
+		position = GridCoordsProvider.grid_to_godot(cell)
 
 
 var world_cell: Vector3i:
@@ -23,5 +23,5 @@ func _init() -> void:
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_LOCAL_TRANSFORM_CHANGED or not Engine.is_editor_hint():
 		return
-	if not position.is_equal_approx(CoordsProvider.grid_to_godot(cell)):
-		cell = CoordsProvider.godot_to_grid(position)
+	if not position.is_equal_approx(GridCoordsProvider.grid_to_godot(cell)):
+		cell = GridCoordsProvider.godot_to_grid(position)

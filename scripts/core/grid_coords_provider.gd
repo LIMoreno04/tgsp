@@ -1,4 +1,4 @@
-class_name CoordsProvider
+class_name GridCoordsProvider
 extends RefCounted
 
 static func godot_to_grid(position: Vector3) -> Vector3i:
