@@ -8,9 +8,9 @@ static func godot_to_grid(position: Vector3) -> Vector3i:
 		floori(position.y)
 	)
 
-static func grid_to_godot(position: Vector3i) -> Vector3:
+static func grid_to_godot(cell: Vector3i) -> Vector3:
 	return Vector3(
-		position.x,
-		position.z,
-		position.y
-	) +  Vector3(0.5,0.5,0.5)
+		cell.x,
+		cell.z,
+		cell.y
+	)

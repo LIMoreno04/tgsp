@@ -1,149 +1,331 @@
 [gd_scene format=3 uid="uid://myah3i0lg70k"]
 
-[ext_resource type="Script" uid="uid://jwcabsk2nx86" path="res://scripts/core/grid_entity.gd" id="1_bl13t"]
-[ext_resource type="PackedScene" uid="uid://prbqftumc4bt" path="res://scenes/prefabs/box.tscn" id="1_errlg"]
+[ext_resource type="PackedScene" uid="uid://d38ctwehqsiio" path="res://scenes/prefabs/structure.tscn" id="1_errlg"]
+[ext_resource type="PackedScene" uid="uid://prbqftumc4bt" path="res://scenes/prefabs/box.tscn" id="2_iyx0m"]
 
 [node name="Node3D" type="Node3D" unique_id=1576238727]
 
-[node name="cajas" type="Node3D" parent="." unique_id=1736956119]
-script = ExtResource("1_bl13t")
+[node name="Piso" parent="." unique_id=121214647 instance=ExtResource("1_errlg")]
+dimensions = Vector3i(6, 7, 1)
 
-[node name="Box1" parent="cajas" unique_id=825564579 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
-cell = Vector3i(0, 0, 0)
+[node name="Box" parent="Piso" unique_id=1123826767 instance=ExtResource("2_iyx0m")]
+is_floor = true
 
-[node name="Box" parent="cajas" unique_id=1320525035 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 0.5)
-walkable = true
-cell = Vector3i(1, 0, 0)
-
-[node name="Box2" parent="cajas" unique_id=538776252 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 1.5)
-walkable = true
+[node name="Box2" parent="Piso" unique_id=317482425 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+is_floor = true
 cell = Vector3i(0, 1, 0)
 
-[node name="Box3" parent="cajas" unique_id=93886983 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.5, 0.5)
-mobility = 4
-wall_axis = 1
-cell = Vector3i(2, 0, 1)
-
-[node name="Box4" parent="cajas" unique_id=2099577702 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 0.5)
-mobility = 4
-wall_axis = 1
-cell = Vector3i(2, 0, 0)
-
-[node name="Box5" parent="cajas" unique_id=1402189123 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 2.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
+[node name="Box3" parent="Piso" unique_id=1895459807 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+is_floor = true
 cell = Vector3i(0, 2, 0)
 
-[node name="Box6" parent="cajas" unique_id=208825648 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 1.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(1, 1, 0)
-
-[node name="Box7" parent="cajas" unique_id=2056171315 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 2.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(1, 2, 0)
-
-[node name="Box8" parent="cajas" unique_id=2051642166 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.5, 2.5)
-mobility = 1
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(0, 2, 1)
-
-[node name="Box9" parent="cajas" unique_id=1605085586 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 1.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(2, 1, 0)
-
-[node name="Box10" parent="cajas" unique_id=489672001 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 2.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(2, 2, 0)
-
-[node name="Box11" parent="cajas" unique_id=859764863 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 1.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(3, 1, 0)
-
-[node name="Box12" parent="cajas" unique_id=1232111997 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 0.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(3, 0, 0)
-
-[node name="Box13" parent="cajas" unique_id=1107517186 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 2.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(3, 2, 0)
-
-[node name="Box14" parent="cajas" unique_id=1969544058 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 3.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
+[node name="Box4" parent="Piso" unique_id=1730850832 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+is_floor = true
 cell = Vector3i(0, 3, 0)
 
-[node name="Box15" parent="cajas" unique_id=1722825340 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.5, 3.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(1, 3, 0)
+[node name="Box5" parent="Piso" unique_id=635363314 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+is_floor = true
+cell = Vector3i(0, 4, 0)
 
-[node name="Box16" parent="cajas" unique_id=1066418845 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 3.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
-cell = Vector3i(2, 3, 0)
+[node name="Box6" parent="Piso" unique_id=287135651 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+is_floor = true
+cell = Vector3i(1, 0, 0)
 
-[node name="Box17" parent="cajas" unique_id=2012574702 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, 3.5)
-walkable = true
-from_pos_x = true
-from_pos_y = true
+[node name="Box7" parent="Piso" unique_id=1476405173 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+is_floor = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box8" parent="Piso" unique_id=1969626363 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+is_floor = true
+cell = Vector3i(1, 2, 0)
+
+[node name="Box10" parent="Piso" unique_id=891048955 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+is_floor = true
+cell = Vector3i(1, 4, 0)
+
+[node name="Box11" parent="Piso" unique_id=264570939 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+is_floor = true
+cell = Vector3i(2, 0, 0)
+
+[node name="Box12" parent="Piso" unique_id=950648222 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 1)
+is_floor = true
+cell = Vector3i(2, 1, 0)
+
+[node name="Box13" parent="Piso" unique_id=1431541834 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
+is_floor = true
+cell = Vector3i(2, 2, 0)
+
+[node name="Box15" parent="Piso" unique_id=1872466196 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 4)
+is_floor = true
+cell = Vector3i(2, 4, 0)
+
+[node name="Box16" parent="Piso" unique_id=1901617836 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+is_floor = true
+cell = Vector3i(3, 0, 0)
+
+[node name="Box17" parent="Piso" unique_id=1947032437 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 1)
+is_floor = true
+cell = Vector3i(3, 1, 0)
+
+[node name="Box18" parent="Piso" unique_id=281097490 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
+is_floor = true
+cell = Vector3i(3, 2, 0)
+
+[node name="Box19" parent="Piso" unique_id=123540154 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 3)
+is_floor = true
 cell = Vector3i(3, 3, 0)
 
-[node name="Box18" parent="cajas" unique_id=381368038 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.5, 0.5)
-mobility = 4
+[node name="Box20" parent="Piso" unique_id=675196707 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 4)
+is_floor = true
+cell = Vector3i(3, 4, 0)
+
+[node name="Box21" parent="Piso" unique_id=2038824516 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+is_floor = true
+cell = Vector3i(4, 0, 0)
+
+[node name="Box22" parent="Piso" unique_id=1565137657 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 1)
+is_floor = true
+cell = Vector3i(4, 1, 0)
+
+[node name="Box23" parent="Piso" unique_id=599207563 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2)
+is_floor = true
+cell = Vector3i(4, 2, 0)
+
+[node name="Box24" parent="Piso" unique_id=1817203242 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 3)
+is_floor = true
+cell = Vector3i(4, 3, 0)
+
+[node name="Box25" parent="Piso" unique_id=988035029 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 4)
+is_floor = true
+cell = Vector3i(4, 4, 0)
+
+[node name="Box26" parent="Piso" unique_id=262410184 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+is_floor = true
+cell = Vector3i(0, 5, 0)
+
+[node name="Box27" parent="Piso" unique_id=591016179 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+is_floor = true
+cell = Vector3i(0, 6, 0)
+
+[node name="Box29" parent="Piso" unique_id=704722154 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 5)
+is_floor = true
+cell = Vector3i(1, 5, 0)
+
+[node name="Box30" parent="Piso" unique_id=1248666122 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 6)
+is_floor = true
+cell = Vector3i(1, 6, 0)
+
+[node name="Box32" parent="Piso" unique_id=1321926236 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 5)
+is_floor = true
+cell = Vector3i(2, 5, 0)
+
+[node name="Box33" parent="Piso" unique_id=1974181687 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6)
+is_floor = true
+cell = Vector3i(2, 6, 0)
+
+[node name="Box35" parent="Piso" unique_id=1716480150 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 5)
+is_floor = true
+cell = Vector3i(3, 5, 0)
+
+[node name="Box36" parent="Piso" unique_id=1138027402 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 6)
+is_floor = true
+cell = Vector3i(3, 6, 0)
+
+[node name="Box38" parent="Piso" unique_id=548749201 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 5)
+is_floor = true
+cell = Vector3i(4, 5, 0)
+
+[node name="Box39" parent="Piso" unique_id=595460464 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
+is_floor = true
+cell = Vector3i(4, 6, 0)
+
+[node name="Box41" parent="Piso" unique_id=2102740092 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+is_floor = true
+cell = Vector3i(5, 0, 0)
+
+[node name="Box42" parent="Piso" unique_id=1899474699 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 1)
+is_floor = true
+cell = Vector3i(5, 1, 0)
+
+[node name="Box43" parent="Piso" unique_id=632442118 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
+is_floor = true
+cell = Vector3i(5, 2, 0)
+
+[node name="Box45" parent="Piso" unique_id=145882095 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 4)
+is_floor = true
+cell = Vector3i(5, 4, 0)
+
+[node name="Box46" parent="Piso" unique_id=1364507692 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 5)
+is_floor = true
+cell = Vector3i(5, 5, 0)
+
+[node name="Box47" parent="Piso" unique_id=376271288 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 6)
+is_floor = true
+cell = Vector3i(5, 6, 0)
+
+[node name="Bloque" parent="." unique_id=1171765217 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1)
+dimensions = Vector3i(2, 2, 2)
+cell = Vector3i(1, 1, 1)
+
+[node name="Box" parent="Bloque" unique_id=1362655896 instance=ExtResource("2_iyx0m")]
+
+[node name="Box2" parent="Bloque" unique_id=241526569 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+walkable = true
 cell = Vector3i(0, 0, 1)
 
-[node name="Box19" parent="cajas" unique_id=1011176896 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 1.5, 3.5)
-mobility = 2
-wall_axis = 1
-from_neg_x = true
-from_pos_y = true
-cell = Vector3i(2, 3, 1)
+[node name="Box3" parent="Bloque" unique_id=398635681 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+cell = Vector3i(0, 1, 0)
 
-[node name="Box20" parent="cajas" unique_id=653835581 instance=ExtResource("1_errlg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 1.5, 0.5)
+[node name="Box4" parent="Bloque" unique_id=1279023081 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1)
 walkable = true
-mobility = 3
-wall_axis = 1
-from_pos_x = true
-from_neg_x = true
-from_neg_y = true
-cell = Vector3i(3, 0, 1)
+cell = Vector3i(0, 1, 1)
+
+[node name="Box5" parent="Bloque" unique_id=1479975094 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+movable_3d_pos_x = true
+movable_3d_neg_y = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Box6" parent="Bloque" unique_id=765090265 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0)
+walkable = true
+cell = Vector3i(1, 0, 1)
+
+[node name="Box7" parent="Bloque" unique_id=106916062 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+top_half_only = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box8" parent="Bloque" unique_id=1819701138 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1)
+cell = Vector3i(1, 1, 1)
+
+[node name="Structure" parent="." unique_id=2075959267 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 5)
+dimensions = Vector3i(1, 2, 4)
+cell = Vector3i(1, 5, 1)
+
+[node name="Box" parent="Structure" unique_id=654831110 instance=ExtResource("2_iyx0m")]
+
+[node name="Box2" parent="Structure" unique_id=1813590486 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+cell = Vector3i(0, 0, 1)
+
+[node name="Box3" parent="Structure" unique_id=467743389 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+cell = Vector3i(0, 0, 2)
+
+[node name="Box4" parent="Structure" unique_id=16219932 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+walkable = true
+cell = Vector3i(0, 0, 3)
+
+[node name="Box5" parent="Structure" unique_id=512811718 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+walkable = true
+movable_3d_pos_y = true
+movable_2d_neg_x = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box8" parent="Structure" unique_id=658950856 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 1)
+walkable = true
+cell = Vector3i(0, 1, 3)
+
+[node name="Box6" parent="Structure" unique_id=954725752 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 0)
+walkable = true
+top_half_only = true
+movable_3d_pos_y = true
+movable_2d_pos_x = true
+movable_2d_neg_x = true
+movable_2d_pos_y = true
+cell = Vector3i(1, 0, 2)
+
+[node name="Pilar" parent="." unique_id=1304722964 instance=ExtResource("1_errlg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, 0)
+dimensions = Vector3i(1, 1, 5)
+cell = Vector3i(5, 0, 1)
+
+[node name="Box" parent="Pilar" unique_id=718385919 instance=ExtResource("2_iyx0m")]
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+
+[node name="Box2" parent="Pilar" unique_id=1416655765 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+cell = Vector3i(0, 0, 1)
+
+[node name="Box3" parent="Pilar" unique_id=1569777342 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+cell = Vector3i(0, 0, 2)
+
+[node name="Box4" parent="Pilar" unique_id=147237022 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+cell = Vector3i(0, 0, 3)
+
+[node name="Box5" parent="Pilar" unique_id=60994895 instance=ExtResource("2_iyx0m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+walkable = true
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_pos_x = true
+movable_2d_neg_x = true
+cell = Vector3i(0, 0, 4)

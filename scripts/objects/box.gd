@@ -1,81 +1,108 @@
 @tool
-extends GridEntity
 class_name Box
-signal _request_rebuild
+extends GridEntity
 
+signal appearance_changed
 
-enum Mobility { STATIC, MOVABLE, MOVABLE_3D, MOVABLE_2D, WALL }
+enum Facing { POS_X, NEG_X, POS_Y, NEG_Y }
 
-enum Side { POS_X, NEG_X, POS_Y, NEG_Y }
-
-## Qué cara de la pared lleva la textura del piso: la +X o la +Y (de grilla).
-enum WallAxis { X, Y }
-
-const SIDE_NORMAL := {
-	Side.POS_X: Vector3(1, 0, 0),
-	Side.NEG_X: Vector3(-1, 0, 0),
-	Side.POS_Y: Vector3(0, 0, 1),
-	Side.NEG_Y: Vector3(0, 0, -1),
+const FACING_NORMAL := {
+	Facing.POS_X: Vector3(1, 0, 0),
+	Facing.NEG_X: Vector3(-1, 0, 0),
+	Facing.POS_Y: Vector3(0, 0, 1),
+	Facing.NEG_Y: Vector3(0, 0, -1),
 }
-
-@export var structure_id :int:
-	set(value):
-		structure_id = value
 
 @export var walkable := false:
 	set(value):
 		walkable = value
-		_request_rebuild.emit()
-
-@export var mobility := Mobility.STATIC:
-	set(value):
-		mobility = value
+		if walkable:
+			movable_2d_whole_face = false
 		notify_property_list_changed()
-		_request_rebuild.emit()
+		appearance_changed.emit()
 
-## Sólo importa en WALL.
-@export var wall_axis := WallAxis.X:
+@export var is_wall := false:
 	set(value):
-		wall_axis = value
-		_request_rebuild.emit()
+		is_wall = value
+		notify_property_list_changed()
+		appearance_changed.emit()
 
-@export_group("Movable sides", "from_")
-@export var from_pos_x := false:
+@export var is_floor := false:
 	set(value):
-		from_pos_x = value
-		movable_from[Side.POS_X] = value
-		_request_rebuild.emit()
-@export var from_neg_x := false:
-	set(value):
-		from_neg_x = value
-		movable_from[Side.NEG_X] = value
-		_request_rebuild.emit()
-@export var from_pos_y := false:
-	set(value):
-		from_pos_y = value
-		movable_from[Side.POS_Y] = value
-		_request_rebuild.emit()
-@export var from_neg_y := false:
-	set(value):
-		from_neg_y = value
-		movable_from[Side.NEG_Y] = value
-		_request_rebuild.emit()
-@export_group("")
-
-var movable_from := {
-	Side.POS_X: from_pos_x,
-	Side.NEG_X: from_neg_x,
-	Side.POS_Y: from_pos_y,
-	Side.NEG_Y: from_neg_y,
-}
-
-func _validate_property(property: Dictionary) -> void:
-	if property.name.begins_with("from_") and !(mobility in [Mobility.MOVABLE_2D, Mobility.MOVABLE_3D]):
-		property.usage = PROPERTY_USAGE_NO_EDITOR
-	if property.name == "wall_axis" and mobility != Mobility.WALL:
-		property.usage = PROPERTY_USAGE_NO_EDITOR
+		is_floor = value
+		notify_property_list_changed()
+		appearance_changed.emit()
 
 @export var top_half_only := false:
 	set(value):
 		top_half_only = value
-		_request_rebuild.emit()
+		appearance_changed.emit()
+
+@export_group("3D movability", "movable_3d_")
+@export var movable_3d_pos_x := false:
+	set(value):
+		movable_3d_pos_x = value
+		appearance_changed.emit()
+@export var movable_3d_neg_x := false:
+	set(value):
+		movable_3d_neg_x = value
+		appearance_changed.emit()
+@export var movable_3d_pos_y := false:
+	set(value):
+		movable_3d_pos_y = value
+		appearance_changed.emit()
+@export var movable_3d_neg_y := false:
+	set(value):
+		movable_3d_neg_y = value
+		appearance_changed.emit()
+
+@export_group("2D movability", "movable_2d_")
+@export var movable_2d_pos_x := false:
+	set(value):
+		movable_2d_pos_x = value
+		appearance_changed.emit()
+@export var movable_2d_neg_x := false:
+	set(value):
+		movable_2d_neg_x = value
+		appearance_changed.emit()
+@export var movable_2d_pos_y := false:
+	set(value):
+		movable_2d_pos_y = value
+		appearance_changed.emit()
+@export var movable_2d_neg_y := false:
+	set(value):
+		movable_2d_neg_y = value
+		appearance_changed.emit()
+@export var movable_2d_whole_face := false:
+	set(value):
+		movable_2d_whole_face = value
+		if movable_2d_whole_face:
+			walkable = false
+		notify_property_list_changed()
+		appearance_changed.emit()
+@export_group("")
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name.contains("movable") and (is_wall or is_floor):
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+
+
+
+func movable_3d_from(facing: Facing) -> bool:
+	match facing:
+		Facing.POS_X: return movable_3d_pos_x
+		Facing.NEG_X: return movable_3d_neg_x
+		Facing.POS_Y: return movable_3d_pos_y
+		Facing.NEG_Y: return movable_3d_neg_y
+		_: return false
+
+
+func movable_2d_from(facing: Facing) -> bool:
+	if movable_2d_whole_face:
+		return true
+	match facing:
+		Facing.POS_X: return movable_2d_pos_x
+		Facing.NEG_X: return movable_2d_neg_x
+		Facing.POS_Y: return movable_2d_pos_y
+		Facing.NEG_Y: return movable_2d_neg_y
+		_: return false

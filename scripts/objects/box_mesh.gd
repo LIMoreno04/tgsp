@@ -11,23 +11,15 @@ const COLOUR_BORDER := Color(0.62, 0.62, 0.60)
 const WALKABLE_BORDER_WIDTH := 0.04
 const WALKABLE_SIDES_DISPLAY := 0.25
 const MOVABLE_STRIPE_WIDTH := 0.15
-const STRIPE_LIFT := 0.001
-
-static var _material: StandardMaterial3D
+const TILE_LIFT := 0.001
+const HANDLE_STRIPE_LIFT := 0.002
 
 var _rebuild_pending := false
 
 
 func _ready() -> void:
-	box._request_rebuild.connect(_request_rebuild)
+	box.appearance_changed.connect(_request_rebuild)
 	_request_rebuild()
-
-func _init() -> void:
-	if _material == null:
-		_material = StandardMaterial3D.new()
-		_material.vertex_color_use_as_albedo = true
-	material_override = _material
-
 
 
 # --- Geometría ---------------------------------------------------------------
@@ -41,80 +33,60 @@ func _request_rebuild() -> void:
 
 func _rebuild() -> void:
 	_rebuild_pending = false
-	var body_colour := COLOUR_MOVABLE if box.mobility == box.Mobility.MOVABLE else COLOUR_STATIC
 	var top_y := 0.5
 	var bottom_y := 0.0 if box.top_half_only else -0.5
 	# Las caras laterales terminan donde empieza la franja blanca de arriba (si hay).
 	var side_top_y := top_y - WALKABLE_SIDES_DISPLAY if box.walkable else top_y
-	# Caras de tipo pared: centro blanco y borde gris, igual que el piso.
-	var wall_side := box.Side.POS_X if box.wall_axis == box.WallAxis.X else box.Side.POS_Y
+	var top_lo := Vector3(-0.5, top_y, -0.5)
+	var top_hi := Vector3(0.5, top_y, 0.5)
 
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
-	# Caras laterales, color + franja blanca arriba si es caminable
-	for side: Side in box.SIDE_NORMAL:
-		var normal: Vector3 = box.SIDE_NORMAL[side]
-		var face_colour := COLOUR_MOVABLE if box.mobility == box.Mobility.MOVABLE_3D and box.movable_from[side] else body_colour
+	for facing: Box.Facing in Box.FACING_NORMAL:
+		var normal: Vector3 = Box.FACING_NORMAL[facing]
 		if box.walkable:
 			var skin_lo := _on_face(Vector3(-0.5, side_top_y, -0.5), normal)
 			var skin_hi := _on_face(Vector3(0.5, top_y, 0.5), normal)
 			_rect(st, skin_lo, skin_hi, normal, COLOUR_WALKABLE)
-		if box.mobility == box.Mobility.WALL and side == wall_side:
-			continue # se dibuja aparte abajo
 		var face_lo := _on_face(Vector3(-0.5, bottom_y, -0.5), normal)
 		var face_hi := _on_face(Vector3(0.5, side_top_y, 0.5), normal)
-		_rect(st, face_lo, face_hi, normal, face_colour)
-
-	# Caras de tipo pared: centro blanco y borde gris, igual que el piso.
-	if box.mobility == box.Mobility.WALL:
-		var bw := WALKABLE_BORDER_WIDTH
-		var lo_y := bottom_y
-		var hi_y := side_top_y
-		if box.wall_axis == box.WallAxis.X:
-			# Plano x = 0.5; ancho en z, alto en y.
-			_rect(st, Vector3(0.5, lo_y + bw, -0.5 + bw), Vector3(0.5, hi_y - bw, 0.5 - bw), Vector3.RIGHT, COLOUR_WALKABLE)
-			_rect(st, Vector3(0.5, lo_y, -0.5), Vector3(0.5, hi_y, -0.5 + bw), Vector3.RIGHT, COLOUR_BORDER)
-			_rect(st, Vector3(0.5, lo_y, 0.5 - bw), Vector3(0.5, hi_y, 0.5), Vector3.RIGHT, COLOUR_BORDER)
-			_rect(st, Vector3(0.5, lo_y, -0.5 + bw), Vector3(0.5, lo_y + bw, 0.5 - bw), Vector3.RIGHT, COLOUR_BORDER)
-			_rect(st, Vector3(0.5, hi_y - bw, -0.5 + bw), Vector3(0.5, hi_y, 0.5 - bw), Vector3.RIGHT, COLOUR_BORDER)
+		if box.is_wall:
+			_bordered_rect(st, face_lo, face_hi, normal)
+		elif box.movable_3d_from(facing):
+			_rect(st, face_lo, face_hi, normal, COLOUR_MOVABLE)
 		else:
-			# +Y de grilla = +Z de Godot. Plano z = 0.5; ancho en x, alto en y.
-			_rect(st, Vector3(-0.5 + bw, lo_y + bw, 0.5), Vector3(0.5 - bw, hi_y - bw, 0.5), Vector3.BACK, COLOUR_WALKABLE)
-			_rect(st, Vector3(-0.5, lo_y, 0.5), Vector3(-0.5 + bw, hi_y, 0.5), Vector3.BACK, COLOUR_BORDER)
-			_rect(st, Vector3(0.5 - bw, lo_y, 0.5), Vector3(0.5, hi_y, 0.5), Vector3.BACK, COLOUR_BORDER)
-			_rect(st, Vector3(-0.5 + bw, lo_y, 0.5), Vector3(0.5 - bw, lo_y + bw, 0.5), Vector3.BACK, COLOUR_BORDER)
-			_rect(st, Vector3(-0.5 + bw, hi_y - bw, 0.5), Vector3(0.5 - bw, hi_y, 0.5), Vector3.BACK, COLOUR_BORDER)
+			_rect(st, face_lo, face_hi, normal, COLOUR_STATIC)
 
-	# Cara de arriba.
-	if box.walkable:
-		# Centro blanco y borde gris
-		var bw := WALKABLE_BORDER_WIDTH
-		_rect(st, Vector3(-0.5 + bw, top_y, -0.5 + bw), Vector3(0.5 - bw, top_y, 0.5 - bw), Vector3.UP, COLOUR_WALKABLE)
-		_rect(st, Vector3(-0.5, top_y, -0.5), Vector3(-0.5 + bw, top_y, 0.5), Vector3.UP, COLOUR_BORDER)
-		_rect(st, Vector3(0.5 - bw, top_y, -0.5), Vector3(0.5, top_y, 0.5), Vector3.UP, COLOUR_BORDER)
-		_rect(st, Vector3(-0.5 + bw, top_y, -0.5), Vector3(0.5 - bw, top_y, -0.5 + bw), Vector3.UP, COLOUR_BORDER)
-		_rect(st, Vector3(-0.5 + bw, top_y, 0.5 - bw), Vector3(0.5 - bw, top_y, 0.5), Vector3.UP, COLOUR_BORDER)
+	if box.walkable or box.is_floor:
+		_bordered_rect(st, top_lo, top_hi, Vector3.UP)
+	elif box.movable_2d_whole_face:
+		_rect(st, top_lo, top_hi, Vector3.UP, COLOUR_MOVABLE)
 	else:
-		_rect(st, Vector3(-0.5, top_y, -0.5), Vector3(0.5, top_y, 0.5), Vector3.UP, body_colour)
+		_rect(st, top_lo, top_hi, Vector3.UP, COLOUR_STATIC)
 
-
-	if box.mobility == box.Mobility.MOVABLE_2D:
-		var y := top_y + STRIPE_LIFT
-		var msw := MOVABLE_STRIPE_WIDTH
-		if box.movable_from[box.Side.POS_X]:
-			_rect(st, Vector3(0.5 - msw, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
-		if box.movable_from[box.Side.NEG_X]:
-			_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + msw, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
-		if box.movable_from[box.Side.POS_Y]: # Y de grilla = Z de Godot
-			_rect(st, Vector3(-0.5, y, 0.5 - msw), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
-		if box.movable_from[box.Side.NEG_Y]:
-			_rect(st, Vector3(-0.5, y, -0.5), Vector3(0.5, y, -0.5 + msw), Vector3.UP, COLOUR_MOVABLE)
+	var y := top_y + HANDLE_STRIPE_LIFT
+	var msw := MOVABLE_STRIPE_WIDTH
+	if box.movable_2d_from(Box.Facing.POS_X):
+		_rect(st, Vector3(0.5 - msw, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+	if box.movable_2d_from(Box.Facing.NEG_X):
+		_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + msw, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+	if box.movable_2d_from(Box.Facing.POS_Y): # Y de grilla = Z de Godot
+		_rect(st, Vector3(-0.5, y, 0.5 - msw), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+	if box.movable_2d_from(Box.Facing.NEG_Y):
+		_rect(st, Vector3(-0.5, y, -0.5), Vector3(0.5, y, -0.5 + msw), Vector3.UP, COLOUR_MOVABLE)
 
 	# Cara de abajo.
-	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, body_colour)
+	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, COLOUR_STATIC)
 
 	mesh = st.commit()
+
+
+func _bordered_rect(st: SurfaceTool, lo: Vector3, hi: Vector3, normal: Vector3) -> void:
+	var inset := (Vector3.ONE - normal.abs()) * WALKABLE_BORDER_WIDTH
+	var lift := normal * TILE_LIFT
+	_rect(st, lo, hi, normal, COLOUR_BORDER)
+	_rect(st, lo + inset + lift, hi - inset + lift, normal, COLOUR_WALKABLE)
 
 
 ## Rectángulo plano alineado a los ejes, de la esquina `lo` a la esquina `hi` mirando hacia `normal`.
