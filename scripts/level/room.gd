@@ -74,24 +74,40 @@ func same_structure(a: Box,b: Box) -> bool:
 	else:
 		return a == b
 
-func adjacent_and_connected_to(box: Box)->Array[Box]:
+func connected_structure_from_box(box: Box, visited: Array[Box] = [])->Array[Box]:
+	var _visited := visited.duplicate()
+	_visited.append(box)
+
+	var orthogonal_dirs := []
+	var map_dict: Dictionary = {}
 	if is_3d():
-		return
+		orthogonal_dirs = [Vector3i.BACK,Vector3i.FORWARD,Vector3i.DOWN,Vector3i.UP,Vector3i.LEFT,Vector3i.RIGHT]
+		map_dict = cells_3D
 	elif is_2d():
-		return
+		orthogonal_dirs = [Vector2i.DOWN,Vector2i.UP,Vector2i.LEFT,Vector2i.RIGHT]
+		map_dict = grid_2D
 	else:
-		return
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+	
+	for orthogonal_dir in orthogonal_dirs:
+		var target = box.world_cell + orthogonal_dir if is_3d() else Vector2i(box.world_cell.x,box.world_cell.y) + orthogonal_dir
+		if map_dict.has(target) and same_structure(box, map_dict[target]) and not _visited.has(map_dict[target]):
+			_visited = connected_structure_from_box(map_dict[target], _visited)
+	
+	return _visited
+	
 
 
 
-func _box_can_move(box: Box, direction: Vector2i) -> bool:
+func _one_box_can_move(box: Box, direction: Vector2i) -> bool:
 	if is_3d():
-		var target := Vector3i(direction.x, direction.y, box.world_cell.z)
+		var target := box.world_cell + Vector3i(direction.x, direction.y, 0)
 		return not cells_3D.has(target) or same_structure(box,cells_3D[target])
 	elif is_2d():
-		return not grid_2D.has(direction) or grid_2D[direction].walkable or same_structure(box,grid_2D[direction])
+		var target := direction + Vector2i(box.world_cell.x, box.world_cell.y)
+		return not grid_2D.has(target) or grid_2D[target].walkable or same_structure(box,grid_2D[target])
 	else:
-		assert(false, "Error catastrófico: Perspectiva no definida")
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
 		return false
 
 
