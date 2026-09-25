@@ -74,6 +74,27 @@ func same_structure(a: Box,b: Box) -> bool:
 	else:
 		return a == b
 
+func adjacent_and_connected_to(box: Box)->Array[Box]:
+	if is_3d():
+		return
+	elif is_2d():
+		return
+	else:
+		return
+
+
+
+func _box_can_move(box: Box, direction: Vector2i) -> bool:
+	if is_3d():
+		var target := Vector3i(direction.x, direction.y, box.world_cell.z)
+		return not cells_3D.has(target) or same_structure(box,cells_3D[target])
+	elif is_2d():
+		return not grid_2D.has(direction) or grid_2D[direction].walkable or same_structure(box,grid_2D[direction])
+	else:
+		assert(false, "Error catastrófico: Perspectiva no definida")
+		return false
+
+
 
 func _ready() -> void:
 	cells_3D.clear()
