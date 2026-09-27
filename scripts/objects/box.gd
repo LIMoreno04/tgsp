@@ -30,6 +30,8 @@ const FACING_NORMAL := {
 @export var is_floor := false:
 	set(value):
 		is_floor = value
+		if is_floor:
+			walkable = true
 		notify_property_list_changed()
 		appearance_changed.emit()
 
@@ -87,6 +89,14 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 
+static func facing_toward(direction: Vector2i) -> Facing:
+	match direction:
+		Vector2i(1, 0): return Facing.POS_X
+		Vector2i(-1, 0): return Facing.NEG_X
+		Vector2i(0, 1): return Facing.POS_Y
+		Vector2i(0, -1): return Facing.NEG_Y
+	assert(false, "No hay cara para la dirección %s" % direction)
+	return Facing.POS_X
 
 func movable_3d_from(facing: Facing) -> bool:
 	match facing:
@@ -96,6 +106,8 @@ func movable_3d_from(facing: Facing) -> bool:
 		Facing.NEG_Y: return movable_3d_neg_y
 		_: return false
 
+func movable_2d() -> bool:
+	return movable_2d_whole_face or movable_2d_pos_x or movable_2d_neg_x or movable_2d_pos_y or movable_2d_neg_y
 
 func movable_2d_from(facing: Facing) -> bool:
 	if movable_2d_whole_face:
