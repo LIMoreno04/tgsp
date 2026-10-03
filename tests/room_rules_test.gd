@@ -11,6 +11,7 @@ const E := Vector2i(1, 0)
 const W := Vector2i(-1, 0)
 const D3 := Room.Perspective.ISO_3D
 const D2 := Room.Perspective.TOP_2D
+const SOLID := Room.ColliderType.SOLID
 
 var root: Node
 var passed := 0
@@ -381,36 +382,36 @@ func colliders() -> void:
 
 	var r := room([])
 	var plane := r.colliders_plane(0, D3)
-	same("the open far edge is solid", plane.get(Vector2i(6,3)), [])
-	same("the wall line is solid", plane.get(Vector2i(-1,3)), [])
-	same("the near corner is solid", plane.get(Vector2i(-1,-1)), [])
-	same("the far corner is solid", plane.get(Vector2i(6,6)), [])
-	is_true("nothing beyond the ring", not plane.has(Vector2i(7,3)))
+	same("the open far edge is solid", plane.get(Vector2i(6,3)), [SOLID])
+	same("the wall line is solid", plane.get(Vector2i(-1,3)), [SOLID])
+	same("the near corner is solid", plane.get(Vector2i(-1,-1)), [SOLID])
+	is_true("the far corner is left out, the edges beside it already close it", not plane.has(Vector2i(6,6)))
+	is_true("nothing beyond the edge", not plane.has(Vector2i(7,3)))
 	is_true("open floor needs no collider", not plane.has(Vector2i(3,3)))
 	same("high above, every interior column is solid", interior_entries(r.colliders_plane(5, D3)), 36)
 	free_room(r)
 
 	r = room([[c(3,3,0)]])
-	same("3D: a crate at your height is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [])
-	same("2D: a non-walkable top is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [])
+	same("3D: a crate at your height is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
+	same("2D: a non-walkable top is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
 	free_room(r)
 
 	r = room([[c(3,3,0)]], [], [0])
 	is_true("3D: on top of a walkable crate is open", not r.colliders_plane(1, D3).has(Vector2i(3,3)))
-	same("3D: but inside it is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [])
+	same("3D: but inside it is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
 	is_true("2D: a walkable top is open", not r.colliders_plane(0, D2).has(Vector2i(3,3)))
 	free_room(r)
 
 	r = room([[c(3,3,0)]])
 	at(r,3,3,0).movable_2d_whole_face = true
 	r.rebuild_index()
-	same("2D: a whole-face grabbable tile is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [])
+	same("2D: a whole-face grabbable tile is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
 	free_room(r)
 
 	r = room([[c(3,3,0)]], [], [0])
 	at(r,3,3,0).movable_2d_pos_x = true
 	r.rebuild_index()
-	same("one stripe, one edge", r.colliders_plane(0, D2).get(Vector2i(3,3)), [Box.Facing.POS_X])
+	same("one stripe, one edge", r.colliders_plane(0, D2).get(Vector2i(3,3)), [Room.ColliderType.POS_X])
 	is_true("3D reports no edges", not r.colliders_plane(1, D3).has(Vector2i(3,3)))
 	free_room(r)
 
@@ -420,21 +421,42 @@ func colliders() -> void:
 	r.rebuild_index()
 	var edges: Array = r.colliders_plane(0, D2).get(Vector2i(3,3))
 	same("two stripes, two edges", edges.size(), 2)
-	is_true("  both of them", edges.has(Box.Facing.POS_X) and edges.has(Box.Facing.NEG_Y))
-	free_room(r)
-
-	# Un agujero se hace con una caja no caminable debajo del piso, así la columna existe.
-	r = room([])
-	remove_box(r, c(3,3,-1))
-	add_boxes(r, "HoleMarker", [c(3,3,-2)], false)
-	same("2D: a marked hole is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [])
-	same("3D: a marked hole is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [])
-	is_true("  its neighbours stay open", not r.colliders_plane(0, D3).has(Vector2i(3,2)))
+	is_true("  both of them", edges.has(Room.ColliderType.POS_X) and edges.has(Room.ColliderType.NEG_Y))
 	free_room(r)
 
 	r = room([])
 	remove_box(r, c(2,2,-1))
-	is_true("an unmarked hole is invisible to the plane", not r.colliders_plane(0, D3).has(Vector2i(2,2)))
+	same("3D: a hole in the floor is solid", r.colliders_plane(0, D3).get(Vector2i(2,2)), [SOLID])
+	same("2D: a hole in the floor is solid", r.colliders_plane(0, D2).get(Vector2i(2,2)), [SOLID])
+	is_true("  its neighbours stay open", not r.colliders_plane(0, D3).has(Vector2i(2,1)))
+	free_room(r)
+
+	r = room([])
+	remove_box(r, c(3,3,-1))
+	add_boxes(r, "UnderTheHole", [c(3,3,-2)], false)
+	same("a hole with a non-walkable box under it is solid too", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
+	free_room(r)
+
+	r = room([[c(4,2,0), c(5,2,0), c(6,2,0)]], [], [0])
+	is_true("3D: a platform hanging past the edge can be walked on", not r.colliders_plane(1, D3).has(Vector2i(6,2)))
+	same("  the void past its end is solid", r.colliders_plane(1, D3).get(Vector2i(7,2)), [SOLID])
+	same("  and the void beside it", r.colliders_plane(1, D3).get(Vector2i(6,3)), [SOLID])
+	is_true("2D: the same platform can be walked on", not r.colliders_plane(0, D2).has(Vector2i(6,2)))
+	same("  and the void past it is solid", r.colliders_plane(0, D2).get(Vector2i(7,2)), [SOLID])
+	free_room(r)
+
+	r = room([[c(4,2,0), c(5,2,0), c(6,2,0)]], [], [0])
+	at(r,6,2,0).movable_2d_pos_x = true
+	r.rebuild_index()
+	plane = r.colliders_plane(0, D2)
+	same("a stripe facing the void is an edge", plane.get(Vector2i(6,2)), [Room.ColliderType.POS_X])
+	same("  and the void behind the stripe is still solid", plane.get(Vector2i(7,2)), [SOLID])
+	free_room(r)
+
+	r = room([], [], [], Vector3i(50, 50, 1))
+	plane = r.colliders_plane(0, D3)
+	same("a 50x50 floor, past where the old flood overflowed, is closed on its far side", plane.get(Vector2i(50,49)), [SOLID])
+	same("  and its whole rim is there: two walls and two open sides", plane.size(), 51 + 50 + 50 + 50)
 	free_room(r)
 
 
@@ -495,14 +517,14 @@ func unit_size(label: String, groups: Array, seed: Vector3i, direction: Vector2i
 	free_room(r)
 
 
-func room(groups: Array, wall_groups := [], walkable_groups := []) -> Room:
+func room(groups: Array, wall_groups := [], walkable_groups := [], size := ROOM_SIZE) -> Room:
 	var r := Room.new()
 	r.name = "Room"
 	var shell := RoomShell.new()
 	shell.name = "RoomShell"
 	r.add_child(shell)
 	root.add_child(r)
-	r.dimensions = ROOM_SIZE
+	r.dimensions = size
 
 	for i in range(groups.size()):
 		var s := Structure.new()

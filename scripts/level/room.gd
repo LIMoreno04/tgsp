@@ -35,7 +35,7 @@ func volumetric_center() -> Vector3:
 	return GridCoordsProvider.grid_to_godot(maximum_reach())*(0.5)
 
 #==================estructura del nivel==================
-const LOWEST_Z := -2
+const LOWEST_Z := -1
 const GRID_UP := Vector3i(0,0,1)
 const GRID_DOWN := Vector3i(0,0,-1)
 
@@ -150,9 +150,9 @@ func boxes_that_would_move(box: Box, direction: Vector2i, perspective: Perspecti
 	if is_2d(perspective):
 		return unit
 
-	var grown := true
-	while grown:
-		grown = false
+	var has_box_above := true
+	while has_box_above:
+		has_box_above = false
 		for unit_box: Box in unit.duplicate():
 			var above := unit_box.world_cell + GRID_UP
 			if not cells_3D.has(above) or unit.has(cells_3D[above]):
@@ -163,7 +163,7 @@ func boxes_that_would_move(box: Box, direction: Vector2i, perspective: Perspecti
 			for rider_box in rider:
 				if not unit.has(rider_box):
 					unit.append(rider_box)
-					grown = true
+					has_box_above = true
 	return unit
 
 
@@ -268,32 +268,38 @@ func has_grab_barrier(column: Vector2i, facing: Box.Facing, perspective: Perspec
 	var tile: Box = grid_2D.get(column)
 	return tile != null and tile.walkable and tile.movable_2d_from(facing)
 
-## Dónde tiene que haber collider en el plano por el que camina el jugador.
-## [] = collider tapando la celda entera, [Box.Facing (tipo POS_X o NEG_y)] = collider solo en ese borde de la celda (solo en 2D)
-func colliders_plane(height: int, perspective: Perspective) -> Dictionary[Vector2i, Array]:
-	var colliders: Dictionary[Vector2i, Array] = {}
+enum ColliderType { POS_X, NEG_X, POS_Y, NEG_Y, SOLID }
 
+const EDGE_COLLIDER_ON: Dictionary[Box.Facing, ColliderType] = {
+	Box.Facing.POS_X: ColliderType.POS_X,
+	Box.Facing.NEG_X: ColliderType.NEG_X,
+	Box.Facing.POS_Y: ColliderType.POS_Y,
+	Box.Facing.NEG_Y: ColliderType.NEG_Y,
+}
+
+## Dónde tiene que haber collider en el plano por el que camina el jugador.
+## [SOLID] = collider tapando la celda entera, [POS_X, NEG_Y, etc] = collider sólo en esos bordes de la celda (sólo en 2D)
+## Básicamente agarra todas las columnas del plano + las que están al lado de las caminables (así agarra agujeros y el borde del mapa)
+func colliders_plane(height: int, perspective: Perspective) -> Dictionary[Vector2i, Array]:
+	var columns_to_test: Dictionary[Vector2i, bool] = {}
 	for column: Vector2i in grid_2D:
+		columns_to_test[column] = true
+		if can_player_be_on(Vector3i(column.x, column.y, height), perspective):
+			for direction: Vector2i in NEIGHBOURS_2D:
+				columns_to_test[column + direction] = true
+
+	var colliders: Dictionary[Vector2i, Array] = {}
+	for column: Vector2i in columns_to_test:
 		if not can_player_be_on(Vector3i(column.x, column.y, height), perspective):
-			colliders[column] = []
+			colliders[column] = [ColliderType.SOLID]
 			continue
 		var edges := []
 		for direction: Vector2i in NEIGHBOURS_2D:
 			var facing := Box.facing_toward(direction)
 			if has_grab_barrier(column, facing, perspective):
-				edges.append(facing)
+				edges.append(EDGE_COLLIDER_ON[facing])
 		if not edges.is_empty():
 			colliders[column] = edges
-
-	# El anillo de afuera es siempre sólido: el interior va de (0,0) a dimensions - 1, y
-	# ahí no hay cajas que el recorrido de arriba pueda ver.
-	for x in range(-1, dimensions.x + 1):
-		colliders[Vector2i(x, -1)] = []
-		colliders[Vector2i(x, dimensions.y)] = []
-	for y in range(-1, dimensions.y + 1):
-		colliders[Vector2i(-1, y)] = []
-		colliders[Vector2i(dimensions.x, y)] = []
-
 	return colliders
 
 
