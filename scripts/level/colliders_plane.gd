@@ -1,6 +1,6 @@
 class_name CollidersPlane
 extends Node3D
-## Room.colliders_plane hecho colliders de verdad. Una capa (un GridMap) por cada Room.ColliderType.
+## LevelIndex.colliders_plane hecho colliders de verdad. Una capa (un GridMap) por cada ColliderType.
 
 const BOX_MESH := preload("res://scripts/objects/box_mesh.gd")
 ## Del mismo ancho que la raya visual
@@ -19,7 +19,7 @@ const DEBUG_BODY_COLOUR := Color(0.2, 1.0, 0.4, 0.7)
 
 @onready var room: Room = get_parent()
 
-var _layers: Dictionary[Room.ColliderType, GridMap] = {}
+var _layers: Dictionary[LevelIndex.ColliderType, GridMap] = {}
 var _rebuild_pending := false
 
 var _debug_mesh := ImmediateMesh.new()
@@ -30,7 +30,7 @@ var _debug_body_material := _debug_material(DEBUG_BODY_COLOUR)
 
 
 func _ready() -> void:
-	for type: Room.ColliderType in Room.ColliderType.values():
+	for type: LevelIndex.ColliderType in LevelIndex.ColliderType.values():
 		_layers[type] = _create_layer(type)
 	room.moved.connect(request_rebuild)
 	room.perspective_manager.perspective_changed.connect(request_rebuild.unbind(1))
@@ -43,7 +43,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"toggle_collision_debug"):
+	if OS.is_debug_build() and event.is_action_pressed(&"toggle_collision_debug"):
 		_debug_view.visible = not _debug_view.visible
 
 func _process(_delta: float) -> void:
@@ -63,13 +63,13 @@ func rebuild() -> void:
 	for layer: GridMap in _layers.values():
 		layer.clear()
 	var perspective_manager := room.perspective_manager
-	var colliders := room.colliders_plane(perspective_manager.height, perspective_manager.current)
+	var colliders := room.index.colliders_plane(perspective_manager.height, perspective_manager.current)
 	for column: Vector2i in colliders:
-		for type: Room.ColliderType in colliders[column]:
+		for type: LevelIndex.ColliderType in colliders[column]:
 			_layers[type].set_cell_item(_cell_of(column), ONLY_ITEM)
 
 
-func has_collider(column: Vector2i, type: Room.ColliderType) -> bool:
+func has_collider(column: Vector2i, type: LevelIndex.ColliderType) -> bool:
 	return _layers[type].get_cell_item(_cell_of(column)) == ONLY_ITEM
 
 
@@ -77,9 +77,9 @@ func _cell_of(column: Vector2i) -> Vector3i:
 	return GridCoordsProvider.grid_to_godot(Vector3i(column.x, column.y, 0))
 
 
-func _create_layer(type: Room.ColliderType) -> GridMap:
+func _create_layer(type: LevelIndex.ColliderType) -> GridMap:
 	var layer := GridMap.new()
-	layer.name = Room.ColliderType.keys()[type]
+	layer.name = LevelIndex.ColliderType.keys()[type]
 	layer.cell_size = Vector3.ONE
 	layer.mesh_library = MeshLibrary.new()
 	layer.mesh_library.create_item(ONLY_ITEM)
@@ -88,16 +88,16 @@ func _create_layer(type: Room.ColliderType) -> GridMap:
 	return layer
 
 
-func _shape_of(type: Room.ColliderType) -> Array:
+func _shape_of(type: LevelIndex.ColliderType) -> Array:
 	var wall_along_x := Vector3(EDGE_THICKNESS, 1, 1)
 	var wall_along_y := Vector3(1, 1, EDGE_THICKNESS) # y de grilla = z de Godot
 	var to_the_edge := 0.5 - EDGE_THICKNESS / 2.0
 	match type:
-		Room.ColliderType.POS_X: return _box(wall_along_x, Vector3(to_the_edge, 0, 0))
-		Room.ColliderType.NEG_X: return _box(wall_along_x, Vector3(-to_the_edge, 0, 0))
-		Room.ColliderType.POS_Y: return _box(wall_along_y, Vector3(0, 0, to_the_edge))
-		Room.ColliderType.NEG_Y: return _box(wall_along_y, Vector3(0, 0, -to_the_edge))
-		Room.ColliderType.SOLID: return _box(Vector3.ONE, Vector3.ZERO)
+		LevelIndex.ColliderType.POS_X: return _box(wall_along_x, Vector3(to_the_edge, 0, 0))
+		LevelIndex.ColliderType.NEG_X: return _box(wall_along_x, Vector3(-to_the_edge, 0, 0))
+		LevelIndex.ColliderType.POS_Y: return _box(wall_along_y, Vector3(0, 0, to_the_edge))
+		LevelIndex.ColliderType.NEG_Y: return _box(wall_along_y, Vector3(0, 0, -to_the_edge))
+		LevelIndex.ColliderType.SOLID: return _box(Vector3.ONE, Vector3.ZERO)
 	assert(false, "Error CATASTRÓFICO: ColliderType sin forma")
 	return []
 

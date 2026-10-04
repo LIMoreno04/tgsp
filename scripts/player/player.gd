@@ -77,16 +77,16 @@ func _grab_or_let_go() -> void:
 	if grabbed != null:
 		grabbed = null
 		return
-	grabbed = room.choose_box_to_grab(cell(), facing, perspective_manager.current)
+	grabbed = room.index.choose_box_to_grab(cell(), facing, perspective_manager.current)
 	if grabbed == null:
 		_shake_model()
 		return
-	facing = Vector2(room.column_of(grabbed) - _column())
+	facing = Vector2(room.index.column_of(grabbed) - _column())
 	_slide_to(_centre_of(_column()))
 
 ## Jugador y caja juntos o ninguno.
 func _step_with_grabbed_box(screen_direction: Vector2) -> void:
-	var toward_box := room.column_of(grabbed) - _column()
+	var toward_box := room.index.column_of(grabbed) - _column()
 	var along_grab := Vector2(toward_box).dot(_on_grid(_on_plane(screen_direction)))
 	if is_zero_approx(along_grab):
 		return
@@ -94,7 +94,7 @@ func _step_with_grabbed_box(screen_direction: Vector2) -> void:
 	if room.move_grabbed_box(grabbed, step, cell(), perspective_manager.current):
 		_slide_to(_centre_of(_column() + step))
 	else:
-		for box in room.boxes_grabbed_along_with(grabbed, perspective_manager.current):
+		for box in room.index.boxes_grabbed_along_with(grabbed, perspective_manager.current):
 			box.shake()
 
 func _toggle_perspective() -> void:

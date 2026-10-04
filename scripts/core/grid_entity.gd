@@ -60,10 +60,16 @@ static func global_name_of(node: Node) -> StringName:
 
 
 func _get_configuration_warnings() -> PackedStringArray:
-	var warnings := PackedStringArray()
+	var warnings := _warnings_about_its_transform()
 	var unseen := why_the_rules_cannot_see_it()
 	if unseen != "":
 		warnings.append(unseen)
+	return warnings
+
+func _warnings_about_its_transform() -> PackedStringArray:
+	var warnings := PackedStringArray()
+	if not basis.is_equal_approx(Basis.IDENTITY):
+		warnings.append("Rotated or scaled: the rules only see its cell, so it plays as if it were neither. Reset its rotation and scale.")
 	return warnings
 
 
@@ -92,3 +98,4 @@ func _notification(what: int) -> void:
 		return
 	if not position.is_equal_approx(GridCoordsProvider.grid_to_godot(cell)):
 		cell = GridCoordsProvider.godot_to_grid(position)
+	update_configuration_warnings()

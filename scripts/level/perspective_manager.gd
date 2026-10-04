@@ -51,11 +51,11 @@ func toggle(player_column: Vector2i) -> bool:
 	if is_locked():
 		return false
 	if is_3d():
-		if room.is_occluded(Vector3i(player_column.x, player_column.y, height)):
+		if room.index.is_occluded(Vector3i(player_column.x, player_column.y, height)):
 			return false
 		current = Room.Perspective.TOP_2D
 	else:
-		height = room.grid_2D[player_column].world_cell.z + 1
+		height = room.index.cell_of(room.index.top_of(player_column)).z + 1
 		current = Room.Perspective.ISO_3D
 	perspective_changed.emit(current)
 	return true

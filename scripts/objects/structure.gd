@@ -91,10 +91,10 @@ func _get_configuration_warnings() -> PackedStringArray:
 		if child is Structure:
 			warnings.append("Structures cannot be nested, but %s is one." % child.name)
 	warnings.append_array(super())
-	var keeping_height := 0
-	for box in boxes():
-		if box.keeps_height:
-			keeping_height += 1
+	var keeping_height := boxes().filter(func(box: Box) -> bool: return box.keeps_height).size()
 	if keeping_height > 0 and keeping_height < boxes().size():
 		warnings.append("Only some of its boxes keep their height. One is enough for the whole structure to keep it, so the others probably should too.")
+	var terrain := boxes().filter(func(box: Box) -> bool: return box.is_terrain()).size()
+	if terrain > 0 and terrain < boxes().size():
+		warnings.append("Some of its boxes are terrain (is_wall or is_floor) and some are not. Terrain never moves, so none of this structure can move. Make it two structures.")
 	return warnings

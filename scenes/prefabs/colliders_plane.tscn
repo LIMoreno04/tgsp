@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bu0alvofbamij"]
 
-[ext_resource type="Script" path="res://scripts/level/colliders_plane.gd" id="1_chpbh"]
+[ext_resource type="Script" uid="uid://dlgo6hlt16ji8" path="res://scripts/level/colliders_plane.gd" id="1_chpbh"]
 
 [node name="CollidersPlane" type="Node3D" unique_id=1058661855]
 script = ExtResource("1_chpbh")

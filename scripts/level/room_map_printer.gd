@@ -1,7 +1,6 @@
 @tool
 class_name RoomMapPrinter
 extends RefCounted
-## CLAUDE:
 ## Dibuja los índices de un Room en el Output, para mirarlos sin abrir el debugger.
 ## Sólo lee: nunca toca el Room ni las cajas.
 
@@ -18,16 +17,18 @@ const STRUCTURE_LETTERS := "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz"
 const LOOSE_LETTER := "o"
 
 var _room: Room
+var _index: LevelIndex
 
 
 func _init(room: Room) -> void:
 	_room = room
+	_index = room.index
 
 
 ## cells_3D en cortes horizontales, del más alto al más bajo. Cada corte tiene x hacia la
 ## derecha e y hacia abajo, como lo ve la cámara 2D.
 func print_cells_3D() -> void:
-	if _room.cells_3D.is_empty():
+	if _index.cells_3D.is_empty():
 		print_rich("[b]cells_3D[/b] is empty.")
 		return
 	var corners := _index_corners()
@@ -35,14 +36,14 @@ func print_cells_3D() -> void:
 	var hi := corners[1]
 	var letters := _structure_letters()
 	var lines := PackedStringArray()
-	lines.append("[b]cells_3D[/b]  %d boxes · x %d..%d · y %d..%d · z %d..%d" % [_room.cells_3D.size(), lo.x, hi.x, lo.y, hi.y, lo.z, hi.z])
+	lines.append("[b]cells_3D[/b]  %d boxes · x %d..%d · y %d..%d · z %d..%d" % [_index.cells_3D.size(), lo.x, hi.x, lo.y, hi.y, lo.z, hi.z])
 	for z in range(hi.z, lo.z - 1, -1):
 		lines.append("[b]z = %d[/b]" % z)
 		lines.append(_x_axis(lo.x, hi.x, 3))
 		for y in range(lo.y, hi.y + 1):
 			var row := _y_label(y)
 			for x in range(lo.x, hi.x + 1):
-				var box: Box = _room.cells_3D.get(Vector3i(x, y, z))
+				var box: Box = _index.cells_3D.get(Vector3i(x, y, z))
 				row += _cell(box, _letter(box, letters), 3)
 			lines.append(row)
 	lines.append(_legend(letters))
@@ -50,7 +51,7 @@ func print_cells_3D() -> void:
 
 ## grid_2D: la caja de arriba de cada columna, con la letra de su estructura y su z.
 func print_grid_2D() -> void:
-	if _room.grid_2D.is_empty():
+	if _index.grid_2D.is_empty():
 		print_rich("[b]grid_2D[/b] is empty.")
 		return
 	var corners := _index_corners()
@@ -58,13 +59,13 @@ func print_grid_2D() -> void:
 	var hi := corners[1]
 	var letters := _structure_letters()
 	var lines := PackedStringArray()
-	lines.append("[b]grid_2D[/b]  %d columns · x %d..%d · y %d..%d · each tile shows its letter and its z" % [_room.grid_2D.size(), lo.x, hi.x, lo.y, hi.y])
+	lines.append("[b]grid_2D[/b]  %d columns · x %d..%d · y %d..%d · each tile shows its letter and its z" % [_index.grid_2D.size(), lo.x, hi.x, lo.y, hi.y])
 	lines.append(_x_axis(lo.x, hi.x, 4))
 	for y in range(lo.y, hi.y + 1):
 		var row := _y_label(y)
 		for x in range(lo.x, hi.x + 1):
-			var top: Box = _room.grid_2D.get(Vector2i(x, y))
-			var text := "·" if top == null else "%s%d" % [_letter(top, letters), top.world_cell.z]
+			var top: Box = _index.grid_2D.get(Vector2i(x, y))
+			var text := "·" if top == null else "%s%d" % [_letter(top, letters), _index.cell_of(top).z]
 			row += _cell(top, text, 4)
 		lines.append(row)
 	lines.append(_legend(letters))
@@ -101,7 +102,7 @@ func _letter(box: Box, letters: Dictionary[Node, String]) -> String:
 ## Una letra por Structure, en el orden en que aparecen en el índice (el del árbol).
 func _structure_letters() -> Dictionary[Node, String]:
 	var letters: Dictionary[Node, String] = {}
-	for box: Box in _room.cells_3D.values():
+	for box: Box in _index.cells_3D.values():
 		var parent := box.get_parent()
 		if parent is Structure and not letters.has(parent):
 			var index := letters.size()
@@ -110,9 +111,9 @@ func _structure_letters() -> Dictionary[Node, String]:
 
 ## La esquina más baja y la más alta de todo lo que hay en cells_3D.
 func _index_corners() -> Array[Vector3i]:
-	var lo: Vector3i = _room.cells_3D.keys()[0]
+	var lo: Vector3i = _index.cells_3D.keys()[0]
 	var hi := lo
-	for cell: Vector3i in _room.cells_3D:
+	for cell: Vector3i in _index.cells_3D:
 		lo = lo.min(cell)
 		hi = hi.max(cell)
 	return [lo, hi]
@@ -130,7 +131,7 @@ func _legend(letters: Dictionary[Node, String]) -> String:
 	var names := PackedStringArray()
 	for structure in letters:
 		names.append("%s %s" % [letters[structure], _room.get_path_to(structure)])
-	if _room.cells_3D.values().any(func(box: Box) -> bool: return box.get_parent() is not Structure):
+	if _index.cells_3D.values().any(func(box: Box) -> bool: return box.get_parent() is not Structure):
 		names.append("%s loose box" % LOOSE_LETTER)
 	var kinds := PackedStringArray()
 	for kind in COLOURS:

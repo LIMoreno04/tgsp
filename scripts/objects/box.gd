@@ -15,7 +15,7 @@ const FACING_NORMAL := {
 
 @export var walkable := false:
 	set(value):
-		walkable = value
+		walkable = value or is_floor # Un piso siempre se puede pisar.
 		if walkable:
 			movable_2d_whole_face = false
 		notify_property_list_changed()
@@ -26,6 +26,7 @@ const FACING_NORMAL := {
 		is_wall = value
 		notify_property_list_changed()
 		appearance_changed.emit()
+		_ask_the_parent_to_check_its_warnings()
 
 @export var is_floor := false:
 	set(value):
@@ -34,12 +35,12 @@ const FACING_NORMAL := {
 			walkable = true
 		notify_property_list_changed()
 		appearance_changed.emit()
+		_ask_the_parent_to_check_its_warnings()
 
 @export var keeps_height := false:
 	set(value):
 		keeps_height = value
-		if get_parent() != null:
-			get_parent().update_configuration_warnings()
+		_ask_the_parent_to_check_its_warnings()
 
 @export var top_half_only := false:
 	set(value):
@@ -103,13 +104,24 @@ func shake() -> void:
 
 func _get_configuration_warnings() -> PackedStringArray:
 	if global_name_of(get_parent()) == &"Structure":
-		return PackedStringArray() # Lo avisa su Structure, una vez por todas sus cajas.
+		return _warnings_about_its_transform() # Si las reglas no la ven, lo avisa su Structure, una vez por todas sus cajas.
 	return super()
+
+## Su Structure avisa si mezcla terreno con cajas que no lo son, o si sólo algunas mantienen la altura.
+func _ask_the_parent_to_check_its_warnings() -> void:
+	if get_parent() != null:
+		get_parent().update_configuration_warnings()
 
 
 func _validate_property(property: Dictionary) -> void:
-	if property.name.contains("movable") and (is_wall or is_floor):
+	if property.name.contains("movable") and is_terrain():
 		property.usage = PROPERTY_USAGE_NO_EDITOR
+	if property.name == "walkable" and is_floor:
+		property.usage |= PROPERTY_USAGE_READ_ONLY
+
+
+func is_terrain() -> bool:
+	return is_wall or is_floor
 
 
 static func facing_toward(direction: Vector2i) -> Facing:
@@ -122,6 +134,8 @@ static func facing_toward(direction: Vector2i) -> Facing:
 	return Facing.POS_X
 
 func movable_3d_from(facing: Facing) -> bool:
+	if is_terrain():
+		return false
 	match facing:
 		Facing.POS_X: return movable_3d_pos_x
 		Facing.NEG_X: return movable_3d_neg_x
@@ -129,10 +143,15 @@ func movable_3d_from(facing: Facing) -> bool:
 		Facing.NEG_Y: return movable_3d_neg_y
 		_: return false
 
-func movable_2d() -> bool:
-	return movable_2d_whole_face or movable_2d_pos_x or movable_2d_neg_x or movable_2d_pos_y or movable_2d_neg_y
+func movable_3d_from_any_side() -> bool:
+	for facing: Facing in Facing.values():
+		if movable_3d_from(facing):
+			return true
+	return false
 
 func movable_2d_from(facing: Facing) -> bool:
+	if is_terrain():
+		return false
 	if movable_2d_whole_face:
 		return true
 	match facing:
@@ -141,3 +160,6 @@ func movable_2d_from(facing: Facing) -> bool:
 		Facing.POS_Y: return movable_2d_pos_y
 		Facing.NEG_Y: return movable_2d_neg_y
 		_: return false
+
+func movable_2d_from_every_side() -> bool:
+	return movable_2d_whole_face and not is_terrain()

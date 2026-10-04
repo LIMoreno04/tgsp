@@ -12,7 +12,7 @@ const W := Vector2i(-1, 0)
 const S := Vector2i(0, 1)
 const D3 := Room.Perspective.ISO_3D
 const D2 := Room.Perspective.TOP_2D
-const SOLID := Room.ColliderType.SOLID
+const SOLID := LevelIndex.ColliderType.SOLID
 
 var root: Node
 var passed := 0
@@ -27,6 +27,7 @@ func run(tree_root: Node) -> void:
 	grabbed_structure_2d()
 	riders_3d()
 	terrain()
+	floors_and_terrain_flags()
 	refusals()
 	landing_2d()
 	floor_to_floor_2d()
@@ -39,6 +40,7 @@ func run(tree_root: Node) -> void:
 	colliders_plane_node()
 	keeping_the_height()
 	structure_warnings()
+	room_warnings()
 	folders()
 
 
@@ -46,9 +48,9 @@ func index() -> void:
 	section("the index")
 
 	var r := room([[c(1,1,0)]])
-	is_true("a box in a structure is indexed by its world cell", r.cells_3D.has(c(1,1,0)))
-	is_true("the shell is indexed too", r.cells_3D.has(c(0,0,-1)))
-	same("grid_2D keeps the highest box of the column", r.grid_2D[Vector2i(1,1)], at(r,1,1,0))
+	is_true("a box in a structure is indexed by its world cell", r.index.cells_3D.has(c(1,1,0)))
+	is_true("the shell is indexed too", r.index.cells_3D.has(c(0,0,-1)))
+	same("grid_2D keeps the highest box of the column", r.index.grid_2D[Vector2i(1,1)], at(r,1,1,0))
 	free_room(r)
 
 	r = room([])
@@ -60,7 +62,7 @@ func index() -> void:
 	b.cell = c(1,0,0)
 	s.add_child(b)
 	r.rebuild_index()
-	is_true("a box under an offset structure lands at cell + parent cell", r.cells_3D.has(c(3,2,1)))
+	is_true("a box under an offset structure lands at cell + parent cell", r.index.cells_3D.has(c(3,2,1)))
 	same("  and world_cell agrees", b.world_cell, c(3,2,1))
 	free_room(r)
 
@@ -68,14 +70,14 @@ func index() -> void:
 	var moving: Array[Box] = [at(r,1,1,0)]
 	var after := r.index.moved(moving, Vector3i(1,0,0))
 	is_true("an index after a move has the box at its new cell", after.cells_3D.has(c(2,1,0)) and not after.cells_3D.has(c(1,1,0)))
-	is_true("  and the room's own index is untouched", r.cells_3D.has(c(1,1,0)))
+	is_true("  and the room's own index is untouched", r.index.cells_3D.has(c(1,1,0)))
 	free_room(r)
 
 	r = room([[c(1,1,0)]])
 	r.try_to_move_grabbed_box(at(r,1,1,0), E, D3)
-	is_true("after a move the old cell is empty", not r.cells_3D.has(c(1,1,0)))
-	is_true("  the new cell is filled", r.cells_3D.has(c(2,1,0)))
-	same("  and grid_2D followed", r.grid_2D[Vector2i(2,1)], r.cells_3D[c(2,1,0)])
+	is_true("after a move the old cell is empty", not r.index.cells_3D.has(c(1,1,0)))
+	is_true("  the new cell is filled", r.index.cells_3D.has(c(2,1,0)))
+	same("  and grid_2D followed", r.index.grid_2D[Vector2i(2,1)], r.index.cells_3D[c(2,1,0)])
 	free_room(r)
 
 
@@ -99,9 +101,14 @@ func connectivity() -> void:
 	var r := room([ring()])
 	var all_eight := true
 	for cell: Vector3i in ring():
-		if r.boxes_of_same_structure_connected_to(r.cells_3D[cell], D3).size() != 8:
+		if r.index.boxes_of_same_structure_connected_to(r.index.cells_3D[cell], D3).size() != 8:
 			all_eight = false
 	is_true("every box of the ring sees all eight", all_eight)
+	free_room(r)
+
+	r = room([], [], [], Vector3i(50, 50, 1))
+	same("a 50x50 floor is one piece, past where a recursive walk broke the stack",
+		r.index.boxes_of_same_structure_connected_to(at(r,0,0,-1), D3).size(), 2500)
 	free_room(r)
 
 
@@ -119,7 +126,7 @@ func grabbed_structure_2d() -> void:
 
 	var r := room([[c(0,0,0), c(1,0,0)], [c(0,0,1)]])
 	is_true("pushing the exposed half works", r.try_to_move_grabbed_box(at(r,1,0,0), E, D2))
-	is_true("  and the buried half did not move", r.cells_3D.has(c(0,0,0)))
+	is_true("  and the buried half did not move", r.index.cells_3D.has(c(0,0,0)))
 	free_room(r)
 
 
@@ -143,20 +150,20 @@ func riders_3d() -> void:
 	var r := room([[c(0,0,0)], [c(0,0,1)], [c(1,0,1)]], [2])
 	is_true("a platform may not slide out from under a blocked rider and leave it floating",
 		not r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
-	is_true("  and nothing moved", r.cells_3D.has(c(0,0,0)) and r.cells_3D.has(c(0,0,1)))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(0,0,0)) and r.index.cells_3D.has(c(0,0,1)))
 	free_room(r)
 
 	r = room([[c(0,0,0), c(1,0,0)], [c(1,0,1)], [c(2,0,1)]], [2])
 	is_true("a longer platform slides partly out from under it", r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
-	is_true("  the platform moved", r.cells_3D.has(c(2,0,0)))
-	is_true("  the rider stayed, still resting on the platform", r.cells_3D.has(c(1,0,1)) and r.cells_3D.has(c(1,0,0)))
+	is_true("  the platform moved", r.index.cells_3D.has(c(2,0,0)))
+	is_true("  the rider stayed, still resting on the platform", r.index.cells_3D.has(c(1,0,1)) and r.index.cells_3D.has(c(1,0,0)))
 	is_true("  but not all the way out", not r.try_to_move_grabbed_box(at(r,1,0,0), E, D3))
 	free_room(r)
 
 	r = room([[c(0,0,0), c(1,0,0)], [c(1,0,1), c(1,1,1)], [c(0,1,0), c(1,1,0), c(2,1,0), c(2,1,1)]], [2])
 	is_true("unloading: a crate also resting on a ledge is caught by the ledge's end", r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
 	is_true("  and the platform can leave it on the ledge",
-		r.try_to_move_grabbed_box(at(r,1,0,0), E, D3) and r.cells_3D.has(c(1,0,1)) and not r.cells_3D.has(c(1,0,0)))
+		r.try_to_move_grabbed_box(at(r,1,0,0), E, D3) and r.index.cells_3D.has(c(1,0,1)) and not r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
 
 
@@ -173,9 +180,39 @@ func terrain() -> void:
 
 	r = room([[c(0,0,0), c(1,0,0)]])
 	add_boxes(r, "Wall", [c(0,0,1)], true)
-	same("a wall never joins the unit", r.boxes_that_would_move(at(r,0,0,0), E, D3).size(), 2)
+	same("a wall never joins the unit", r.index.boxes_that_would_move(at(r,0,0,0), E, D3).size(), 2)
 	is_true("  so the platform can still be pushed out", r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
-	is_true("  and the wall is left floating", r.cells_3D.has(c(0,0,1)))
+	is_true("  and the wall is left floating", r.index.cells_3D.has(c(0,0,1)))
+	free_room(r)
+
+
+func floors_and_terrain_flags() -> void:
+	section("a floor is always walkable, and terrain has no handles")
+
+	var floor_box := Structure.BOX_SCENE.instantiate() as Box
+	floor_box.is_floor = true
+	floor_box.walkable = false
+	is_true("unchecking walkable on a floor does nothing", floor_box.walkable)
+	var saved := PackedScene.new()
+	saved.pack(floor_box)
+	var loaded := saved.instantiate() as Box
+	is_true("  and the floor is still walkable once saved and loaded", loaded.walkable)
+	floor_box.free()
+	loaded.free()
+
+	var r := room([[c(3,2,0)]], [0])
+	at(r,3,2,0).movable_3d_neg_x = true
+	at(r,3,2,0).movable_2d_neg_x = true
+	r.rebuild_index()
+	is_true("a wall left with a 3D handle from before cannot be grabbed", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("  nor with a 2D one", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D2) == null)
+	free_room(r)
+
+	r = room([])
+	at(r,2,2,-1).movable_2d_pos_x = true
+	r.rebuild_index()
+	is_true("a floor left with a 2D handle is no barrier", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D2))
+	is_true("  and gets no edge collider", not r.index.colliders_plane(0, D2).has(Vector2i(2,2)))
 	free_room(r)
 
 
@@ -184,7 +221,7 @@ func refusals() -> void:
 
 	var r := room([[c(0,0,0)], [c(1,0,0)]])
 	is_true("a blocked grabbed structure refuses", not r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
-	is_true("  and nothing moved", r.cells_3D.has(c(0,0,0)) and r.cells_3D.has(c(1,0,0)))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(0,0,0)) and r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0), c(1,0,0)], [c(2,0,0)]])
@@ -197,7 +234,7 @@ func refusals() -> void:
 
 	r = room([[c(5,0,0)]])
 	is_true("2D: the void refuses", not r.try_to_move_grabbed_box(at(r,5,0,0), E, D2))
-	is_true("  and it stayed", r.cells_3D.has(c(5,0,0)))
+	is_true("  and it stayed", r.index.cells_3D.has(c(5,0,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0)], [c(1,0,0)]])
@@ -212,32 +249,32 @@ func landing_2d() -> void:
 
 	var r := room([[c(0,0,0)]])
 	r.try_to_move_grabbed_box(at(r,0,0,0), E, D2)
-	is_true("flat ground keeps its height", r.cells_3D.has(c(1,0,0)))
+	is_true("flat ground keeps its height", r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0)], [c(1,0,0)]], [], [1])
 	r.try_to_move_grabbed_box(at(r,0,0,0), E, D2)
-	is_true("it climbs onto a walkable step", r.cells_3D.has(c(1,0,1)))
-	is_true("  and the step is untouched", r.cells_3D.has(c(1,0,0)))
+	is_true("it climbs onto a walkable step", r.index.cells_3D.has(c(1,0,1)))
+	is_true("  and the step is untouched", r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0), c(0,0,1)], [c(1,0,0)]], [], [1])
 	is_true("a two-tall unit climbs", r.try_to_move_grabbed_box(at(r,0,0,1), E, D2))
-	is_true("  bottom at z = 1", r.cells_3D.has(c(1,0,1)))
-	is_true("  top at z = 2, shape kept", r.cells_3D.has(c(1,0,2)))
+	is_true("  bottom at z = 1", r.index.cells_3D.has(c(1,0,1)))
+	is_true("  top at z = 2, shape kept", r.index.cells_3D.has(c(1,0,2)))
 	free_room(r)
 
 	r = room([[c(0,0,3)]])
 	is_true("a floating tile drops", r.try_to_move_grabbed_box(at(r,0,0,3), E, D2))
-	is_true("  onto the floor at z = 0", r.cells_3D.has(c(1,0,0)))
+	is_true("  onto the floor at z = 0", r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0), c(0,1,0)], [c(1,1,0)]], [], [1])
-	var before := r.cells_3D.size()
+	var before := r.index.cells_3D.size()
 	is_true("a wide unit rises by the most demanding column", r.try_to_move_grabbed_box(at(r,0,0,0), E, D2))
-	is_true("  the stepped column landed on top", r.cells_3D.has(c(1,1,1)))
-	is_true("  the flat column rose with it", r.cells_3D.has(c(1,0,1)))
-	same("  no box lost or duplicated", r.cells_3D.size(), before)
+	is_true("  the stepped column landed on top", r.index.cells_3D.has(c(1,1,1)))
+	is_true("  the flat column rose with it", r.index.cells_3D.has(c(1,0,1)))
+	same("  no box lost or duplicated", r.index.cells_3D.size(), before)
 	free_room(r)
 
 
@@ -247,25 +284,25 @@ func staying_connected() -> void:
 	# El piso va de 0 a 5, así que una caja sola corrida de la última columna no toca nada.
 	var r := room([[c(5,2,0)]])
 	is_true("a lone box cannot be pushed off the edge", not r.try_to_move_grabbed_box(at(r,5,2,0), E, D3))
-	is_true("  and it stayed", r.cells_3D.has(c(5,2,0)))
+	is_true("  and it stayed", r.index.cells_3D.has(c(5,2,0)))
 	free_room(r)
 
 	r = room([[c(3,2,0), c(4,2,0), c(5,2,0)]])
 	is_true("a structure may cantilever over the void", r.try_to_move_grabbed_box(at(r,3,2,0), E, D3))
-	is_true("  its far end is over the void", r.cells_3D.has(c(6,2,0)))
-	is_true("  and its near end still on the floor", r.cells_3D.has(c(4,2,0)))
+	is_true("  its far end is over the void", r.index.cells_3D.has(c(6,2,0)))
+	is_true("  and its near end still on the floor", r.index.cells_3D.has(c(4,2,0)))
 	free_room(r)
 
 	r = room([[c(4,2,0), c(5,2,0)]])
 	is_true("the first push out is fine", r.try_to_move_grabbed_box(at(r,4,2,0), E, D3))
 	is_true("the one that would free it is refused", not r.try_to_move_grabbed_box(at(r,5,2,0), E, D3))
-	is_true("  so it stayed where it was", r.cells_3D.has(c(5,2,0)) and r.cells_3D.has(c(6,2,0)))
+	is_true("  so it stayed where it was", r.index.cells_3D.has(c(5,2,0)) and r.index.cells_3D.has(c(6,2,0)))
 	free_room(r)
 
 	r = room([[c(4,2,0), c(5,2,0)]])
 	r.try_to_move_grabbed_box(at(r,4,2,0), E, D3)
 	is_true("it can be pulled back toward land", r.try_to_move_grabbed_box(at(r,5,2,0), W, D3))
-	is_true("  and is back over the floor", r.cells_3D.has(c(4,2,0)))
+	is_true("  and is back over the floor", r.index.cells_3D.has(c(4,2,0)))
 	free_room(r)
 
 	r = room([[c(0,0,0)]])
@@ -295,13 +332,13 @@ func floor_to_floor_2d() -> void:
 	var r := room([[c(2,2,0)], [c(2,2,1)]])
 	is_true("a crate on another crate cannot be pulled off it", not r.try_to_move_grabbed_box(at(r,2,2,1), W, D2))
 	is_true("  nor pushed off it", not r.try_to_move_grabbed_box(at(r,2,2,1), E, D2))
-	is_true("  so it stays", r.cells_3D.has(c(2,2,1)))
-	is_true("  but in 3D the crate under it carries it along", r.try_to_move_grabbed_box(at(r,2,2,0), E, D3) and r.cells_3D.has(c(3,2,1)))
+	is_true("  so it stays", r.index.cells_3D.has(c(2,2,1)))
+	is_true("  but in 3D the crate under it carries it along", r.try_to_move_grabbed_box(at(r,2,2,0), E, D3) and r.index.cells_3D.has(c(3,2,1)))
 	free_room(r)
 
 	r = room([[c(2,2,0)], [c(2,2,1)]], [], [0])
-	is_true("a crate on a walkable platform can be pulled off it", r.try_to_move_grabbed_box(at(r,2,2,1), W, D2) and r.cells_3D.has(c(1,2,0)))
-	is_true("  and pushed back onto it", r.try_to_move_grabbed_box(at(r,1,2,0), E, D2) and r.cells_3D.has(c(2,2,1)))
+	is_true("a crate on a walkable platform can be pulled off it", r.try_to_move_grabbed_box(at(r,2,2,1), W, D2) and r.index.cells_3D.has(c(1,2,0)))
+	is_true("  and pushed back onto it", r.try_to_move_grabbed_box(at(r,1,2,0), E, D2) and r.index.cells_3D.has(c(2,2,1)))
 	free_room(r)
 
 	r = room([[c(2,2,0)], [c(2,2,1)]], [0])
@@ -309,22 +346,22 @@ func floor_to_floor_2d() -> void:
 	free_room(r)
 
 	r = room([[c(4,2,0), c(5,2,0), c(6,2,0)]])
-	is_true("a platform hanging over the void can be pulled back in 2D", r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.cells_3D.has(c(3,2,0)) and r.cells_3D.has(c(5,2,0)))
-	is_true("  and pushed out over it again", r.try_to_move_grabbed_box(at(r,3,2,0), E, D2) and r.cells_3D.has(c(6,2,0)))
-	is_true("  and further, while a box of it is still over the floor", r.try_to_move_grabbed_box(at(r,4,2,0), E, D2) and r.cells_3D.has(c(7,2,0)))
-	is_true("  but not once none would be", not r.try_to_move_grabbed_box(at(r,5,2,0), E, D2) and r.cells_3D.has(c(5,2,0)))
+	is_true("a platform hanging over the void can be pulled back in 2D", r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.index.cells_3D.has(c(3,2,0)) and r.index.cells_3D.has(c(5,2,0)))
+	is_true("  and pushed out over it again", r.try_to_move_grabbed_box(at(r,3,2,0), E, D2) and r.index.cells_3D.has(c(6,2,0)))
+	is_true("  and further, while a box of it is still over the floor", r.try_to_move_grabbed_box(at(r,4,2,0), E, D2) and r.index.cells_3D.has(c(7,2,0)))
+	is_true("  but not once none would be", not r.try_to_move_grabbed_box(at(r,5,2,0), E, D2) and r.index.cells_3D.has(c(5,2,0)))
 	free_room(r)
 
 	r = room([[c(1,2,0), c(2,2,0), c(3,2,0)]], [], [0])
 	remove_box(r, c(4,2,-1))
-	is_true("2D: a plank can be pushed out over a hole", r.try_to_move_grabbed_box(at(r,1,2,0), E, D2) and r.cells_3D.has(c(4,2,0)))
-	is_true("  and across it, as a bridge", r.try_to_move_grabbed_box(at(r,2,2,0), E, D2) and r.cells_3D.has(c(5,2,0)))
-	is_true("  which can be stood on over the hole", r.can_player_be_on(c(4,2,9), D2))
+	is_true("2D: a plank can be pushed out over a hole", r.try_to_move_grabbed_box(at(r,1,2,0), E, D2) and r.index.cells_3D.has(c(4,2,0)))
+	is_true("  and across it, as a bridge", r.try_to_move_grabbed_box(at(r,2,2,0), E, D2) and r.index.cells_3D.has(c(5,2,0)))
+	is_true("  which can be stood on over the hole", r.index.can_player_be_on(c(4,2,9), D2))
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
 	remove_box(r, c(4,2,-1))
-	is_true("2D: a lone crate cannot be pushed into a hole", not r.try_to_move_grabbed_box(at(r,3,2,0), E, D2) and r.cells_3D.has(c(3,2,0)))
+	is_true("2D: a lone crate cannot be pushed into a hole", not r.try_to_move_grabbed_box(at(r,3,2,0), E, D2) and r.index.cells_3D.has(c(3,2,0)))
 	free_room(r)
 
 	r = room([[c(2,2,0)], [c(3,2,0)]], [], [1])
@@ -335,12 +372,12 @@ func floor_to_floor_2d() -> void:
 	r = room([[c(4,2,0), c(5,2,0)], [c(5,2,1)]], [], [0])
 	remove_box(r, c(5,2,-1))
 	same("2D: a crate on a plank's tip over a hole hides the tip, so a pull takes only the near box",
-		r.boxes_that_would_move(at(r,4,2,0), W, D2).size(), 1)
+		r.index.boxes_that_would_move(at(r,4,2,0), W, D2).size(), 1)
 	is_true("  and is refused: the tip would stay over the hole holding the crate, attached to nothing",
-		not r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.cells_3D.has(c(4,2,0)))
-	is_true("  the crate can be moved off it, onto the floor beside", r.try_to_move_grabbed_box(at(r,5,2,1), S, D2) and r.cells_3D.has(c(5,3,0)))
+		not r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.index.cells_3D.has(c(4,2,0)))
+	is_true("  the crate can be moved off it, onto the floor beside", r.try_to_move_grabbed_box(at(r,5,2,1), S, D2) and r.index.cells_3D.has(c(5,3,0)))
 	is_true("  and then the plank comes back whole",
-		r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.cells_3D.has(c(3,2,0)) and r.cells_3D.has(c(4,2,0)))
+		r.try_to_move_grabbed_box(at(r,4,2,0), W, D2) and r.index.cells_3D.has(c(3,2,0)) and r.index.cells_3D.has(c(4,2,0)))
 	free_room(r)
 
 
@@ -348,31 +385,31 @@ func player_queries() -> void:
 	section("player queries")
 
 	var r := room([])
-	is_true("3D: the shell floor can be stood on", r.can_player_be_on(c(2,2,0), D3))
-	is_true("  the box below is the floor", r.floor_of(c(2,2,0), D3).is_floor)
-	is_true("3D: nothing to stand on in mid air", not r.can_player_be_on(c(2,2,3), D3))
-	is_true("3D: outside the room there is nowhere to stand", not r.can_player_be_on(c(9,9,0), D3))
+	is_true("3D: the shell floor can be stood on", r.index.can_player_be_on(c(2,2,0), D3))
+	is_true("  the box below is the floor", r.index.floor_of(c(2,2,0), D3).is_floor)
+	is_true("3D: nothing to stand on in mid air", not r.index.can_player_be_on(c(2,2,3), D3))
+	is_true("3D: outside the room there is nowhere to stand", not r.index.can_player_be_on(c(9,9,0), D3))
 	free_room(r)
 
 	r = room([[c(2,2,0)]])
-	is_true("3D: a box in your own cell blocks", not r.can_player_be_on(c(2,2,0), D3))
-	is_true("3D: a non-walkable top cannot be stood on", not r.can_player_be_on(c(2,2,1), D3))
-	is_true("2D: a non-walkable top cannot be stood on", not r.can_player_be_on(c(2,2,9), D2))
-	is_true("something above the cell is occlusion", r.is_occluded(c(2,2,-1)))
-	is_true("  nothing above a cell over the box", not r.is_occluded(c(2,2,1)))
+	is_true("3D: a box in your own cell blocks", not r.index.can_player_be_on(c(2,2,0), D3))
+	is_true("3D: a non-walkable top cannot be stood on", not r.index.can_player_be_on(c(2,2,1), D3))
+	is_true("2D: a non-walkable top cannot be stood on", not r.index.can_player_be_on(c(2,2,9), D2))
+	is_true("something above the cell is occlusion", r.index.is_occluded(c(2,2,-1)))
+	is_true("  nothing above a cell over the box", not r.index.is_occluded(c(2,2,1)))
 	free_room(r)
 
 	r = room([[c(2,2,0)]], [], [0])
-	is_true("3D: on top of a walkable box", r.can_player_be_on(c(2,2,1), D3))
-	is_true("2D: height is ignored, the top decides", r.can_player_be_on(c(2,2,9), D2))
+	is_true("3D: on top of a walkable box", r.index.can_player_be_on(c(2,2,1), D3))
+	is_true("2D: height is ignored, the top decides", r.index.can_player_be_on(c(2,2,9), D2))
 	free_room(r)
 
 	r = room([[c(2,2,0)]], [], [0])
 	at(r,2,2,0).movable_2d_pos_x = true
 	r.rebuild_index()
-	is_true("2D: a stripe is a barrier on that side", r.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D2))
-	is_true("  but not on the others", not r.has_grab_barrier(Vector2i(2,2), Box.Facing.NEG_X, D2))
-	is_true("3D: there are no barriers", not r.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D3))
+	is_true("2D: a stripe is a barrier on that side", r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D2))
+	is_true("  but not on the others", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.NEG_X, D2))
+	is_true("3D: there are no barriers", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D3))
 	free_room(r)
 
 
@@ -382,36 +419,36 @@ func grabbing() -> void:
 	var r := room([[c(3,2,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.NEG_X)
 	r.rebuild_index()
-	same("grabs the crate straight ahead", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
-	same("  a lone candidate behind is still grabbed", r.choose_box_to_grab(c(2,2,0), Vector2(-1,0), D3), at(r,3,2,0))
-	is_true("3D ignores a neighbour below the player", r.choose_box_to_grab(c(2,2,1), Vector2(1,0), D3) == null)
+	same("grabs the crate straight ahead", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
+	same("  a lone candidate behind is still grabbed", r.index.choose_box_to_grab(c(2,2,0), Vector2(-1,0), D3), at(r,3,2,0))
+	is_true("3D ignores a neighbour below the player", r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.POS_X)
 	r.rebuild_index()
-	is_true("a handle on the far face is not grabbable", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("a handle on the far face is not grabbable", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
-	is_true("a box with no handles is not grabbable", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("a box with no handles is not grabbable", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)], [c(2,3,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.NEG_X)
 	handle_3d(at(r,2,3,0), Box.Facing.NEG_Y)
 	r.rebuild_index()
-	same("facing east picks east", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
-	same("facing north picks north", r.choose_box_to_grab(c(2,2,0), Vector2(0,1), D3), at(r,2,3,0))
+	same("facing east picks east", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
+	same("facing north picks north", r.index.choose_box_to_grab(c(2,2,0), Vector2(0,1), D3), at(r,2,3,0))
 	same("a diagonal ties, and the fixed order settles it",
-		r.choose_box_to_grab(c(2,2,0), Vector2(1,1).normalized(), D3), at(r,3,2,0))
+		r.index.choose_box_to_grab(c(2,2,0), Vector2(1,1).normalized(), D3), at(r,3,2,0))
 	free_room(r)
 
 	r = room([[c(3,2,3)]])
 	at(r,3,2,3).movable_2d_neg_x = true
 	r.rebuild_index()
-	same("2D grabs the neighbouring top", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D2), at(r,3,2,3))
-	is_true("  and the 3D handles are a separate set", r.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	same("2D grabs the neighbouring top", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D2), at(r,3,2,3))
+	is_true("  and the 3D handles are a separate set", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(2,2,0)], [c(3,2,0)]], [], [0])
@@ -419,11 +456,11 @@ func grabbing() -> void:
 	at(r,3,2,0).movable_2d_neg_x = true
 	r.rebuild_index()
 	is_true("2D: a stripe on your own tile blocks the grab",
-		r.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2) == null)
+		r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2) == null)
 	at(r,2,2,0).movable_2d_pos_x = false
 	r.rebuild_index()
 	same("  with the stripe gone it is reachable",
-		r.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2), at(r,3,2,0))
+		r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2), at(r,3,2,0))
 	free_room(r)
 
 
@@ -432,25 +469,25 @@ func moving_with_a_player() -> void:
 
 	var r := room([[c(3,2,0)]])
 	is_true("push succeeds", r.move_grabbed_box(at(r,3,2,0), E, c(2,2,0), D3))
-	is_true("  the crate moved", r.cells_3D.has(c(4,2,0)))
-	is_true("  and vacated the cell the player steps into", not r.cells_3D.has(c(3,2,0)))
+	is_true("  the crate moved", r.index.cells_3D.has(c(4,2,0)))
+	is_true("  and vacated the cell the player steps into", not r.index.cells_3D.has(c(3,2,0)))
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
 	is_true("pull succeeds", r.move_grabbed_box(at(r,3,2,0), W, c(2,2,0), D3))
-	is_true("  the crate arrived where the player was", r.cells_3D.has(c(2,2,0)))
+	is_true("  the crate arrived where the player was", r.index.cells_3D.has(c(2,2,0)))
 	free_room(r)
 
 	r = room([[c(1,2,0)]])
 	is_true("a pull with nothing behind the player is refused",
 		not r.move_grabbed_box(at(r,1,2,0), W, c(0,2,0), D3))
-	is_true("  and nothing moved", r.cells_3D.has(c(1,2,0)))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(1,2,0)))
 	free_room(r)
 
 	r = room([[c(2,2,0), c(3,2,0)]], [], [0])
 	is_true("you cannot move what you are standing on",
 		not r.move_grabbed_box(at(r,3,2,0), E, c(2,2,1), D3))
-	is_true("  and nothing moved", r.cells_3D.has(c(2,2,0)) and r.cells_3D.has(c(3,2,0)))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(2,2,0)) and r.index.cells_3D.has(c(3,2,0)))
 	free_room(r)
 
 	r = room([[c(2,2,0), c(3,2,0)], [c(2,2,1)]], [], [1])
@@ -471,7 +508,7 @@ func moving_with_a_player() -> void:
 	r.rebuild_index()
 	is_true("2D: a push may not step the player over the stripe it uncovers",
 		not r.move_grabbed_box(at(r,3,2,1), E, c(2,2,0), D2))
-	is_true("  and nothing moved", r.cells_3D.has(c(3,2,1)))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(3,2,1)))
 	free_room(r)
 
 	r = room([[c(3,2,0)], [c(3,2,1)]], [], [0])
@@ -493,7 +530,7 @@ func moving_with_a_player() -> void:
 	r = room([[c(3,2,0)], [c(3,2,1)]], [], [0])
 	at(r,3,2,0).movable_2d_neg_x = true
 	r.rebuild_index()
-	is_true("3D: stripes are no barrier to a step", not r.would_player_cross_a_stripe(c(2,2,1), E, r.index, D3))
+	is_true("3D: stripes are no barrier to a step", not r.index.would_player_cross_a_stripe(c(2,2,1), E, r.index, D3))
 	free_room(r)
 
 
@@ -501,80 +538,80 @@ func colliders() -> void:
 	section("the collision plane")
 
 	var r := room([])
-	var plane := r.colliders_plane(0, D3)
+	var plane := r.index.colliders_plane(0, D3)
 	same("the open far edge is solid", plane.get(Vector2i(6,3)), [SOLID])
 	same("the wall line is solid", plane.get(Vector2i(-1,3)), [SOLID])
 	same("the near corner is solid", plane.get(Vector2i(-1,-1)), [SOLID])
 	is_true("the far corner is left out, the edges beside it already close it", not plane.has(Vector2i(6,6)))
 	is_true("nothing beyond the edge", not plane.has(Vector2i(7,3)))
 	is_true("open floor needs no collider", not plane.has(Vector2i(3,3)))
-	same("high above, every interior column is solid", interior_entries(r.colliders_plane(5, D3)), 36)
+	same("high above, every interior column is solid", interior_entries(r.index.colliders_plane(5, D3)), 36)
 	free_room(r)
 
 	r = room([[c(3,3,0)]])
-	same("3D: a crate at your height is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
-	same("2D: a non-walkable top is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
+	same("3D: a crate at your height is solid", r.index.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
+	same("2D: a non-walkable top is solid", r.index.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
 	free_room(r)
 
 	r = room([[c(3,3,0)]], [], [0])
-	is_true("3D: on top of a walkable crate is open", not r.colliders_plane(1, D3).has(Vector2i(3,3)))
-	same("3D: but inside it is solid", r.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
-	is_true("2D: a walkable top is open", not r.colliders_plane(0, D2).has(Vector2i(3,3)))
+	is_true("3D: on top of a walkable crate is open", not r.index.colliders_plane(1, D3).has(Vector2i(3,3)))
+	same("3D: but inside it is solid", r.index.colliders_plane(0, D3).get(Vector2i(3,3)), [SOLID])
+	is_true("2D: a walkable top is open", not r.index.colliders_plane(0, D2).has(Vector2i(3,3)))
 	free_room(r)
 
 	r = room([[c(3,3,0)]])
 	at(r,3,3,0).movable_2d_whole_face = true
 	r.rebuild_index()
-	same("2D: a whole-face grabbable tile is solid", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
+	same("2D: a whole-face grabbable tile is solid", r.index.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
 	free_room(r)
 
 	r = room([[c(3,3,0)]], [], [0])
 	at(r,3,3,0).movable_2d_pos_x = true
 	r.rebuild_index()
-	same("one stripe, one edge", r.colliders_plane(0, D2).get(Vector2i(3,3)), [Room.ColliderType.POS_X])
-	is_true("3D reports no edges", not r.colliders_plane(1, D3).has(Vector2i(3,3)))
+	same("one stripe, one edge", r.index.colliders_plane(0, D2).get(Vector2i(3,3)), [LevelIndex.ColliderType.POS_X])
+	is_true("3D reports no edges", not r.index.colliders_plane(1, D3).has(Vector2i(3,3)))
 	free_room(r)
 
 	r = room([[c(3,3,0)]], [], [0])
 	at(r,3,3,0).movable_2d_pos_x = true
 	at(r,3,3,0).movable_2d_neg_y = true
 	r.rebuild_index()
-	var edges: Array = r.colliders_plane(0, D2).get(Vector2i(3,3))
+	var edges: Array = r.index.colliders_plane(0, D2).get(Vector2i(3,3))
 	same("two stripes, two edges", edges.size(), 2)
-	is_true("  both of them", edges.has(Room.ColliderType.POS_X) and edges.has(Room.ColliderType.NEG_Y))
+	is_true("  both of them", edges.has(LevelIndex.ColliderType.POS_X) and edges.has(LevelIndex.ColliderType.NEG_Y))
 	free_room(r)
 
 	r = room([])
 	remove_box(r, c(2,2,-1))
-	same("3D: a hole in the floor is solid", r.colliders_plane(0, D3).get(Vector2i(2,2)), [SOLID])
-	same("2D: a hole in the floor is solid", r.colliders_plane(0, D2).get(Vector2i(2,2)), [SOLID])
-	is_true("  its neighbours stay open", not r.colliders_plane(0, D3).has(Vector2i(2,1)))
+	same("3D: a hole in the floor is solid", r.index.colliders_plane(0, D3).get(Vector2i(2,2)), [SOLID])
+	same("2D: a hole in the floor is solid", r.index.colliders_plane(0, D2).get(Vector2i(2,2)), [SOLID])
+	is_true("  its neighbours stay open", not r.index.colliders_plane(0, D3).has(Vector2i(2,1)))
 	free_room(r)
 
 	r = room([])
 	remove_box(r, c(3,3,-1))
 	add_boxes(r, "UnderTheHole", [c(3,3,-2)], false)
-	same("a hole with a non-walkable box under it is solid too", r.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
+	same("a hole with a non-walkable box under it is solid too", r.index.colliders_plane(0, D2).get(Vector2i(3,3)), [SOLID])
 	free_room(r)
 
 	r = room([[c(4,2,0), c(5,2,0), c(6,2,0)]], [], [0])
-	is_true("3D: a platform hanging past the edge can be walked on", not r.colliders_plane(1, D3).has(Vector2i(6,2)))
-	same("  the void past its end is solid", r.colliders_plane(1, D3).get(Vector2i(7,2)), [SOLID])
-	same("  and the void beside it", r.colliders_plane(1, D3).get(Vector2i(6,3)), [SOLID])
-	is_true("2D: the same platform can be walked on", not r.colliders_plane(0, D2).has(Vector2i(6,2)))
-	same("  and the void past it is solid", r.colliders_plane(0, D2).get(Vector2i(7,2)), [SOLID])
+	is_true("3D: a platform hanging past the edge can be walked on", not r.index.colliders_plane(1, D3).has(Vector2i(6,2)))
+	same("  the void past its end is solid", r.index.colliders_plane(1, D3).get(Vector2i(7,2)), [SOLID])
+	same("  and the void beside it", r.index.colliders_plane(1, D3).get(Vector2i(6,3)), [SOLID])
+	is_true("2D: the same platform can be walked on", not r.index.colliders_plane(0, D2).has(Vector2i(6,2)))
+	same("  and the void past it is solid", r.index.colliders_plane(0, D2).get(Vector2i(7,2)), [SOLID])
 	free_room(r)
 
 	r = room([[c(4,2,0), c(5,2,0), c(6,2,0)]], [], [0])
 	at(r,6,2,0).movable_2d_pos_x = true
 	r.rebuild_index()
-	plane = r.colliders_plane(0, D2)
-	same("a stripe facing the void is an edge", plane.get(Vector2i(6,2)), [Room.ColliderType.POS_X])
+	plane = r.index.colliders_plane(0, D2)
+	same("a stripe facing the void is an edge", plane.get(Vector2i(6,2)), [LevelIndex.ColliderType.POS_X])
 	same("  and the void behind the stripe is still solid", plane.get(Vector2i(7,2)), [SOLID])
 	free_room(r)
 
 	r = room([], [], [], Vector3i(50, 50, 1))
-	plane = r.colliders_plane(0, D3)
+	plane = r.index.colliders_plane(0, D3)
 	same("a 50x50 floor, past where the old flood overflowed, is closed on its far side", plane.get(Vector2i(50,49)), [SOLID])
 	same("  and its whole rim is there: two walls and two open sides", plane.size(), 51 + 50 + 50 + 50)
 	free_room(r)
@@ -631,7 +668,7 @@ func colliders_plane_node() -> void:
 	plane = add_colliders_plane(r)
 	manager.toggle(Vector2i(2,2))
 	plane.rebuild()
-	is_true("2D: a stripe becomes its edge collider", plane.has_collider(Vector2i(3,3), Room.ColliderType.POS_X))
+	is_true("2D: a stripe becomes its edge collider", plane.has_collider(Vector2i(3,3), LevelIndex.ColliderType.POS_X))
 	is_true("  and nothing else changes", plane_matches_its_room(plane, r))
 	free_room(r)
 
@@ -647,24 +684,24 @@ func keeping_the_height() -> void:
 	section("boxes that keep their height")
 
 	var r := room([[c(0,2,2), c(1,2,2)]], [], [0])
-	is_true("2D: a platform that does not keep its height drops", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.cells_3D.has(c(0,3,0)))
+	is_true("2D: a platform that does not keep its height drops", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.index.cells_3D.has(c(0,3,0)))
 	free_room(r)
 
 	r = room([[c(0,2,2), c(1,2,2)]], [], [0])
 	keep_height(r, [c(0,2,2), c(1,2,2)])
 	is_true("2D: one that keeps it slides along the wall at the same height",
-		r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.cells_3D.has(c(0,3,2)) and r.cells_3D.has(c(1,3,2)))
+		r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.index.cells_3D.has(c(0,3,2)) and r.index.cells_3D.has(c(1,3,2)))
 	free_room(r)
 
 	r = room([[c(0,2,2), c(1,2,2)]], [], [0])
 	keep_height(r, [c(1,2,2)])
-	is_true("  one ticked box is enough for the whole platform", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.cells_3D.has(c(0,3,2)))
+	is_true("  one ticked box is enough for the whole platform", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.index.cells_3D.has(c(0,3,2)))
 	free_room(r)
 
 	r = room([[c(0,2,2), c(1,2,2)], [c(1,3,0), c(1,3,1), c(1,3,2)]], [], [0, 1])
 	keep_height(r, [c(0,2,2), c(1,2,2)])
 	is_true("2D: a walkable step at its height lifts it, just enough",
-		r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.cells_3D.has(c(0,3,3)) and r.cells_3D.has(c(1,3,3)))
+		r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.index.cells_3D.has(c(0,3,3)) and r.index.cells_3D.has(c(1,3,3)))
 	free_room(r)
 
 	r = room([[c(0,2,2), c(1,2,2)], [c(1,3,2)]], [], [0])
@@ -675,7 +712,7 @@ func keeping_the_height() -> void:
 	r = room([[c(0,2,2), c(1,2,2)]], [], [0])
 	keep_height(r, [c(0,2,2), c(1,2,2)])
 	remove_box(r, c(0,3,-1))
-	is_true("2D: like in 3D, it slides over a hole while it touches the wall", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.cells_3D.has(c(0,3,2)))
+	is_true("2D: like in 3D, it slides over a hole while it touches the wall", r.try_to_move_grabbed_box(at(r,0,2,2), S, D2) and r.index.cells_3D.has(c(0,3,2)))
 	free_room(r)
 
 	r = room([[c(5,2,2)]], [], [0])
@@ -685,7 +722,7 @@ func keeping_the_height() -> void:
 
 	r = room([[c(0,2,2), c(1,2,2)]])
 	keep_height(r, [c(0,2,2), c(1,2,2)])
-	is_true("3D: it hangs from the wall while sliding along it", r.try_to_move_grabbed_box(at(r,0,2,2), S, D3) and r.cells_3D.has(c(0,3,2)))
+	is_true("3D: it hangs from the wall while sliding along it", r.try_to_move_grabbed_box(at(r,0,2,2), S, D3) and r.index.cells_3D.has(c(0,3,2)))
 	is_true("  but not once it would touch nothing", not r.try_to_move_grabbed_box(at(r,0,3,2), E, D3))
 	free_room(r)
 
@@ -707,6 +744,37 @@ func structure_warnings() -> void:
 	is_true("only some boxes keeping their height is flagged", has_warning(platform, "Only some of its boxes"))
 	at(r,0,2,2).keeps_height = true
 	is_true("  all of them is not", not has_warning(platform, "Only some of its boxes"))
+	is_true("a structure without terrain says nothing about it", not has_warning(platform, "terrain"))
+	at(r,1,2,2).is_wall = true
+	is_true("  one mixing terrain with other boxes says so", has_warning(platform, "Some of its boxes are terrain"))
+	free_room(r)
+
+	r = room([[c(1,1,0)]])
+	is_true("an unrotated box says nothing about its transform", not has_warning(at(r,1,1,0), "Rotated or scaled"))
+	at(r,1,1,0).rotation = Vector3(0, PI / 2, 0)
+	is_true("a rotated box says so, even inside a structure", has_warning(at(r,1,1,0), "Rotated or scaled"))
+	var crate := at(r,1,1,0).get_parent() as Structure
+	crate.scale = Vector3(2, 2, 2)
+	is_true("  and so does a scaled structure", has_warning(crate, "Rotated or scaled"))
+	free_room(r)
+
+
+func room_warnings() -> void:
+	section("room warnings")
+
+	var r := room([])
+	is_true("a room at the origin, with a spawn point on the floor, has nothing to say", r._get_configuration_warnings().is_empty())
+	r.position = Vector3(1, 0, 0)
+	is_true("a room moved off the origin says so", has_warning(r, "must sit at the origin"))
+	free_room(r)
+
+	r = room([[c(2,2,0)]], [], [0])
+	r.player_spawn_point = c(2,2,0)
+	is_true("a spawn point inside a box says so", has_warning(r, "cannot stand at player_spawn_point"))
+	var manager := add_perspective_manager(r)
+	manager.starting_perspective = D2
+	is_true("  unless the level starts in 2D, where the box's walkable top is all that counts",
+		not has_warning(r, "cannot stand at player_spawn_point"))
 	free_room(r)
 
 
@@ -721,9 +789,9 @@ func folders() -> void:
 	loose.cell = c(1,4,0)
 	deeper.add_child(loose)
 	r.rebuild_index()
-	is_true("a structure in a folder lands at its cell plus the folder's", r.cells_3D.has(c(4,1,0)))
-	is_true("  a loose box two folders deep too", r.cells_3D.has(c(4,4,0)))
-	is_true("  a push moves it in the index", r.try_to_move_grabbed_box(at(r,4,1,0), E, D3) and r.cells_3D.has(c(5,1,0)) and not r.cells_3D.has(c(4,1,0)))
+	is_true("a structure in a folder lands at its cell plus the folder's", r.index.cells_3D.has(c(4,1,0)))
+	is_true("  a loose box two folders deep too", r.index.cells_3D.has(c(4,4,0)))
+	is_true("  a push moves it in the index", r.try_to_move_grabbed_box(at(r,4,1,0), E, D3) and r.index.cells_3D.has(c(5,1,0)) and not r.index.cells_3D.has(c(4,1,0)))
 	is_true("  and none of them warns", not has_warning(s, "the rules skip") and not has_warning(loose, "the rules skip") and not has_warning(folder, "the rules skip"))
 	free_room(r)
 
@@ -736,7 +804,7 @@ func folders() -> void:
 	loose.cell = c(2,2,0)
 	plain.add_child(loose)
 	r.rebuild_index()
-	is_true("a plain Node3D in the way hides what is in it from the rules", not r.cells_3D.has(c(1,1,0)) and not r.cells_3D.has(c(2,2,0)))
+	is_true("a plain Node3D in the way hides what is in it from the rules", not r.index.cells_3D.has(c(1,1,0)) and not r.index.cells_3D.has(c(2,2,0)))
 	is_true("  its structures say so", has_warning(s, "Plain, between this and the Room, is not a GridEntity"))
 	is_true("  its loose boxes too", has_warning(loose, "is not a GridEntity"))
 	is_true("  but a box in a structure leaves it to the structure", not has_warning(s.boxes()[0], "the rules skip"))
@@ -762,8 +830,8 @@ func add_structure(parent: Node, structure_name: String, cell: Vector3i, box_cel
 	return s
 
 
-func has_warning(entity: GridEntity, fragment: String) -> bool:
-	for warning in entity._get_configuration_warnings():
+func has_warning(node: Node, fragment: String) -> bool:
+	for warning in node._get_configuration_warnings():
 		if warning.contains(fragment):
 			return true
 	return false
@@ -777,7 +845,7 @@ func c(x: int, y: int, z: int) -> Vector3i:
 	return Vector3i(x, y, z)
 
 func at(r: Room, x: int, y: int, z: int) -> Box:
-	return r.cells_3D[Vector3i(x, y, z)]
+	return r.index.cells_3D[Vector3i(x, y, z)]
 
 func ring() -> Array:
 	return [c(0,0,0), c(1,0,0), c(2,0,0), c(2,1,0), c(2,2,0), c(1,2,0), c(0,2,0), c(0,1,0)]
@@ -805,11 +873,11 @@ func add_colliders_plane(r: Room) -> CollidersPlane:
 
 ## Cada columna tiene justo los colliders que pide colliders_plane, y ninguna otra tiene alguno.
 func plane_matches_its_room(plane: CollidersPlane, r: Room) -> bool:
-	var answer := r.colliders_plane(r.perspective_manager.height, r.perspective_manager.current)
+	var answer := r.index.colliders_plane(r.perspective_manager.height, r.perspective_manager.current)
 	for x in range(-3, ROOM_SIZE.x + 3):
 		for y in range(-3, ROOM_SIZE.y + 3):
 			var wanted: Array = answer.get(Vector2i(x, y), [])
-			for type: Room.ColliderType in Room.ColliderType.values():
+			for type: LevelIndex.ColliderType in LevelIndex.ColliderType.values():
 				if plane.has_collider(Vector2i(x, y), type) != wanted.has(type):
 					return false
 	return true
@@ -832,21 +900,21 @@ func no_duplicates(label: String, boxes: Array[Box]) -> void:
 
 func connected(label: String, groups: Array, seed: Vector3i, perspective: Room.Perspective, expected: int) -> void:
 	var r := room(groups)
-	var found := r.boxes_of_same_structure_connected_to(r.cells_3D[seed], perspective)
+	var found := r.index.boxes_of_same_structure_connected_to(r.index.cells_3D[seed], perspective)
 	no_duplicates(label, found)
 	same(label, found.size(), expected)
 	free_room(r)
 
 func grabbed(label: String, groups: Array, seed: Vector3i, perspective: Room.Perspective, expected: int) -> void:
 	var r := room(groups)
-	var found := r.boxes_grabbed_along_with(r.cells_3D[seed], perspective)
+	var found := r.index.boxes_grabbed_along_with(r.index.cells_3D[seed], perspective)
 	no_duplicates(label, found)
 	same(label, found.size(), expected)
 	free_room(r)
 
 func unit_size(label: String, groups: Array, seed: Vector3i, direction: Vector2i, perspective: Room.Perspective, expected: int) -> void:
 	var r := room(groups)
-	var found := r.boxes_that_would_move(r.cells_3D[seed], direction, perspective)
+	var found := r.index.boxes_that_would_move(r.index.cells_3D[seed], direction, perspective)
 	no_duplicates(label, found)
 	same(label, found.size(), expected)
 	free_room(r)
@@ -887,7 +955,7 @@ func add_boxes(r: Room, group_name: String, cells: Array, walls: bool) -> void:
 	r.rebuild_index()
 
 func remove_box(r: Room, cell: Vector3i) -> void:
-	var box := r.cells_3D[cell]
+	var box := r.index.cells_3D[cell]
 	box.get_parent().remove_child(box)
 	box.queue_free()
 	r.rebuild_index()

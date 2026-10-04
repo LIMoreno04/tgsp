@@ -11,7 +11,11 @@ const COLOUR_BORDER := Color(0.62, 0.62, 0.60)
 const WALKABLE_BORDER_WIDTH := 0.04
 const WALKABLE_SIDES_DISPLAY := 0.25
 const MOVABLE_STRIPE_WIDTH := 0.15
+## Más angosto que el borde gris de una baldosa caminable.
+const HANDLE_OUTLINE_WIDTH := 0.03
 const TILE_LIFT := 0.001
+## Por encima de la baldosa y por debajo de las rayas de agarre 2D, que lo tapan.
+const HANDLE_OUTLINE_LIFT := 0.0015
 const HANDLE_STRIPE_LIFT := 0.002
 ## Hasta cuánto cambia cada estructura su naranja y su gris.
 const MAX_STRUCTURE_TINT_STATIC := 0.10
@@ -65,10 +69,13 @@ func _rebuild() -> void:
 
 	if box.walkable or box.is_floor:
 		_bordered_rect(st, top_lo, top_hi, Vector3.UP)
-	elif box.movable_2d_whole_face:
+	elif box.movable_2d_from_every_side():
 		_rect(st, top_lo, top_hi, Vector3.UP, movable_colour)
 	else:
 		_rect(st, top_lo, top_hi, Vector3.UP, static_colour)
+
+	if box.movable_3d_from_any_side():
+		_add_handle_outline(st, top_y + HANDLE_OUTLINE_LIFT, movable_colour, static_colour)
 
 	var y := top_y + HANDLE_STRIPE_LIFT
 	var msw := MOVABLE_STRIPE_WIDTH
@@ -85,6 +92,20 @@ func _rebuild() -> void:
 	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, static_colour)
 
 	mesh = st.commit()
+
+
+## Un marco finito alrededor de la tapa, cada borde del color de la cara de abajo: naranja si es
+## agarradera 3D, gris si no. Así se ve desde arriba, también en 2D, de qué lados se agarra en 3D.
+## Los bordes en y van entre los de x, para que ninguna esquina se dibuje dos veces con dos colores.
+func _add_handle_outline(st: SurfaceTool, y: float, movable_colour: Color, static_colour: Color) -> void:
+	var colour: Dictionary[Box.Facing, Color] = {}
+	for facing: Box.Facing in Box.FACING_NORMAL:
+		colour[facing] = movable_colour if box.movable_3d_from(facing) else static_colour
+	var w := HANDLE_OUTLINE_WIDTH
+	_rect(st, Vector3(0.5 - w, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, colour[Box.Facing.POS_X])
+	_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + w, y, 0.5), Vector3.UP, colour[Box.Facing.NEG_X])
+	_rect(st, Vector3(-0.5 + w, y, 0.5 - w), Vector3(0.5 - w, y, 0.5), Vector3.UP, colour[Box.Facing.POS_Y]) # Y de grilla = Z de Godot
+	_rect(st, Vector3(-0.5 + w, y, -0.5), Vector3(0.5 - w, y, -0.5 + w), Vector3.UP, colour[Box.Facing.NEG_Y])
 
 
 func _tinted(colour: Color, tint: float) -> Color:
