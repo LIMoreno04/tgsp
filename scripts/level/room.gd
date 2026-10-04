@@ -5,6 +5,8 @@ extends Node3D
 
 #==================General=====================
 signal dimensions_changed
+signal moved
+
 @export var dimensions:Vector3i = Vector3i(5,5,5):
 	set(value):
 		dimensions = value
@@ -23,7 +25,10 @@ func _ready() -> void:
 
 enum Perspective {ISO_3D, TOP_2D}
 
-@onready var perspective_manager: PerspectiveManager = get_node_or_null("PerspectiveManager")
+## Se va a buscar cada vez que se necesita (lazy) porque no está disponible en _ready.
+var perspective_manager: PerspectiveManager:
+	get:
+		return get_node_or_null("PerspectiveManager")
 
 static func is_3d(perspective: Perspective) -> bool:
 	return perspective == Perspective.ISO_3D
@@ -48,42 +53,45 @@ const NEIGHBOURS_2D: Array[Vector2i] = [
 	Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1),
 ]
 
-var cells_3D: Dictionary[Vector3i,Box]
-var grid_2D: Dictionary[Vector2i,Box]
+## El estado del nivel en ambas perspectivas. Para mover se crea otro LevelIndex hipotético
+var index := LevelIndex.new()
+var cells_3D: Dictionary[Vector3i,Box]:
+	get:
+		return index.cells_3D
+var grid_2D: Dictionary[Vector2i,Box]:
+	get:
+		return index.grid_2D
 
 func column_of(box: Box) -> Vector2i:
 	return Vector2i(box.world_cell.x, box.world_cell.y)
 
 func add_to_index(box: Box) -> void:
-	var cell := box.world_cell
-	var projected_cell := column_of(box)
-	
-	if cells_3D.has(cell):
-		push_error("Two boxes share the cell %s: %s and %s." % [cell, cells_3D[cell].get_path(), box.get_path()])
-		return
-
-	cells_3D[cell] = box
-	if not grid_2D.has(projected_cell) or grid_2D[projected_cell].world_cell.z < cell.z:
-		grid_2D[projected_cell] = box
+	index.add(box, box.world_cell)
 
 func _add_structure_to_index(structure: Structure) -> void:
 	for box in structure.boxes():
 		add_to_index(box)
 
+func _add_nested_nodes_to_index(node: GridEntity) -> void:
+	if node is Box:
+		add_to_index(node)
+	elif node is Structure:
+		_add_structure_to_index(node)
+	else:
+		for child in node.get_children():
+			if child is GridEntity:
+				_add_nested_nodes_to_index(child)
 
-func rebuild_index() ->void:
-	cells_3D.clear()
-	grid_2D.clear()
+
+func rebuild_index() -> void:
+	index = LevelIndex.new()
 	for child in get_children():
-		if child is Box:
-			add_to_index(child)
-		elif child is Structure:
-			_add_structure_to_index(child)
-		elif child is RoomShell:
+		if child is RoomShell:
 			for part in child.get_children():
 				if part is Structure:
 					_add_structure_to_index(part)
-
+		elif child is GridEntity:
+			_add_nested_nodes_to_index(child)
 
 func maximum_reach() -> Vector3i:
 	var x_max := dimensions.x
@@ -170,16 +178,6 @@ func boxes_that_would_move(box: Box, direction: Vector2i, perspective: Perspecti
 #==================Movimiento==================
 
 
-func highest_filtered_box_in_column(column: Vector2i, filter: Array[Box] = []) -> Box:
-	var highest: Box = null
-	for occupied_cell: Vector3i in cells_3D:
-		if occupied_cell.x != column.x or occupied_cell.y != column.y or filter.has(cells_3D[occupied_cell]):
-			continue
-		if highest == null or occupied_cell.z > highest.world_cell.z:
-			highest = cells_3D[occupied_cell]
-	return highest
-
-
 func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direction: Vector2i, perspective: Perspective) -> bool:
 	for structure_box in structure:
 		if structure_box.is_wall or structure_box.is_floor:
@@ -189,8 +187,7 @@ func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direct
 			if cells_3D.has(target) and not structure.has(cells_3D[target]) and not already_moving.has(cells_3D[target]):
 				return false
 		elif is_2d(perspective):
-			var landing := highest_filtered_box_in_column(column_of(structure_box) + direction, already_moving)
-			if landing == null or not landing.walkable:
+			if not index.without(already_moving).could_go_over(column_of(structure_box) + direction):
 				return false
 		else:
 			assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
@@ -198,14 +195,86 @@ func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direct
 	return true
 
 
-## Si después de moverse la unidad sigue tocando algo que no se mueva (para no quedar volando).
-func would_unit_stay_connected(unit: Array[Box], step: Vector3i) -> bool:
+## En 2D para no hacer aparecer cajas de la nada
+func would_uncover_a_column_it_could_not_go_over(unit: Array[Box], direction: Vector2i, perspective: Perspective) -> bool:
+	if not is_2d(perspective):
+		return false
+	var rest_of_the_room := index.without(unit)
+	var covered_after: Dictionary[Vector2i, bool] = {}
 	for unit_box in unit:
-		var moved := unit_box.world_cell + step
+		covered_after[column_of(unit_box) + direction] = true
+	for unit_box in unit:
+		var column := column_of(unit_box)
+		if not covered_after.has(column) and not rest_of_the_room.could_go_over(column):
+			return true
+	return false
+
+
+## Cálculo de la altura de un movimiento
+func step_after_landing(unit: Array[Box], direction: Vector2i, perspective: Perspective) -> Vector3i:
+	var step := Vector3i(direction.x, direction.y, 0)
+	if is_2d(perspective):
+		var rest_of_the_room := index.without(unit)
+		var offsets: Array[int] = []
+		for unit_box in unit:
+			var landing := rest_of_the_room.top_of(column_of(unit_box) + direction)
+			if landing != null:
+				offsets.append(landing.world_cell.z + 1 - unit_box.world_cell.z)
+		if not offsets.is_empty():
+			step.z = offsets.max()
+		if keeps_its_height(unit):
+			step.z = maxi(step.z, 0)
+	return step
+
+
+func keeps_its_height(boxes: Array[Box]) -> bool:
+	for box in boxes:
+		if box.keeps_height:
+			return true
+	return false
+
+
+func would_leave_anything_floating(unit: Array[Box], step: Vector3i) -> bool:
+	var after := index.moved(unit, step)
+	if not is_held(unit, after):
+		return true
+	for left_behind in pieces_left_behind(unit):
+		if not contains_terrain(left_behind) and not is_held(left_behind, after):
+			return true
+	return false
+
+## Lo que se queda y estaba pegado a la unidad: lo que tenía encima, y lo de su misma estructura
+## que no viene. Eso último pasa en 2D, cuando una caja de la estructura está tapada por otra:
+## se separa y se queda donde estaba, y puede que sin nada abajo.
+func pieces_left_behind(unit: Array[Box]) -> Array[Array]:
+	var pieces: Array[Array] = []
+	for unit_box in unit:
 		for direction: Vector3i in NEIGHBOURS_3D:
-			var neighbour: Box = cells_3D.get(moved + direction)
-			if neighbour != null and not unit.has(neighbour):
-				return true
+			var neighbour: Box = cells_3D.get(unit_box.world_cell + direction)
+			if neighbour == null or unit.has(neighbour):
+				continue
+			if direction == GRID_UP or same_structure(unit_box, neighbour):
+				pieces.append(_piece_without(neighbour, unit))
+	return pieces
+
+## Las cajas de su estructura conectadas a esta en 3D, sin pasar por la unidad.
+func _piece_without(box: Box, unit: Array[Box]) -> Array[Box]:
+	var piece: Array[Box] = []
+	for piece_box in boxes_of_same_structure_connected_to(box, Perspective.ISO_3D, unit.duplicate()):
+		if not unit.has(piece_box):
+			piece.append(piece_box)
+	return piece
+
+## Apoyada en algo de abajo; o, si tiene keeps_height, agarrada a cualquier cosa que toque.
+func is_held(boxes: Array[Box], world: LevelIndex) -> bool:
+	if world.rests_on_something(boxes):
+		return true
+	return keeps_its_height(boxes) and world.touches_something(boxes)
+
+func contains_terrain(boxes: Array[Box]) -> bool:
+	for box in boxes:
+		if box.is_wall or box.is_floor:
+			return true
 	return false
 
 
@@ -214,59 +283,31 @@ func try_to_move_grabbed_box(box: Box, direction: Vector2i, perspective: Perspec
 	var unit := boxes_that_would_move(box, direction, perspective)
 	if not can_move_one_cell(grabbed, unit, direction, perspective):
 		return false
-
-	var step := Vector3i(direction.x, direction.y, 0)
-	if is_2d(perspective):
-		var offsets: Array[int] = []
-		for unit_box in unit:
-			var landing := highest_filtered_box_in_column(column_of(unit_box) + direction, unit)
-			if landing != null:
-				offsets.append(landing.world_cell.z + 1 - unit_box.world_cell.z)
-		if not offsets.is_empty():
-			step.z = offsets.max()
-
-	if not would_unit_stay_connected(unit, step):
+	if would_uncover_a_column_it_could_not_go_over(unit, direction, perspective):
+		return false
+	var step := step_after_landing(unit, direction, perspective)
+	if would_leave_anything_floating(unit, step):
 		return false
 
 	for unit_box in unit:
 		unit_box.cell += step
 	rebuild_index()
+	moved.emit()
 	return true
 
 # ======================Jugador=======================
 
 func floor_of(cell: Vector3i, perspective: Perspective) -> Box:
-	var floor_box: Box = null
-	if is_3d(perspective):
-		var floor_cell := cell + GRID_DOWN
-		floor_box = cells_3D[floor_cell] if cells_3D.has(floor_cell) else null
-	elif is_2d(perspective):
-		floor_box = grid_2D.get(Vector2i(cell.x,cell.y))
-	else:
-		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
-
-	return floor_box
+	return index.floor_of(cell, perspective)
 
 func can_player_be_on(player_position: Vector3i, perspective: Perspective) -> bool:
-	var floor_box = floor_of(player_position, perspective)
-	if is_3d(perspective):
-		return floor_box != null and floor_box.walkable and not cells_3D.has(player_position)
-	elif is_2d(perspective):
-		return floor_box != null and floor_box.walkable
-	else:
-		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
-		return false	
+	return index.can_player_be_on(player_position, perspective)
 
 func is_occluded(cell: Vector3i) -> bool:
-	var roof := highest_filtered_box_in_column(Vector2i(cell.x,cell.y))
-	return roof != null and roof.world_cell.z >= cell.z
+	return index.is_occluded(cell)
 
-## La raya naranja de un techo caminable es una pared por ese lado.
 func has_grab_barrier(column: Vector2i, facing: Box.Facing, perspective: Perspective) -> bool:
-	if not is_2d(perspective):
-		return false
-	var tile: Box = grid_2D.get(column)
-	return tile != null and tile.walkable and tile.movable_2d_from(facing)
+	return index.has_grab_barrier(column, facing, perspective)
 
 enum ColliderType { POS_X, NEG_X, POS_Y, NEG_Y, SOLID }
 
@@ -277,7 +318,6 @@ const EDGE_COLLIDER_ON: Dictionary[Box.Facing, ColliderType] = {
 	Box.Facing.NEG_Y: ColliderType.NEG_Y,
 }
 
-## Dónde tiene que haber collider en el plano por el que camina el jugador.
 ## [SOLID] = collider tapando la celda entera, [POS_X, NEG_Y, etc] = collider sólo en esos bordes de la celda (sólo en 2D)
 ## Básicamente agarra todas las columnas del plano + las que están al lado de las caminables (así agarra agujeros y el borde del mapa)
 func colliders_plane(height: int, perspective: Perspective) -> Dictionary[Vector2i, Array]:
@@ -332,27 +372,27 @@ func choose_box_to_grab(player_cell: Vector3i, facing: Vector2, perspective: Per
 	return chosen
 
 
-func could_player_stand_on_after_moving(destination: Vector3i, unit: Array[Box], perspective: Perspective) -> bool:
-	if is_3d(perspective):
-		var blocking: Box = cells_3D.get(destination)
-		if blocking != null and not unit.has(blocking):
-			return false
-		var support: Box = cells_3D.get(destination + GRID_DOWN)
-		return support != null and support.walkable and not unit.has(support)
-	elif is_2d(perspective):
-		var top := highest_filtered_box_in_column(Vector2i(destination.x, destination.y), unit)
-		return top != null and top.walkable
-	else:
-		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
-		return false
+## Solo importa en 2D
+func would_player_cross_a_stripe(player_cell: Vector3i, direction: Vector2i, after: LevelIndex, perspective: Perspective) -> bool:
+	var leaving := Vector2i(player_cell.x, player_cell.y)
+	if has_grab_barrier(leaving, Box.facing_toward(direction), perspective):
+		return true
+	return after.has_grab_barrier(leaving + direction, Box.facing_toward(-direction), perspective)
 
 
 func move_grabbed_box(box: Box, direction: Vector2i, player_cell: Vector3i, perspective: Perspective) -> bool:
 	var unit := boxes_that_would_move(box, direction, perspective)
 	if unit.has(floor_of(player_cell, perspective)):
 		return false
+
+	if not can_move_one_cell(boxes_grabbed_along_with(box, perspective), unit, direction, perspective):
+		return false
+	var after := index.moved(unit, step_after_landing(unit, direction, perspective))
+
 	var destination := player_cell + Vector3i(direction.x, direction.y, 0)
-	if not could_player_stand_on_after_moving(destination, unit, perspective):
+	if not after.can_player_be_on(destination, perspective):
+		return false
+	if would_player_cross_a_stripe(player_cell, direction, after, perspective):
 		return false
 	return try_to_move_grabbed_box(box, direction, perspective)
 

@@ -35,6 +35,12 @@ const FACING_NORMAL := {
 		notify_property_list_changed()
 		appearance_changed.emit()
 
+@export var keeps_height := false:
+	set(value):
+		keeps_height = value
+		if get_parent() != null:
+			get_parent().update_configuration_warnings()
+
 @export var top_half_only := false:
 	set(value):
 		top_half_only = value
@@ -83,6 +89,23 @@ const FACING_NORMAL := {
 		notify_property_list_changed()
 		appearance_changed.emit()
 @export_group("")
+
+@onready var _mesh: Node3D = $Mesh
+@onready var _mesh_rest_x := _mesh.position.x
+var _shake: Tween
+
+## Para decir que no se pudo mover solo se hace vibrar la mesh. De momento siempre vibra en x.
+func shake() -> void:
+	if is_instance_valid(_shake):
+		_shake.kill()
+	_shake = Shake.sideways(_mesh, _mesh_rest_x)
+
+
+func _get_configuration_warnings() -> PackedStringArray:
+	if global_name_of(get_parent()) == &"Structure":
+		return PackedStringArray() # Lo avisa su Structure, una vez por todas sus cajas.
+	return super()
+
 
 func _validate_property(property: Dictionary) -> void:
 	if property.name.contains("movable") and (is_wall or is_floor):

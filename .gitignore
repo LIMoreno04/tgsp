@@ -3,4 +3,4 @@
 /android/
 .vscode/settings.json
 .obsidian/
-DESIGN.md
+*.md

@@ -90,4 +90,11 @@ func _get_configuration_warnings() -> PackedStringArray:
 	for child in get_children():
 		if child is Structure:
 			warnings.append("Structures cannot be nested, but %s is one." % child.name)
+	warnings.append_array(super())
+	var keeping_height := 0
+	for box in boxes():
+		if box.keeps_height:
+			keeping_height += 1
+	if keeping_height > 0 and keeping_height < boxes().size():
+		warnings.append("Only some of its boxes keep their height. One is enough for the whole structure to keep it, so the others probably should too.")
 	return warnings

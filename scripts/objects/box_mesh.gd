@@ -13,6 +13,9 @@ const WALKABLE_SIDES_DISPLAY := 0.25
 const MOVABLE_STRIPE_WIDTH := 0.15
 const TILE_LIFT := 0.001
 const HANDLE_STRIPE_LIFT := 0.002
+## Hasta cuánto cambia cada estructura su naranja y su gris.
+const MAX_STRUCTURE_TINT_STATIC := 0.10
+const MAX_STRUCTURE_TINT_MOVABLE := 0.25
 
 var _rebuild_pending := false
 
@@ -39,6 +42,8 @@ func _rebuild() -> void:
 	var side_top_y := top_y - WALKABLE_SIDES_DISPLAY if box.walkable else top_y
 	var top_lo := Vector3(-0.5, top_y, -0.5)
 	var top_hi := Vector3(0.5, top_y, 0.5)
+	var movable_colour := _tinted(COLOUR_MOVABLE, MAX_STRUCTURE_TINT_MOVABLE)
+	var static_colour := _tinted(COLOUR_STATIC, MAX_STRUCTURE_TINT_STATIC)
 
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -54,32 +59,48 @@ func _rebuild() -> void:
 		if box.is_wall:
 			_bordered_rect(st, face_lo, face_hi, normal)
 		elif box.movable_3d_from(facing):
-			_rect(st, face_lo, face_hi, normal, COLOUR_MOVABLE)
+			_rect(st, face_lo, face_hi, normal, movable_colour)
 		else:
-			_rect(st, face_lo, face_hi, normal, COLOUR_STATIC)
+			_rect(st, face_lo, face_hi, normal, static_colour)
 
 	if box.walkable or box.is_floor:
 		_bordered_rect(st, top_lo, top_hi, Vector3.UP)
 	elif box.movable_2d_whole_face:
-		_rect(st, top_lo, top_hi, Vector3.UP, COLOUR_MOVABLE)
+		_rect(st, top_lo, top_hi, Vector3.UP, movable_colour)
 	else:
-		_rect(st, top_lo, top_hi, Vector3.UP, COLOUR_STATIC)
+		_rect(st, top_lo, top_hi, Vector3.UP, static_colour)
 
 	var y := top_y + HANDLE_STRIPE_LIFT
 	var msw := MOVABLE_STRIPE_WIDTH
 	if box.movable_2d_from(Box.Facing.POS_X):
-		_rect(st, Vector3(0.5 - msw, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+		_rect(st, Vector3(0.5 - msw, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, movable_colour)
 	if box.movable_2d_from(Box.Facing.NEG_X):
-		_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + msw, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+		_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + msw, y, 0.5), Vector3.UP, movable_colour)
 	if box.movable_2d_from(Box.Facing.POS_Y): # Y de grilla = Z de Godot
-		_rect(st, Vector3(-0.5, y, 0.5 - msw), Vector3(0.5, y, 0.5), Vector3.UP, COLOUR_MOVABLE)
+		_rect(st, Vector3(-0.5, y, 0.5 - msw), Vector3(0.5, y, 0.5), Vector3.UP, movable_colour)
 	if box.movable_2d_from(Box.Facing.NEG_Y):
-		_rect(st, Vector3(-0.5, y, -0.5), Vector3(0.5, y, -0.5 + msw), Vector3.UP, COLOUR_MOVABLE)
+		_rect(st, Vector3(-0.5, y, -0.5), Vector3(0.5, y, -0.5 + msw), Vector3.UP, movable_colour)
 
 	# Cara de abajo.
-	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, COLOUR_STATIC)
+	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, static_colour)
 
 	mesh = st.commit()
+
+
+func _tinted(colour: Color, tint: float) -> Color:
+	var structure: GridEntity = box.get_parent() if GridEntity.global_name_of(box.get_parent()) == &"Structure" else box
+	var random := RandomNumberGenerator.new()
+	random.seed = _seed_of(structure)
+	var channel := random.randi_range(0, 2)
+	colour[channel] = clampf(colour[channel] + random.randf_range(-tint, tint), 0.0, 1.0)
+	return colour
+
+## Su camino dentro del Room, que no se repite entre carpetas como la posición entre hermanos.
+func _seed_of(structure: GridEntity) -> int:
+	var room := structure.room_above()
+	if room == null:
+		return structure.get_index()
+	return str(room.get_path_to(structure)).hash()
 
 
 func _bordered_rect(st: SurfaceTool, lo: Vector3, hi: Vector3, normal: Vector3) -> void:
