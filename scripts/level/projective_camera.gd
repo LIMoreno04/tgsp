@@ -56,7 +56,7 @@ func _jump_to(perspective: Room.Perspective) -> void:
 		light.shadow_opacity = _shadow_opacity_for(perspective)
 
 func _turn_to(perspective: Room.Perspective) -> void:
-	room.perspective_manager.block(self)
+	room.get_parent().block(self)
 	is_transitioning = true
 	perspective_change_started.emit()
 	_from_pose = basis
@@ -72,7 +72,7 @@ func _frame_between(weight: float) -> void:
 
 func _finish_turn() -> void:
 	is_transitioning = false
-	room.perspective_manager.unblock(self)
+	room.get_parent().unblock(self)
 	perspective_change_finished.emit()
 
 

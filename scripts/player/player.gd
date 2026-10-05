@@ -18,6 +18,7 @@ const HEIGHT_IN_PLANE := 0.5
 @onready var plane: CollidersPlane = get_parent()
 @onready var room: Room = plane.get_parent()
 @onready var perspective_manager: PerspectiveManager = room.perspective_manager
+@onready var level: Level = room.get_parent()
 @onready var model: Node3D = $Model
 
 ## La última dirección en la que caminó, en la grilla. Sólo sirve para elegir qué agarrar.
@@ -35,7 +36,7 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if perspective_manager.is_locked() or grabbed != null:
+	if level.is_locked() or grabbed != null:
 		return
 	var walking := _on_plane(Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down"))
 	velocity = walking * walking_speed
@@ -48,7 +49,7 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if perspective_manager.is_locked():
+	if level.is_locked():
 		return
 	if event.is_action_pressed(&"grab"):
 		_grab_or_let_go()
@@ -91,7 +92,9 @@ func _step_with_grabbed_box(screen_direction: Vector2) -> void:
 	if is_zero_approx(along_grab):
 		return
 	var step := toward_box if along_grab > 0 else -toward_box
+	var before := level.moment_now()
 	if room.move_grabbed_box(grabbed, step, cell(), perspective_manager.current):
+		level.remember(before)
 		_slide_to(_centre_of(_column() + step))
 	else:
 		for box in room.index.boxes_grabbed_along_with(grabbed, perspective_manager.current):
@@ -101,16 +104,31 @@ func _toggle_perspective() -> void:
 	if grabbed != null:
 		_shake_model()
 		return
+	var before := level.moment_now()
 	if perspective_manager.toggle(_column()):
+		level.remember(before)
 		_slide_to(_centre_of(_column()))
 	else:
 		_shake_model()
 
+func restore(where: Vector3i, restored_facing: Vector2, restored_grab: Box) -> void:
+	facing = restored_facing
+	grabbed = restored_grab
+	var destination := _centre_of(Vector2i(where.x, where.y))
+	if _is_one_grid_step_away(destination):
+		_slide_to(destination)
+	else:
+		position = destination
+
+func _is_one_grid_step_away(destination: Vector3) -> bool:
+	var offset := destination - position
+	return is_equal_approx(offset.length(), 1.0) and (is_zero_approx(offset.x) or is_zero_approx(offset.z))
+
 func _slide_to(destination: Vector3) -> void:
-	perspective_manager.block(self)
+	level.block(self)
 	var slide := create_tween()
 	slide.tween_property(self, "position", destination, GridEntity.SLIDE_SECONDS)
-	slide.tween_callback(perspective_manager.unblock.bind(self))
+	slide.tween_callback(level.unblock.bind(self))
 
 
 func _on_plane(screen_direction: Vector2) -> Vector3:

@@ -37,6 +37,7 @@ func run(tree_root: Node) -> void:
 	moving_with_a_player()
 	colliders()
 	perspective_toggle()
+	restoring_for_undo()
 	colliders_plane_node()
 	keeping_the_height()
 	structure_warnings()
@@ -634,10 +635,32 @@ func perspective_toggle() -> void:
 	is_true("  and nothing changed", manager.is_3d() and manager.height == 0)
 	free_room(r)
 
-	r = room([])
-	manager = add_perspective_manager(r)
-	manager.block(r)
-	is_true("nothing toggles while something holds the lock", not manager.toggle(Vector2i(2,2)) and manager.is_3d())
+
+
+func restoring_for_undo() -> void:
+	section("restoring for undo")
+
+	var r := room([[c(3,2,0)]])
+	var before := r.box_cells()
+	r.try_to_move_grabbed_box(at(r,3,2,0), E, D3)
+	var announced := [0]
+	r.moved.connect(func() -> void: announced[0] += 1)
+	r.restore(before)
+	is_true("restoring the cells puts a pushed box back", r.index.cells_3D.has(c(3,2,0)) and not r.index.cells_3D.has(c(4,2,0)))
+	same("  and the room announces it, so the collision plane follows", announced[0], 1)
+	free_room(r)
+
+	r = room([[c(3,3,0)]], [], [0])
+	var manager := add_perspective_manager(r)
+	manager.toggle(Vector2i(3,3))
+	manager.toggle(Vector2i(3,3))
+	var turns := [0]
+	manager.perspective_changed.connect(func(_perspective: Room.Perspective) -> void: turns[0] += 1)
+	manager.restore(D2, 0)
+	is_true("restoring the perspective goes back to 2D and the old height", manager.is_2d() and manager.height == 0)
+	same("  and announces it, so the camera turns back", turns[0], 1)
+	manager.restore(D2, 0)
+	same("restoring the same perspective announces nothing", turns[0], 1)
 	free_room(r)
 
 

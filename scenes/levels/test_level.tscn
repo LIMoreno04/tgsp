@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/prefabs/colliders_plane.tscn" id="9_qgrpf"]
 [ext_resource type="PackedScene" path="res://scenes/prefabs/player.tscn" id="11_lxl1u"]
 [ext_resource type="Script" uid="uid://jwcabsk2nx86" path="res://scripts/core/grid_entity.gd" id="12_grid"]
+[ext_resource type="Script" path="res://scripts/level/level.gd" id="13_level"]
 
 [sub_resource type="Environment" id="Environment_owgeq"]
 background_mode = 1
@@ -19,6 +20,7 @@ ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_energy = 0.45
 
 [node name="TestLevel" type="Node3D" unique_id=1267921727]
+script = ExtResource("13_level")
 
 [node name="Room" type="Node3D" parent="." unique_id=654176954]
 script = ExtResource("1_eaa0b")

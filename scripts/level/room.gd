@@ -116,6 +116,19 @@ func _move_the_unit_of(grabbed: Box, direction: Vector2i, perspective: Perspecti
 	rebuild_index()
 	moved.emit()
 
+## donde está cada caja ahora
+func box_cells() -> Dictionary[Box, Vector3i]:
+	var cells: Dictionary[Box, Vector3i] = {}
+	for box: Box in index.cells_3D.values():
+		cells[box] = box.cell
+	return cells
+
+func restore(cells: Dictionary[Box, Vector3i]) -> void:
+	for box in cells:
+		box.cell = cells[box]
+	rebuild_index()
+	moved.emit()
+
 #==================Avisos en el editor==================
 
 func _get_configuration_warnings() -> PackedStringArray:
