@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://d1bltup8wtbbj"]
+
+[ext_resource type="Script" path="res://scripts/powerables/laser_receiver.gd" id="1_1reon"]
+
+[node name="LaserReceiver" type="Node3D" unique_id=532264207]
+script = ExtResource("1_1reon")
+face = 2

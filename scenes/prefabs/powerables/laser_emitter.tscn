@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cli7rmi42uttb"]
+
+[ext_resource type="Script" path="res://scripts/powerables/laser_emitter.gd" id="1_7ujat"]
+
+[node name="LaserEmitter" type="Node3D" unique_id=1342087778]
+script = ExtResource("1_7ujat")
+face = 2

@@ -25,6 +25,8 @@ const FACE_ROTATIONS: Dictionary[Face, Vector3] = {
 }
 const BOX_CENTRE := Vector3(0.5, 0.5, 0.5)
 
+const SIDE_FACES: Array[Face] = [Face.POS_X, Face.NEG_X, Face.POS_Y, Face.NEG_Y]
+
 const LIT_RED := Color(1.0, 0.1, 0.06)
 const DIM_RED := Color(0.38, 0.07, 0.05)
 const STAND_GREY := Color(0.55, 0.55, 0.57)
@@ -99,7 +101,16 @@ func allowed_directions() -> Array[Vector3i]:
 
 
 
-@abstract func activation_condition(active_neighbours: Array[Powerable], pressed: bool) -> bool
+## Lo que se le dice a un powerable para que decida si está activo. Cada tipo lee lo que le importa.
+class Inputs:
+	## Sus vecinos conectados que están activos.
+	var active_neighbours: Array[Powerable] = []
+	## Algo está parado sobre su cara.
+	var pressed := false
+	## Un láser termina en su cara.
+	var hit_by_a_laser := false
+
+@abstract func activation_condition(inputs: Inputs) -> bool
 
 
 static func powered(active_neighbours: Array[Powerable]) -> bool:
@@ -167,6 +178,13 @@ func _validate_property(property: Dictionary) -> void:
 		Face.POS_Y, Face.NEG_Y: off_the_face = ["connects_pos_y", "connects_neg_y"]
 	if property.name in off_the_face:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
+
+## Para los tipos que van sólo en algunas caras: lo que el inspector ofrece para `face`.
+static func _faces_hint(faces: Array[Face]) -> String:
+	var options := PackedStringArray()
+	for each_face in faces:
+		options.append("%s:%d" % [Face.keys()[each_face], each_face])
+	return ",".join(options)
 
 
 func _get_configuration_warnings() -> PackedStringArray:

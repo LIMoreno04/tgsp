@@ -15,8 +15,8 @@ const DARK := Color(0.09, 0.09, 0.1)
 var _dots := StandardMaterial3D.new()
 
 
-func activation_condition(active_neighbours: Array[Powerable], _pressed: bool) -> bool:
-	return Powerable.powered(active_neighbours)
+func activation_condition(inputs: Inputs) -> bool:
+	return Powerable.powered(inputs.active_neighbours)
 
 
 func turn_on() -> void:

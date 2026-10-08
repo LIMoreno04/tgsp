@@ -21,8 +21,8 @@ const COLOUR := Color(0.2, 0.2, 0.22)
 var _slab: MeshInstance3D
 
 
-func activation_condition(active_neighbours: Array[Powerable], _pressed: bool) -> bool:
-	return Powerable.powered(active_neighbours)
+func activation_condition(inputs: Inputs) -> bool:
+	return Powerable.powered(inputs.active_neighbours)
 
 
 func turn_on() -> void:

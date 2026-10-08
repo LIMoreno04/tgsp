@@ -69,6 +69,11 @@ func run(tree_root: Node) -> void:
 	doors_and_the_player()
 	buttons()
 	button_pedestals()
+	wall_buttons()
+	where_a_beam_goes()
+	lasers_in_power()
+	beams_and_the_player()
+	a_door_held_by_its_own_laser()
 
 
 func index() -> void:
@@ -671,7 +676,7 @@ func restoring_for_undo() -> void:
 	r.try_to_move_grabbed_box(at(r,3,2,0), E, D3)
 	var announced := [0]
 	r.moved.connect(func() -> void: announced[0] += 1)
-	r.restore(before, r.button_states())
+	r.restore(before, r.button_states(), r.powerables_displayed_as_on())
 	is_true("restoring the cells puts a pushed box back", r.index.cells_3D.has(c(3,2,0)) and not r.index.cells_3D.has(c(4,2,0)))
 	same("  and the room announces it, so the collision plane follows", announced[0], 1)
 	free_room(r)
@@ -889,9 +894,9 @@ func powerables_on_faces() -> void:
 		hidden_in_inspector(stale, "connects_up") and hidden_in_inspector(stale, "connects_down") and not hidden_in_inspector(stale, "connects_pos_x"))
 	var side := wire(r, c(2,2,0), FACE_NEG_X, [])
 	is_true("  on a side face it hides the two along x", hidden_in_inspector(side, "connects_neg_x") and not hidden_in_inspector(side, "connects_up"))
-	is_true("plates, doors and buttons have no face to choose",
-		hidden_in_inspector(plate(r, c(3,3,-1), []), "face") and hidden_in_inspector(door(r, c(4,4,-1), Box.Facing.POS_X, []), "face")
-		and hidden_in_inspector(button(r, c(5,5,-1), [], false), "face"))
+	is_true("plates and doors have no face to choose",
+		hidden_in_inspector(plate(r, c(3,3,-1), []), "face") and hidden_in_inspector(door(r, c(4,4,-1), Box.Facing.POS_X, []), "face"))
+	same("buttons offer the top and the four sides", faces_offered(button(r, c(5,5,-1), [], false)), "TOP:0,POS_X:2,NEG_X:3,POS_Y:4,NEG_Y:5")
 	free_room(r)
 
 
@@ -934,7 +939,7 @@ func connections_in_3d() -> void:
 
 
 func connections_in_2d() -> void:
-	section("2D: only the tops exist, and every plate")
+	section("2D: what can be seen from above")
 
 	var r := room([[c(2,2,2)]])
 	var low := wire(r, c(1,2,-1), TOP, [POS_X])
@@ -946,10 +951,23 @@ func connections_in_2d() -> void:
 	r = room([[c(2,2,0)]])
 	var under := wire(r, c(2,2,-1), TOP, [NEG_X])
 	var beside := wire(r, c(1,2,-1), TOP, [POS_X])
-	var side := wire(r, c(2,2,0), FACE_NEG_X, [DOWN])
 	is_true("a wire under a box does not exist", not r.index.is_powerable_considered(under, D2) and not connects(r, beside, under, D2))
-	is_true("  nor does one on a side face", not r.index.is_powerable_considered(side, D2))
-	is_true("  so nothing connects to the side either", r.index.connected_powerables(beside, D2).is_empty())
+	free_room(r)
+
+	# Una pared de tres, con cables en la cara que da a -x, sobre el piso.
+	r = room([[c(2,2,0), c(2,2,1), c(2,2,2)], [c(2,3,0), c(2,3,1), c(2,3,2)]])
+	var on_the_floor := wire(r, c(1,2,-1), TOP, [POS_X])
+	var low_on_the_wall := wire(r, c(2,2,0), FACE_NEG_X, [DOWN])
+	var high_on_the_wall := wire(r, c(2,2,2), FACE_NEG_X, [UP, POS_Y])
+	var on_top_of_the_wall := wire(r, c(2,2,2), TOP, [NEG_X])
+	var along_the_wall := wire(r, c(2,3,1), FACE_NEG_X, [NEG_Y])
+	is_true("a wire on a wall over a lower column exists in 2D", r.index.is_powerable_considered(low_on_the_wall, D2))
+	is_true("  and meets the floor in front, as an inner corner seen from above", connects(r, low_on_the_wall, on_the_floor, D2))
+	is_true("  up the wall, it meets the top of its own column", connects(r, high_on_the_wall, on_top_of_the_wall, D2))
+	is_true("  along the wall, the next column's wire, whatever their heights", connects(r, high_on_the_wall, along_the_wall, D2))
+	is_true("  which in 3D are a cell apart", not connects(r, high_on_the_wall, along_the_wall, D3))
+	add_boxes(r, "Overhang", [c(1,2,3)], false)
+	is_true("a wire on a wall under an overhang does not exist in 2D", not r.index.is_powerable_considered(low_on_the_wall, D2))
 	free_room(r)
 
 	r = room([[c(2,2,3)]])
@@ -1332,7 +1350,7 @@ func buttons() -> void:
 	r.press(b)
 	is_true("another press switches it off", not b.switched_on and not is_active(r, w, D3))
 	r.press(b)
-	r.restore(r.box_cells(), before)
+	r.restore(r.box_cells(), before, r.powerables_displayed_as_on())
 	is_true("restoring puts it back as it was", not b.switched_on)
 	same("  and announces it", announced[0], 4)
 	free_room(r)
@@ -1364,16 +1382,236 @@ func button_pedestals() -> void:
 	free_room(r)
 
 
+func wall_buttons() -> void:
+	section("buttons on walls")
+
+	var r := room([[c(3,2,0), c(3,2,1)]])
+	var b := button(r, c(3,2,0), [], false, FACE_NEG_X)
+	same("3D: a button on the face of the box beside, looking at the player", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), b)
+	same("2D: the same button, seen from above over the player's tile", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), b)
+	var higher := button(r, c(3,2,1), [], false, FACE_NEG_X)
+	same("3D: one a level up is out of reach", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), b)
+	same("2D: with several in the column, the highest: it covers the others", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), higher)
+	is_true("it has no hitbox: the tile in front stays free", not r.index.colliders_plane(0, D3).has(Vector2i(2,2)))
+	free_room(r)
+
+	r = room([[c(3,2,0)]])
+	button(r, c(3,2,0), [], false, Powerable.Face.NEG_Y)
+	is_true("one on another face of that box is not reached", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
+	free_room(r)
+
+	r = room([[c(3,2,0)]])
+	handle_3d(at(r,3,2,0), Box.Facing.NEG_X)
+	b = button(r, c(3,2,0), [], false, FACE_NEG_X)
+	same("a button wins over a handle on its face", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), b)
+	free_room(r)
+
+	r = room([[c(3,2,0), c(3,2,1)], [c(2,2,0)]], [], [1])
+	button(r, c(3,2,0), [], false, FACE_NEG_X)
+	is_true("2D: not when the player's column covers it", r.index.choose_what_to_interact_with(c(2,2,1), Vector2(1,0), D2) == null)
+	free_room(r)
+
+	r = room([[c(3,2,0), c(3,3,0)]])
+	button(r, c(3,2,0), [POS_Y], true, FACE_NEG_X)
+	var w := wire(r, c(3,3,0), FACE_NEG_X, [NEG_Y])
+	is_true("switched on, it powers the wall wire beside it", is_active(r, w, D3))
+	is_true("  in 2D too, both seen from above", is_active(r, w, D2))
+	free_room(r)
+
+
+func where_a_beam_goes() -> void:
+	section("lasers: where a beam goes")
+
+	var r := room([[c(1,2,0)], [c(4,2,0)]])
+	var e := emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	var target := receiver(r, c(4,2,0), FACE_NEG_X, [])
+	settle(r, D3)
+	same("a beam runs out of its face until the first box", r.beams[0].length, 2.0)
+	same("  and hits what is on that box's face", r.beams[0].hits, target)
+	is_true("  which makes a receiver active", is_active(r, target, D3, NOBODY, r.index.hit_by_lasers(r.beams, D3, 0, NO_BODY)))
+	is_true("an emitter passes no power to its wires", not e.TRANSMITS)
+	add_boxes(r, "InTheWay", [c(3,2,0)], false)
+	settle(r, D3)
+	is_true("a box pushed into it stops it there", r.beams[0].length == 1.0 and r.beams[0].hits == null)
+	free_room(r)
+
+	r = room([[c(1,2,0), c(1,2,1), c(1,2,2)], [c(3,2,0)], [c(5,2,0), c(5,2,1), c(5,2,2)]])
+	emitter(r, c(1,2,2), FACE_POS_X, [], true)
+	target = receiver(r, c(5,2,2), FACE_NEG_X, [])
+	settle(r, D3)
+	is_true("a beam high up passes over lower boxes", r.beams[0].hits == target)
+	settle(r, D2)
+	is_true("  in 2D too: nothing covers it from above", r.beams[0].hits == target)
+	free_room(r)
+
+	# El arco: un dintel muy por encima del camino del rayo.
+	r = room([[c(1,2,0)], [c(5,2,0)], [c(3,2,2)]])
+	emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	target = receiver(r, c(5,2,0), FACE_NEG_X, [])
+	settle(r, D3)
+	is_true("3D: a beam passes under an arch", r.beams[0].hits == target)
+	settle(r, D2)
+	is_true("2D: the arch's top covers it and stops it", r.beams[0].length == 1.0 and r.beams[0].hits == null)
+	free_room(r)
+
+	r = room([[c(1,2,0)], [c(2,2,2)]])
+	var hidden := emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	is_true("2D: an emitter whose face is covered from above does not exist", not r.index.is_powerable_considered(hidden, D2))
+	free_room(r)
+
+	r = room([[c(1,2,0)], [c(5,2,0)]])
+	emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	receiver(r, c(5,2,0), FACE_NEG_X, [])
+	var across := door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	settle(r, D3)
+	same("a closed door standing across its path stops it at its strip", r.beams[0].length, 1.0)
+	across.always_open = true
+	settle(r, D3)
+	same("  an open one lets it through", r.beams[0].length, 3.0)
+	across.always_open = false
+	across.edge = Box.Facing.POS_Y
+	settle(r, D3)
+	same("  and a closed one along the side of its path does not touch it", r.beams[0].length, 3.0)
+	free_room(r)
+
+	r = room([[c(1,2,0)], [c(5,2,0)]])
+	emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	button(r, c(3,2,-1), [], false)
+	settle(r, D3)
+	same("a button's pedestal stops it", r.beams[0].length, 1.0 + (1.0 - ButtonPowerable.STAND_WIDTH) / 2.0)
+	free_room(r)
+
+	r = room([[c(1,2,0)]])
+	emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	settle(r, D3)
+	same("with nothing in the way it stops at its longest", r.beams[0].length, float(LevelIndex.MIN_BEAM_LENGTH))
+	free_room(r)
+
+
+func lasers_in_power() -> void:
+	section("lasers: emitters and receivers in power")
+
+	# Un botón alimenta un emisor; su rayo llega a un receptor cableado a una puerta fuera del camino.
+	var r := room([[c(1,2,0)], [c(4,2,0)]])
+	var b := button(r, c(2,1,-1), [POS_Y], false)
+	wire(r, c(2,2,-1), TOP, [NEG_X, NEG_Y])
+	var e := emitter(r, c(1,2,0), FACE_POS_X, [DOWN], false)
+	receiver(r, c(4,2,0), FACE_NEG_X, [DOWN])
+	wire(r, c(3,2,-1), TOP, [POS_X, POS_Y])
+	var d := door(r, c(3,3,-1), Box.Facing.POS_X, [NEG_Y])
+	settle(r, D3)
+	is_true("an emitter that is not always on needs power", r.beams.is_empty() and r.index.closed_doors.has(d))
+	b.switched_on = true
+	settle(r, D3)
+	is_true("  powered, it shines", r.beams.size() == 1 and r.beams[0].emitter == e)
+	is_true("  and the receiver it hits passes the signal on to its wires: the door opens", not r.index.closed_doors.has(d))
+	free_room(r)
+
+	r = room([[c(1,2,0)]])
+	var on_a_side := emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	same("emitters only offer the four sides", faces_offered(on_a_side), "POS_X:2,NEG_X:3,POS_Y:4,NEG_Y:5")
+	same("  and so do receivers", faces_offered(receiver(r, c(1,2,0), FACE_NEG_X, [])), "POS_X:2,NEG_X:3,POS_Y:4,NEG_Y:5")
+	free_room(r)
+
+
+func beams_and_the_player() -> void:
+	section("lasers: the player's body")
+
+	var r := room([[c(1,2,0)], [c(5,2,0)]])
+	emitter(r, c(1,2,0), FACE_POS_X, [], true)
+	var target := receiver(r, c(5,2,0), FACE_NEG_X, [])
+	settle(r, D3)
+	var beam: LevelIndex.Beam = r.beams[0]
+	is_true("3D: the body at the beam's height cuts it at its near edge", is_equal_approx(r.index.beam_length_with_the_body(beam, D3, 0, body_in(Vector2i(3,2))), 1.2))
+	is_true("  and the receiver is not hit", not r.index.hit_by_lasers(r.beams, D3, 0, body_in(Vector2i(3,2))).has(target))
+	same("  at another height it does not", r.index.beam_length_with_the_body(beam, D3, 2, body_in(Vector2i(3,2))), beam.length)
+	same("  nor beside the beam's line", r.index.beam_length_with_the_body(beam, D3, 0, body_in(Vector2i(3,3))), beam.length)
+	is_true("the room notices when the body steps into a beam", r.is_power_out_of_date(D3, 0, body_in(Vector2i(3,2))))
+	is_true("  and not while nothing changes", not r.is_power_out_of_date(D3, 0, NO_BODY))
+	settle(r, D2)
+	is_true("2D: the body cuts it at any height", is_equal_approx(r.index.beam_length_with_the_body(r.beams[0], D2, 7, body_in(Vector2i(3,2))), 1.2))
+	free_room(r)
+
+
+func a_door_held_by_its_own_laser() -> void:
+	section("lasers: a door held open by its own laser")
+
+	# Un emisor, una puerta atravesada en el camino, y detrás un receptor que alimenta la puerta. Un
+	# botón es la otra manera de abrirla.
+	var r := room([[c(0,2,0)], [c(4,2,0)]])
+	emitter(r, c(0,2,0), FACE_POS_X, [], true)
+	var target := receiver(r, c(4,2,0), FACE_NEG_X, [DOWN])
+	wire(r, c(3,2,-1), TOP, [NEG_X, POS_X])
+	var d := door(r, c(2,2,-1), Box.Facing.NEG_X, [POS_X, NEG_Y])
+	var b := button(r, c(2,1,-1), [POS_Y], false)
+	settle(r, D3)
+	is_true("closed, the door stops the laser", r.index.closed_doors.has(d) and not is_active(r, target, D3, NOBODY, r.index.hit_by_lasers(r.beams, D3, 0, NO_BODY)))
+	b.switched_on = true
+	settle(r, D3)
+	is_true("the button opens it, and the laser comes through to the receiver", not r.index.closed_doors.has(d) and r.beams[0].hits == target)
+	b.switched_on = false
+	settle(r, D3)
+	is_true("  the button off, the laser holds it open", not r.index.closed_doors.has(d))
+	settle(r, D3, c(1,2,0), body_in(Vector2i(1,2)))
+	is_true("stepping into the laser closes it", r.index.closed_doors.has(d))
+	settle(r, D3)
+	is_true("  and stepping out leaves it closed: the door stops the laser again", r.index.closed_doors.has(d))
+	free_room(r)
+
+	r = room([[c(0,2,0)], [c(4,2,0)]])
+	emitter(r, c(0,2,0), FACE_POS_X, [], true)
+	receiver(r, c(4,2,0), FACE_NEG_X, [DOWN])
+	wire(r, c(3,2,-1), TOP, [NEG_X, POS_X])
+	d = door(r, c(2,2,-1), Box.Facing.NEG_X, [POS_X, NEG_Y])
+	b = button(r, c(2,1,-1), [POS_Y], false)
+	settle(r, D3)
+	var buttons_before := r.button_states()
+	var power_before := r.powerables_displayed_as_on()
+	b.switched_on = true
+	settle(r, D3)
+	b.switched_on = false
+	settle(r, D3)
+	r.restore(r.box_cells(), buttons_before, power_before)
+	is_true("restoring a moment before it opened shows it closed at once", r.index.closed_doors.has(d) and not r.powerables_displayed_as_on().has(d))
+	settle(r, D3)
+	is_true("  and the laser does not hold it: it stays closed", r.index.closed_doors.has(d))
+	free_room(r)
+
+
+func emitter(r: Room, cell: Vector3i, face: Powerable.Face, directions: Array, always_on: bool) -> LaserEmitter:
+	var new_emitter := LaserEmitter.new()
+	new_emitter.always_on = always_on
+	return put(r, cell, new_emitter, face, directions) as LaserEmitter
+
+func receiver(r: Room, cell: Vector3i, face: Powerable.Face, directions: Array) -> LaserReceiver:
+	return put(r, cell, LaserReceiver.new(), face, directions) as LaserReceiver
+
+## Calcula hasta que nada quede pendiente, como el Level lo hace frame a frame.
+func settle(r: Room, perspective: Room.Perspective, player_cell := NOBODY, player_body := NO_BODY) -> void:
+	for attempt in 5:
+		r.update_power(perspective, player_cell, player_body)
+		if not r.is_power_out_of_date(perspective, player_cell.z, player_body):
+			return
+	fail("power did not settle")
+
+## Las caras que el inspector ofrece para `face`.
+func faces_offered(powerable: Powerable) -> String:
+	for property in powerable.get_property_list():
+		if property.name == "face":
+			return property.hint_string
+	return ""
+
+
 func wire(r: Room, cell: Vector3i, face: Powerable.Face, directions: Array) -> Wire:
 	return put(r, cell, Wire.new(), face, directions) as Wire
 
 func plate(r: Room, cell: Vector3i, directions: Array) -> PressurePlate:
 	return put(r, cell, PressurePlate.new(), TOP, directions) as PressurePlate
 
-func button(r: Room, cell: Vector3i, directions: Array, switched_on: bool) -> ButtonPowerable:
+func button(r: Room, cell: Vector3i, directions: Array, switched_on: bool, face := TOP) -> ButtonPowerable:
 	var new_button := ButtonPowerable.new()
 	new_button.switched_on = switched_on
-	return put(r, cell, new_button, TOP, directions) as ButtonPowerable
+	return put(r, cell, new_button, face, directions) as ButtonPowerable
 
 func door(r: Room, cell: Vector3i, edge: Box.Facing, directions: Array) -> Door:
 	var new_door := Door.new()
@@ -1387,8 +1625,8 @@ func put(r: Room, cell: Vector3i, powerable: Powerable, face: Powerable.Face, di
 	at(r, cell.x, cell.y, cell.z).add_child(powerable)
 	return powerable
 
-func is_active(r: Room, powerable: Powerable, perspective: Room.Perspective, player_cell := NOBODY) -> bool:
-	return r.index.active_powerables(perspective, player_cell).has(powerable)
+func is_active(r: Room, powerable: Powerable, perspective: Room.Perspective, player_cell := NOBODY, hit_by_lasers: Dictionary[Powerable, bool] = {}) -> bool:
+	return r.index.active_powerables(perspective, player_cell, hit_by_lasers).has(powerable)
 
 func count_active(r: Room, powerables: Array[Powerable], perspective: Room.Perspective) -> int:
 	var active := r.index.active_powerables(perspective, NOBODY)

@@ -373,6 +373,9 @@ func choose_what_to_interact_with(player_cell: Vector3i, facing: Vector2, perspe
 	return chosen
 
 func _what_can_be_interacted_toward(player_cell: Vector3i, direction: Vector2i, perspective: Room.Perspective) -> Node3D:
+	var wall_button := _wall_button_toward(player_cell, direction, perspective)
+	if wall_button != null:
+		return wall_button
 	var face_toward_player := Box.facing_toward(-direction)
 	if Room.is_3d(perspective):
 		var neighbour: Box = cells_3D.get(player_cell + Vector3i(direction.x, direction.y, 0))
@@ -389,6 +392,14 @@ func _what_can_be_interacted_toward(player_cell: Vector3i, direction: Vector2i, 
 	else:
 		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
 		return null
+
+
+func _wall_button_toward(player_cell: Vector3i, direction: Vector2i, perspective: Room.Perspective) -> ButtonPowerable:
+	var step := Vector3i(direction.x, direction.y, 0)
+	for powerable in _powerables_on(player_cell + step, Powerable.face_toward(-step), perspective):
+		if powerable is ButtonPowerable:
+			return powerable
+	return null
 
 static func _button_on_top_of(box: Box) -> ButtonPowerable:
 	if box == null:
@@ -475,7 +486,7 @@ func is_powerable_considered(powerable: Powerable, perspective: Room.Perspective
 	elif Room.is_2d(perspective):
 		if powerable is PressurePlate:
 			return true
-		return powerable.face == Powerable.Face.TOP and top_of(column_of(powerable.box)) == powerable.box
+		return not is_occluded(cell_of(powerable.box) + powerable.normal())
 	else:
 		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
 		return false
@@ -487,42 +498,40 @@ func connected_powerables(powerable: Powerable, perspective: Room.Perspective) -
 	var connected: Array[Powerable] = []
 	if not is_powerable_considered(powerable, perspective):
 		return connected
-	if Room.is_3d(perspective):
-		var cell := cell_of(powerable.box)
-		var normal := powerable.normal()
-		for direction in powerable.allowed_directions():
-			var beside: Box = cells_3D.get(cell + direction)
-			var in_the_corner: Box = cells_3D.get(cell + direction + normal)
-			_connect_if_it_points_back(connected, beside, powerable.face, -direction) #la caja de al lado, misma cara
-			_connect_if_it_points_back(connected, powerable.box, Powerable.face_toward(direction), normal) #la propia caja, otra cara dando la vuelta a un borde
-			_connect_if_it_points_back(connected, in_the_corner, Powerable.face_toward(-direction), -normal) #la caja de la esquina, cara que mira de vuelta doblando hacia adentro
-	elif Room.is_2d(perspective):
-		for direction in powerable.allowed_directions():
-			for neighbour in _powerables_considered_in_2d_in(column_of(powerable.box) + Vector2i(direction.x, direction.y)):
-				if neighbour.allowed_directions().has(-direction):
-					connected.append(neighbour)
-	else:
-		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+	var cell := cell_of(powerable.box)
+	var normal := powerable.normal()
+	for direction in powerable.allowed_directions():
+		var beside := _powerables_on(cell + direction, powerable.face, perspective) #la caja de al lado, misma cara
+		var around_the_edge := _powerables_on(cell, Powerable.face_toward(direction), perspective) #la propia caja, otra cara dando la vuelta a un borde
+		var in_the_corner := _powerables_on(cell + direction + normal, Powerable.face_toward(-direction), perspective) #la caja de la esquina, cara que mira de vuelta doblando hacia adentro
+		_connect_if_they_point_back(connected, powerable, beside, -direction)
+		_connect_if_they_point_back(connected, powerable, around_the_edge, normal)
+		_connect_if_they_point_back(connected, powerable, in_the_corner, -normal)
 	return connected
 
-## Si esa cara de esa caja tiene un powerable que permite la dirección que apunta al borde compartido.
-static func _connect_if_it_points_back(connected: Array[Powerable], box: Box, face: Powerable.Face, toward_the_shared_edge: Vector3i) -> void:
-	if box == null:
-		return
-	var neighbour := box.powerable_on(face)
-	if neighbour != null and neighbour.allowed_directions().has(toward_the_shared_edge):
-		connected.append(neighbour)
+## Los que permiten la dirección que apunta al borde compartido.
+static func _connect_if_they_point_back(connected: Array[Powerable], powerable: Powerable, candidates: Array[Powerable], toward_the_shared_edge: Vector3i) -> void:
+	for candidate in candidates:
+		if candidate != powerable and not connected.has(candidate) and candidate.allowed_directions().has(toward_the_shared_edge):
+			connected.append(candidate)
 
-## El powerable que esté en la cell de más arriba + cada pressure plate tapada.
-func _powerables_considered_in_2d_in(column: Vector2i) -> Array[Powerable]:
+## En 3D, el de esa cara de la caja de esa celda. En 2D, los de esa cara que se ven, en toda su columna.
+func _powerables_on(cell: Vector3i, face: Powerable.Face, perspective: Room.Perspective) -> Array[Powerable]:
+	var boxes: Array[Box] = []
+	if Room.is_3d(perspective):
+		if cells_3D.has(cell):
+			boxes.append(cells_3D[cell])
+	elif Room.is_2d(perspective):
+		for z in range(_highest_z, _lowest_z - 1, -1):
+			if cells_3D.has(Vector3i(cell.x, cell.y, z)):
+				boxes.append(cells_3D[Vector3i(cell.x, cell.y, z)])
+	else:
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
 	var found: Array[Powerable] = []
-	for z in range(_highest_z, _lowest_z - 1, -1):
-		var box: Box = cells_3D.get(Vector3i(column.x, column.y, z))
-		if box == null:
-			continue
-		for powerable in box.powerables():
-			if is_powerable_considered(powerable, Room.Perspective.TOP_2D):
-				found.append(powerable)
+	for box in boxes:
+		var on_that_face := box.powerable_on(face)
+		if on_that_face != null and is_powerable_considered(on_that_face, perspective):
+			found.append(on_that_face)
 	return found
 
 
@@ -541,7 +550,7 @@ func is_pressed(powerable: Powerable, perspective: Room.Perspective, player_cell
 		return false
 
 
-func active_powerables(perspective: Room.Perspective, player_cell: Vector3i) -> Dictionary[Powerable, bool]:
+func active_powerables(perspective: Room.Perspective, player_cell: Vector3i, hit_by_lasers: Dictionary[Powerable, bool] = {}) -> Dictionary[Powerable, bool]:
 	var active: Dictionary[Powerable, bool] = {}
 	var to_ask: Array[Powerable] = []
 	for powerable in every_powerable():
@@ -552,11 +561,13 @@ func active_powerables(perspective: Room.Perspective, player_cell: Vector3i) -> 
 		if active.has(powerable):
 			continue
 		var neighbours := connected_powerables(powerable, perspective)
-		var active_neighbours: Array[Powerable] = []
+		var inputs := Powerable.Inputs.new()
 		for neighbour in neighbours:
 			if active.has(neighbour):
-				active_neighbours.append(neighbour)
-		if powerable.activation_condition(active_neighbours, is_pressed(powerable, perspective, player_cell)):
+				inputs.active_neighbours.append(neighbour)
+		inputs.pressed = is_pressed(powerable, perspective, player_cell)
+		inputs.hit_by_a_laser = hit_by_lasers.has(powerable)
+		if powerable.activation_condition(inputs):
 			active[powerable] = true
 			to_ask.append_array(neighbours)
 	return active
@@ -601,3 +612,80 @@ func has_closed_door_on(column: Vector2i, facing: Box.Facing, perspective: Room.
 		if door.box == player_floor and door.edge == facing:
 			return true
 	return false
+
+
+#==================Laseres==================
+
+const MIN_BEAM_LENGTH := 20
+
+class Beam:
+	var emitter: LaserEmitter
+	var height: int
+	var start: Vector2
+	var direction: Vector2i
+	var length: float
+	var hits: Powerable
+
+
+func beam_of(emitter: LaserEmitter, perspective: Room.Perspective, room_reach: Vector3i) -> Beam:
+	var cell := cell_of(emitter.box)
+	var direction := emitter.normal()
+	var beam := Beam.new()
+	beam.emitter = emitter
+	beam.height = cell.z
+	beam.direction = Vector2i(direction.x, direction.y)
+	beam.start = Vector2(cell.x, cell.y) + Vector2(0.5, 0.5) + Vector2(beam.direction) * 0.5
+	var max_length := maxi(MIN_BEAM_LENGTH, room_reach.x if direction.x != 0 else room_reach.y)
+	beam.length = max_length
+	for step in range(1, max_length + 1):
+		var ahead := cell + direction * step
+		var box: Box = cells_3D.get(ahead)
+		if box != null:
+			beam.length = step - 1
+			beam.hits = box.powerable_on(Powerable.face_toward(-direction))
+			return beam
+		if Room.is_2d(perspective) and is_occluded(ahead):
+			beam.length = step - 1
+			return beam
+		var into_the_cell := _how_far_a_beam_gets_into(ahead, direction)
+		if into_the_cell < 1.0:
+			beam.length = step - 1 + into_the_cell
+			return beam
+	return beam
+
+
+func _how_far_a_beam_gets_into(cell: Vector3i, direction: Vector3i) -> float:
+	var how_far := 1.0
+	var door := closed_door_at(cell)
+	if door != null and Box.FACING_DIRECTION[door.edge] == Vector2i(-direction.x, -direction.y):
+		how_far = 0.0
+	elif door != null and Box.FACING_DIRECTION[door.edge] == Vector2i(direction.x, direction.y):
+		how_far = 1.0 - Door.THICKNESS
+	if _button_on_top_of(cells_3D.get(cell + GRID_DOWN)) != null:
+		how_far = minf(how_far, (1.0 - ButtonPowerable.STAND_WIDTH) / 2.0)
+	return how_far
+
+
+
+func beam_length_with_the_body(beam: Beam, perspective: Room.Perspective, player_height: int, player_body: Rect2) -> float:
+	if Room.is_3d(perspective) and player_height != beam.height:
+		return beam.length
+	var along := Vector2(beam.direction)
+	var sideways := Vector2(absf(along.y), absf(along.x))
+	var line := beam.start.dot(sideways)
+	if line <= player_body.position.dot(sideways) or line >= player_body.end.dot(sideways):
+		return beam.length
+	var to_one_side := (player_body.position - beam.start).dot(along)
+	var to_the_other := (player_body.end - beam.start).dot(along)
+	var near_edge := minf(to_one_side, to_the_other)
+	var far_edge := maxf(to_one_side, to_the_other)
+	if far_edge <= 0.0 or near_edge >= beam.length:
+		return beam.length
+	return maxf(near_edge, 0.0)
+
+func hit_by_lasers(beams: Array[Beam], perspective: Room.Perspective, player_height: int, player_body: Rect2) -> Dictionary[Powerable, bool]:
+	var hit: Dictionary[Powerable, bool] = {}
+	for beam in beams:
+		if beam.hits != null and beam_length_with_the_body(beam, perspective, player_height, player_body) == beam.length:
+			hit[beam.hits] = true
+	return hit

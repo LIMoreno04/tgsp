@@ -135,12 +135,15 @@ func button_states() -> Dictionary[ButtonPowerable, bool]:
 			states[button] = button.switched_on
 	return states
 
-func restore(cells: Dictionary[Box, Vector3i], switched_on: Dictionary[ButtonPowerable, bool]) -> void:
+## `displayed_as_on` también vuelve: los rayos se trazan desde las puertas y los emisores como se
+## ven, así que sin eso una puerta que un láser sostenía quedaría sostenida.
+func restore(cells: Dictionary[Box, Vector3i], switched_on: Dictionary[ButtonPowerable, bool], displayed_as_on: Dictionary[Powerable, bool]) -> void:
 	for box in cells:
 		box.cell = cells[box]
 	for button in switched_on:
 		button.switched_on = switched_on[button]
 	rebuild_index()
+	_show_power_as(displayed_as_on)
 	moved.emit()
 	buttons_changed.emit()
 
@@ -158,8 +161,13 @@ var _powerables_displayed_as_on: Dictionary[Powerable, bool] = {}
 
 var doors_stopped_by_the_player: Array[Door] = []
 
+var beams: Array[LevelIndex.Beam] = []
+var _hit_by_lasers: Dictionary[Powerable, bool] = {}
+
+
 func update_power(perspective: Perspective, player_cell: Vector3i, player_body: Rect2) -> void:
-	var active := index.active_powerables(perspective, player_cell)
+	_hit_by_lasers = index.hit_by_lasers(_beams_of_the_active_emitters(perspective), perspective, player_cell.z, player_body)
+	var active := index.active_powerables(perspective, player_cell, _hit_by_lasers)
 	var new_powerables_displayed_as_on: Dictionary[Powerable, bool] = {}
 	var closed_doors: Array[Door] = []
 	doors_stopped_by_the_player = []
@@ -175,6 +183,37 @@ func update_power(perspective: Perspective, player_cell: Vector3i, player_body: 
 			new_powerables_displayed_as_on[powerable] = true
 	index.closed_doors = closed_doors
 	_react_to_what_changed(new_powerables_displayed_as_on)
+	beams = _beams_of_the_active_emitters(perspective)
+	show_the_beams(perspective, player_cell.z, player_body)
+
+
+func is_power_out_of_date(perspective: Perspective, player_height: int, player_body: Rect2) -> bool:
+	for door in doors_stopped_by_the_player:
+		if not index.is_body_across(door, perspective, player_height, player_body):
+			return true
+	return index.hit_by_lasers(beams, perspective, player_height, player_body) != _hit_by_lasers
+
+func show_the_beams(perspective: Perspective, player_height: int, player_body: Rect2) -> void:
+	for beam in beams:
+		beam.emitter.show_beam(index.beam_length_with_the_body(beam, perspective, player_height, player_body))
+
+func powerables_displayed_as_on() -> Dictionary[Powerable, bool]:
+	return _powerables_displayed_as_on.duplicate()
+
+func _show_power_as(displayed_as_on: Dictionary[Powerable, bool]) -> void:
+	var closed_doors: Array[Door] = []
+	for powerable in index.every_powerable():
+		if powerable is Door and not displayed_as_on.has(powerable):
+			closed_doors.append(powerable)
+	index.closed_doors = closed_doors
+	_react_to_what_changed(displayed_as_on)
+
+func _beams_of_the_active_emitters(perspective: Perspective) -> Array[LevelIndex.Beam]:
+	var shining: Array[LevelIndex.Beam] = []
+	for powerable in _powerables_displayed_as_on:
+		if powerable is LaserEmitter:
+			shining.append(index.beam_of(powerable, perspective, maximum_reach()))
+	return shining
 
 func _react_to_what_changed(displayed_as_on: Dictionary[Powerable, bool]) -> void:
 	var anything_changed := false

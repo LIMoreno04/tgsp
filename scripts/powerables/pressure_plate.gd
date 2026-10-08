@@ -13,8 +13,8 @@ const PLATE_HEIGHT := 0.045
 var _pad := StandardMaterial3D.new()
 
 
-func activation_condition(_active_neighbours: Array[Powerable], pressed: bool) -> bool:
-	return pressed
+func activation_condition(inputs: Inputs) -> bool:
+	return inputs.pressed
 
 
 func turn_on() -> void:

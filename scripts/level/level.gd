@@ -8,6 +8,7 @@ const UPDATE_POWER_AFTER_PERSPECTIVE_TURN := false
 class Moment:
 	var box_cells: Dictionary[Box, Vector3i]
 	var button_states: Dictionary[ButtonPowerable, bool]
+	var powerables_displayed_as_on: Dictionary[Powerable, bool]
 	var perspective: Room.Perspective
 	var height: int
 	var player_cell: Vector3i
@@ -32,12 +33,13 @@ func _ready() -> void:
 		room.perspective_manager.perspective_changed.connect(request_power_update.unbind(1))
 	request_power_update()
 
-## Sólo mientras el cuerpo cruza una puerta: si dejó de cruzarla, puede que se tenga que cerrar.
+## Lo único que cambia sin avisar es dónde está el cuerpo del jugador: si dejó una puerta que
+## sostenía, o entró o salió de un laser, hace falta calcular de nuevo. Los rayos lo siguen en cada frame.
 func _physics_process(_delta: float) -> void:
-	for door in room.doors_stopped_by_the_player:
-		if not room.index.is_body_across(door, room.perspective_manager.current, player.cell().z, player.body_on_grid()):
-			request_power_update()
-			return
+	var perspective := room.perspective_manager.current
+	if room.is_power_out_of_date(perspective, player.cell().z, player.body_on_grid()):
+		request_power_update()
+	room.show_the_beams(perspective, player.cell().z, player.body_on_grid())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -55,6 +57,7 @@ func moment_now() -> Moment:
 	var moment := Moment.new()
 	moment.box_cells = room.box_cells()
 	moment.button_states = room.button_states()
+	moment.powerables_displayed_as_on = room.powerables_displayed_as_on()
 	moment.perspective = room.perspective_manager.current
 	moment.height = room.perspective_manager.height
 	moment.player_cell = player.cell()
@@ -72,7 +75,7 @@ func undo() -> void:
 		return
 	var moment: Moment = _history.pop_back()
 	var turns_back := moment.perspective != room.perspective_manager.current
-	room.restore(moment.box_cells, moment.button_states)
+	room.restore(moment.box_cells, moment.button_states, moment.powerables_displayed_as_on)
 	room.perspective_manager.restore(moment.perspective, moment.height)
 	player.restore(moment.player_cell, moment.facing, moment.grabbed)
 	_hold_the_lock_for(ProjectiveCamera.TURN_SECONDS if turns_back else GridEntity.SLIDE_SECONDS)
