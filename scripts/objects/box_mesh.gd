@@ -52,8 +52,9 @@ func _rebuild() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
-	for facing: Box.Facing in Box.FACING_NORMAL:
-		var normal: Vector3 = Box.FACING_NORMAL[facing]
+	for facing: Box.Facing in Box.FACING_DIRECTION:
+		var direction := Box.FACING_DIRECTION[facing]
+		var normal := Vector3(direction.x, 0, direction.y) # y de grilla = z de Godot
 		if box.walkable:
 			var skin_lo := _on_face(Vector3(-0.5, side_top_y, -0.5), normal)
 			var skin_hi := _on_face(Vector3(0.5, top_y, 0.5), normal)
@@ -78,15 +79,12 @@ func _rebuild() -> void:
 		_add_handle_outline(st, top_y + HANDLE_OUTLINE_LIFT, movable_colour, static_colour)
 
 	var y := top_y + HANDLE_STRIPE_LIFT
-	var msw := MOVABLE_STRIPE_WIDTH
-	if box.movable_2d_from(Box.Facing.POS_X):
-		_rect(st, Vector3(0.5 - msw, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, movable_colour)
-	if box.movable_2d_from(Box.Facing.NEG_X):
-		_rect(st, Vector3(-0.5, y, -0.5), Vector3(-0.5 + msw, y, 0.5), Vector3.UP, movable_colour)
-	if box.movable_2d_from(Box.Facing.POS_Y): # Y de grilla = Z de Godot
-		_rect(st, Vector3(-0.5, y, 0.5 - msw), Vector3(0.5, y, 0.5), Vector3.UP, movable_colour)
-	if box.movable_2d_from(Box.Facing.NEG_Y):
-		_rect(st, Vector3(-0.5, y, -0.5), Vector3(0.5, y, -0.5 + msw), Vector3.UP, movable_colour)
+	for facing: Box.Facing in Box.FACING_DIRECTION:
+		if box.movable_2d_from(facing):
+			var stripe := Box.strip_along(facing, MOVABLE_STRIPE_WIDTH)
+			var lo := Vector3(stripe.position.x, y, stripe.position.y) # Y de grilla = Z de Godot
+			var hi := Vector3(stripe.end.x, y, stripe.end.y)
+			_rect(st, lo, hi, Vector3.UP, movable_colour)
 
 	# Cara de abajo.
 	_rect(st, Vector3(-0.5, bottom_y, -0.5), Vector3(0.5, bottom_y, 0.5), Vector3.DOWN, static_colour)
@@ -99,7 +97,7 @@ func _rebuild() -> void:
 ## Los bordes en y van entre los de x, para que ninguna esquina se dibuje dos veces con dos colores.
 func _add_handle_outline(st: SurfaceTool, y: float, movable_colour: Color, static_colour: Color) -> void:
 	var colour: Dictionary[Box.Facing, Color] = {}
-	for facing: Box.Facing in Box.FACING_NORMAL:
+	for facing: Box.Facing in Box.FACING_DIRECTION:
 		colour[facing] = movable_colour if box.movable_3d_from(facing) else static_colour
 	var w := HANDLE_OUTLINE_WIDTH
 	_rect(st, Vector3(0.5 - w, y, -0.5), Vector3(0.5, y, 0.5), Vector3.UP, colour[Box.Facing.POS_X])

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dn8niv2hjstao"]
+
+[ext_resource type="Script" path="res://scripts/powerables/button_powerable.gd" id="1_g4omj"]
+
+[node name="Button" type="Node3D" unique_id=942555066]
+script = ExtResource("1_g4omj")

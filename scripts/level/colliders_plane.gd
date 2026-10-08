@@ -33,6 +33,7 @@ func _ready() -> void:
 	for type: LevelIndex.ColliderType in LevelIndex.ColliderType.values():
 		_layers[type] = _create_layer(type)
 	room.moved.connect(request_rebuild)
+	room.power_changed.connect(request_rebuild)
 	room.perspective_manager.perspective_changed.connect(request_rebuild.unbind(1))
 	request_rebuild()
 	_debug_view.name = "DebugView"
@@ -89,17 +90,12 @@ func _create_layer(type: LevelIndex.ColliderType) -> GridMap:
 
 
 func _shape_of(type: LevelIndex.ColliderType) -> Array:
-	var wall_along_x := Vector3(EDGE_THICKNESS, 1, 1)
-	var wall_along_y := Vector3(1, 1, EDGE_THICKNESS) # y de grilla = z de Godot
-	var to_the_edge := 0.5 - EDGE_THICKNESS / 2.0
-	match type:
-		LevelIndex.ColliderType.POS_X: return _box(wall_along_x, Vector3(to_the_edge, 0, 0))
-		LevelIndex.ColliderType.NEG_X: return _box(wall_along_x, Vector3(-to_the_edge, 0, 0))
-		LevelIndex.ColliderType.POS_Y: return _box(wall_along_y, Vector3(0, 0, to_the_edge))
-		LevelIndex.ColliderType.NEG_Y: return _box(wall_along_y, Vector3(0, 0, -to_the_edge))
-		LevelIndex.ColliderType.SOLID: return _box(Vector3.ONE, Vector3.ZERO)
-	assert(false, "Error CATASTRÓFICO: ColliderType sin forma")
-	return []
+	if type == LevelIndex.ColliderType.SOLID:
+		return _box(Vector3.ONE, Vector3.ZERO)
+	if type == LevelIndex.ColliderType.BUTTON:
+		return _box(Vector3(ButtonPowerable.STAND_WIDTH, 1, ButtonPowerable.STAND_WIDTH), Vector3.ZERO)
+	var strip := Box.strip_along(LevelIndex.EDGE_COLLIDER_ON.find_key(type), EDGE_THICKNESS)
+	return _box(Vector3(strip.size.x, 1, strip.size.y), Vector3(strip.get_center().x, 0, strip.get_center().y))
 
 func _box(size: Vector3, offset: Vector3) -> Array:
 	var shape := BoxShape3D.new()

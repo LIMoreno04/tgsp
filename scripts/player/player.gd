@@ -3,6 +3,8 @@ extends CharacterBody3D
 ## El cuerpo es un collider que camina por el CollidersPlane No tiene altura propia; 
 ## es la del PerspectiveManager. El modelo es hijo del cuerpo, así que lo sigue en x/z.
 
+signal cell_changed(from: Vector3i, to: Vector3i)
+
 const DIRECTION_OF: Dictionary[StringName, Vector2] = {
 	&"move_up": Vector2.UP,
 	&"move_down": Vector2.DOWN,
@@ -20,12 +22,14 @@ const HEIGHT_IN_PLANE := 0.5
 @onready var perspective_manager: PerspectiveManager = room.perspective_manager
 @onready var level: Level = room.get_parent()
 @onready var model: Node3D = $Model
+@onready var body_shape: BoxShape3D = $CollisionShape3D.shape
 
-## La última dirección en la que caminó, en la grilla. Sólo sirve para elegir qué agarrar.
+## La última dirección en la que caminó, en la grilla. Sólo sirve para elegir con que interactura
 var facing := Vector2(0, 1)
 var grabbed: Box = null
 
 var _shake: Tween
+var _last_cell: Vector3i
 
 
 func _ready() -> void:
@@ -33,9 +37,17 @@ func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
 	var spawn := room.player_spawn_point
 	position = _centre_of(Vector2i(spawn.x, spawn.y))
+	_last_cell = cell()
 
 
 func _physics_process(_delta: float) -> void:
+	_walk()
+	if cell() != _last_cell:
+		var from := _last_cell
+		_last_cell = cell()
+		cell_changed.emit(from, _last_cell)
+
+func _walk() -> void:
 	if level.is_locked() or grabbed != null:
 		return
 	var walking := _on_plane(Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down"))
@@ -52,7 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if level.is_locked():
 		return
 	if event.is_action_pressed(&"grab"):
-		_grab_or_let_go()
+		_let_go_or_reach()
 	elif event.is_action_pressed(&"toggle_perspective"):
 		_toggle_perspective()
 	elif grabbed != null:
@@ -73,17 +85,35 @@ func _centre_of(column: Vector2i) -> Vector3:
 	return GridCoordsProvider.grid_to_godot(Vector3i(column.x, column.y, 0)) + Vector3(0.5, HEIGHT_IN_PLANE, 0.5)
 
 
-## Agarrar se queda pegado a la caja, mirándola, hasta que se vuelve a apretar.
-func _grab_or_let_go() -> void:
+func body_on_grid() -> Rect2:
+	var size := Vector2(body_shape.size.x, body_shape.size.z)
+	return Rect2(Vector2(position.x, position.z) - size / 2.0, size)
+
+
+## E
+func _let_go_or_reach() -> void:
 	if grabbed != null:
 		grabbed = null
 		return
-	grabbed = room.index.choose_box_to_grab(cell(), facing, perspective_manager.current)
-	if grabbed == null:
+	var reached := room.index.choose_what_to_interact_with(cell(), facing, perspective_manager.current)
+	if reached is ButtonPowerable:
+		_press(reached)
+	elif reached is Box:
+		_grab(reached)
+	else:
 		_shake_model()
-		return
+
+
+func _grab(box: Box) -> void:
+	grabbed = box
 	facing = Vector2(room.index.column_of(grabbed) - _column())
 	_slide_to(_centre_of(_column()))
+
+func _press(button: ButtonPowerable) -> void:
+	var before := level.moment_now()
+	facing = Vector2(room.index.column_of(button.box) - _column())
+	room.press(button)
+	level.remember(before)
 
 ## Jugador y caja juntos o ninguno.
 func _step_with_grabbed_box(screen_direction: Vector2) -> void:

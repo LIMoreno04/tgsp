@@ -6,11 +6,12 @@ signal appearance_changed
 
 enum Facing { POS_X, NEG_X, POS_Y, NEG_Y }
 
-const FACING_NORMAL := {
-	Facing.POS_X: Vector3(1, 0, 0),
-	Facing.NEG_X: Vector3(-1, 0, 0),
-	Facing.POS_Y: Vector3(0, 0, 1),
-	Facing.NEG_Y: Vector3(0, 0, -1),
+## Hacia dónde mira cada lado en la grilla.
+const FACING_DIRECTION: Dictionary[Facing, Vector2i] = {
+	Facing.POS_X: Vector2i(1, 0),
+	Facing.NEG_X: Vector2i(-1, 0),
+	Facing.POS_Y: Vector2i(0, 1),
+	Facing.NEG_Y: Vector2i(0, -1),
 }
 
 @export var walkable := false:
@@ -125,13 +126,35 @@ func is_terrain() -> bool:
 
 
 static func facing_toward(direction: Vector2i) -> Facing:
-	match direction:
-		Vector2i(1, 0): return Facing.POS_X
-		Vector2i(-1, 0): return Facing.NEG_X
-		Vector2i(0, 1): return Facing.POS_Y
-		Vector2i(0, -1): return Facing.NEG_Y
-	assert(false, "No hay cara para la dirección %s" % direction)
-	return Facing.POS_X
+	assert(FACING_DIRECTION.values().has(direction), "No hay lado para la dirección %s" % direction)
+	return FACING_DIRECTION.find_key(direction)
+
+
+static func strip_along(facing: Facing, width: float) -> Rect2:
+	match facing:
+		Facing.POS_X: return Rect2(0.5 - width, -0.5, width, 1.0)
+		Facing.NEG_X: return Rect2(-0.5, -0.5, width, 1.0)
+		Facing.POS_Y: return Rect2(-0.5, 0.5 - width, 1.0, width)
+		Facing.NEG_Y: return Rect2(-0.5, -0.5, 1.0, width)
+	assert(false, "Error CATASTRÓFICO: Facing sin franja")
+	return Rect2()
+
+
+## Si hay dos en la misma misma cuenta el primero y el segundo avisa en el editor.
+func powerables() -> Array[Powerable]:
+	var counted: Array[Powerable] = []
+	var faces_taken: Dictionary[Powerable.Face, bool] = {}
+	for child in get_children():
+		if child is Powerable and not faces_taken.has(child.face):
+			faces_taken[child.face] = true
+			counted.append(child)
+	return counted
+
+func powerable_on(face: Powerable.Face) -> Powerable:
+	for powerable in powerables():
+		if powerable.face == face:
+			return powerable
+	return null
 
 func movable_3d_from(facing: Facing) -> bool:
 	if is_terrain():

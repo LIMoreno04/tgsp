@@ -6,6 +6,8 @@ extends Node3D
 #==================General=====================
 signal dimensions_changed
 signal moved
+signal buttons_changed
+signal power_changed
 
 @export var dimensions: Vector3i = Vector3i(5, 5, 5):
 	set(value):
@@ -53,7 +55,9 @@ static func is_2d(perspective: Perspective) -> bool:
 var index := LevelIndex.new()
 
 func rebuild_index() -> void:
+	var closed_doors := index.closed_doors
 	index = _index_of_the_boxes_in_the_tree()
+	index.closed_doors = closed_doors
 
 func _index_of_the_boxes_in_the_tree() -> LevelIndex:
 	var new_index := LevelIndex.new()
@@ -123,11 +127,68 @@ func box_cells() -> Dictionary[Box, Vector3i]:
 		cells[box] = box.cell
 	return cells
 
-func restore(cells: Dictionary[Box, Vector3i]) -> void:
+func button_states() -> Dictionary[ButtonPowerable, bool]:
+	var states: Dictionary[ButtonPowerable, bool] = {}
+	for powerable in index.every_powerable():
+		var button := powerable as ButtonPowerable
+		if button != null:
+			states[button] = button.switched_on
+	return states
+
+func restore(cells: Dictionary[Box, Vector3i], switched_on: Dictionary[ButtonPowerable, bool]) -> void:
 	for box in cells:
 		box.cell = cells[box]
+	for button in switched_on:
+		button.switched_on = switched_on[button]
 	rebuild_index()
 	moved.emit()
+	buttons_changed.emit()
+
+
+#==================Powerables==================
+
+## Solo Room cambia el estado de un powerable, como los movimientos
+func press(button: ButtonPowerable) -> void:
+	button.switched_on = not button.switched_on
+	buttons_changed.emit()
+
+
+## Displayed en vez de directo "on" porque las puertas pueden estar abiertas y no estar recibiendo power
+var _powerables_displayed_as_on: Dictionary[Powerable, bool] = {}
+
+var doors_stopped_by_the_player: Array[Door] = []
+
+func update_power(perspective: Perspective, player_cell: Vector3i, player_body: Rect2) -> void:
+	var active := index.active_powerables(perspective, player_cell)
+	var new_powerables_displayed_as_on: Dictionary[Powerable, bool] = {}
+	var closed_doors: Array[Door] = []
+	doors_stopped_by_the_player = []
+	for powerable in index.every_powerable():
+		if powerable is Door:
+			if index.door_is_open(powerable, active, perspective, player_cell.z, player_body):
+				new_powerables_displayed_as_on[powerable] = true
+			else:
+				closed_doors.append(powerable)
+			if index.is_body_across(powerable, perspective, player_cell.z, player_body):
+				doors_stopped_by_the_player.append(powerable)
+		elif active.has(powerable):
+			new_powerables_displayed_as_on[powerable] = true
+	index.closed_doors = closed_doors
+	_react_to_what_changed(new_powerables_displayed_as_on)
+
+func _react_to_what_changed(displayed_as_on: Dictionary[Powerable, bool]) -> void:
+	var anything_changed := false
+	for powerable in index.every_powerable():
+		if displayed_as_on.has(powerable) == _powerables_displayed_as_on.has(powerable):
+			continue
+		anything_changed = true
+		if displayed_as_on.has(powerable):
+			powerable.turn_on()
+		else:
+			powerable.turn_off()
+	_powerables_displayed_as_on = displayed_as_on
+	if anything_changed:
+		power_changed.emit()
 
 #==================Avisos en el editor==================
 
@@ -135,7 +196,9 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var warnings := PackedStringArray()
 	if not transform.is_equal_approx(Transform3D.IDENTITY):
 		warnings.append("The Room must sit at the origin, unrotated and unscaled: the rules only see the cells of its boxes, so moving the Room moves them on screen but not for the rules.")
-	if not _index_of_the_boxes_in_the_tree().can_player_be_on(player_spawn_point, _starting_perspective()):
+	var spawn_index := _index_of_the_boxes_in_the_tree()
+	var spawn_column := Vector2i(player_spawn_point.x, player_spawn_point.y)
+	if not spawn_index.can_player_be_on(player_spawn_point, _starting_perspective()) or spawn_index.has_button_on(spawn_column, _starting_perspective(), player_spawn_point.z):
 		warnings.append("The player cannot stand at player_spawn_point %s in the perspective the level starts in." % player_spawn_point)
 	return warnings
 

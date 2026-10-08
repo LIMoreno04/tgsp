@@ -14,6 +14,20 @@ const D3 := Room.Perspective.ISO_3D
 const D2 := Room.Perspective.TOP_2D
 const SOLID := LevelIndex.ColliderType.SOLID
 
+## Las casillas de las direcciones de un powerable.
+const POS_X := &"connects_pos_x"
+const NEG_X := &"connects_neg_x"
+const POS_Y := &"connects_pos_y"
+const NEG_Y := &"connects_neg_y"
+const UP := &"connects_up"
+const DOWN := &"connects_down"
+const TOP := Powerable.Face.TOP
+const FACE_POS_X := Powerable.Face.POS_X
+const FACE_NEG_X := Powerable.Face.NEG_X
+## Un jugador lejos de todo, para preguntar por la energía sin que apriete nada.
+const NOBODY := Vector3i(-50, -50, 0)
+const NO_BODY := Rect2(-50, -50, 0.6, 0.6)
+
 var root: Node
 var passed := 0
 var failed := 0
@@ -43,6 +57,18 @@ func run(tree_root: Node) -> void:
 	structure_warnings()
 	room_warnings()
 	folders()
+	powerables_on_faces()
+	connections_in_3d()
+	connections_in_2d()
+	pressing()
+	activity()
+	the_four_use_cases()
+	running_power()
+	doors()
+	doors_in_the_move_rules()
+	doors_and_the_player()
+	buttons()
+	button_pedestals()
 
 
 func index() -> void:
@@ -205,14 +231,14 @@ func floors_and_terrain_flags() -> void:
 	at(r,3,2,0).movable_3d_neg_x = true
 	at(r,3,2,0).movable_2d_neg_x = true
 	r.rebuild_index()
-	is_true("a wall left with a 3D handle from before cannot be grabbed", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
-	is_true("  nor with a 2D one", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D2) == null)
+	is_true("a wall left with a 3D handle from before cannot be grabbed", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("  nor with a 2D one", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2) == null)
 	free_room(r)
 
 	r = room([])
 	at(r,2,2,-1).movable_2d_pos_x = true
 	r.rebuild_index()
-	is_true("a floor left with a 2D handle is no barrier", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D2))
+	is_true("a floor left with a 2D handle is no barrier", not r.index.has_stripe_on(Vector2i(2,2), Box.Facing.POS_X, D2))
 	is_true("  and gets no edge collider", not r.index.colliders_plane(0, D2).has(Vector2i(2,2)))
 	free_room(r)
 
@@ -408,9 +434,9 @@ func player_queries() -> void:
 	r = room([[c(2,2,0)]], [], [0])
 	at(r,2,2,0).movable_2d_pos_x = true
 	r.rebuild_index()
-	is_true("2D: a stripe is a barrier on that side", r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D2))
-	is_true("  but not on the others", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.NEG_X, D2))
-	is_true("3D: there are no barriers", not r.index.has_grab_barrier(Vector2i(2,2), Box.Facing.POS_X, D3))
+	is_true("2D: a stripe is a barrier on that side", r.index.has_stripe_on(Vector2i(2,2), Box.Facing.POS_X, D2))
+	is_true("  but not on the others", not r.index.has_stripe_on(Vector2i(2,2), Box.Facing.NEG_X, D2))
+	is_true("3D: there are no barriers", not r.index.has_stripe_on(Vector2i(2,2), Box.Facing.POS_X, D3))
 	free_room(r)
 
 
@@ -420,36 +446,36 @@ func grabbing() -> void:
 	var r := room([[c(3,2,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.NEG_X)
 	r.rebuild_index()
-	same("grabs the crate straight ahead", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
-	same("  a lone candidate behind is still grabbed", r.index.choose_box_to_grab(c(2,2,0), Vector2(-1,0), D3), at(r,3,2,0))
-	is_true("3D ignores a neighbour below the player", r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D3) == null)
+	same("grabs the crate straight ahead", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
+	same("  a lone candidate behind is still grabbed", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(-1,0), D3), at(r,3,2,0))
+	is_true("3D ignores a neighbour below the player", r.index.choose_what_to_interact_with(c(2,2,1), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.POS_X)
 	r.rebuild_index()
-	is_true("a handle on the far face is not grabbable", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("a handle on the far face is not grabbable", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)]])
-	is_true("a box with no handles is not grabbable", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	is_true("a box with no handles is not grabbable", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(3,2,0)], [c(2,3,0)]])
 	handle_3d(at(r,3,2,0), Box.Facing.NEG_X)
 	handle_3d(at(r,2,3,0), Box.Facing.NEG_Y)
 	r.rebuild_index()
-	same("facing east picks east", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
-	same("facing north picks north", r.index.choose_box_to_grab(c(2,2,0), Vector2(0,1), D3), at(r,2,3,0))
+	same("facing east picks east", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), at(r,3,2,0))
+	same("facing north picks north", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(0,1), D3), at(r,2,3,0))
 	same("a diagonal ties, and the fixed order settles it",
-		r.index.choose_box_to_grab(c(2,2,0), Vector2(1,1).normalized(), D3), at(r,3,2,0))
+		r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,1).normalized(), D3), at(r,3,2,0))
 	free_room(r)
 
 	r = room([[c(3,2,3)]])
 	at(r,3,2,3).movable_2d_neg_x = true
 	r.rebuild_index()
-	same("2D grabs the neighbouring top", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D2), at(r,3,2,3))
-	is_true("  and the 3D handles are a separate set", r.index.choose_box_to_grab(c(2,2,0), Vector2(1,0), D3) == null)
+	same("2D grabs the neighbouring top", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), at(r,3,2,3))
+	is_true("  and the 3D handles are a separate set", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
 	free_room(r)
 
 	r = room([[c(2,2,0)], [c(3,2,0)]], [], [0])
@@ -457,11 +483,11 @@ func grabbing() -> void:
 	at(r,3,2,0).movable_2d_neg_x = true
 	r.rebuild_index()
 	is_true("2D: a stripe on your own tile blocks the grab",
-		r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2) == null)
+		r.index.choose_what_to_interact_with(c(2,2,1), Vector2(1,0), D2) == null)
 	at(r,2,2,0).movable_2d_pos_x = false
 	r.rebuild_index()
 	same("  with the stripe gone it is reachable",
-		r.index.choose_box_to_grab(c(2,2,1), Vector2(1,0), D2), at(r,3,2,0))
+		r.index.choose_what_to_interact_with(c(2,2,1), Vector2(1,0), D2), at(r,3,2,0))
 	free_room(r)
 
 
@@ -531,7 +557,7 @@ func moving_with_a_player() -> void:
 	r = room([[c(3,2,0)], [c(3,2,1)]], [], [0])
 	at(r,3,2,0).movable_2d_neg_x = true
 	r.rebuild_index()
-	is_true("3D: stripes are no barrier to a step", not r.index.would_player_cross_a_stripe(c(2,2,1), E, r.index, D3))
+	is_true("3D: stripes are no barrier to a step", not r.index.would_player_cross_a_barrier(c(2,2,1), E, r.index, D3))
 	free_room(r)
 
 
@@ -645,7 +671,7 @@ func restoring_for_undo() -> void:
 	r.try_to_move_grabbed_box(at(r,3,2,0), E, D3)
 	var announced := [0]
 	r.moved.connect(func() -> void: announced[0] += 1)
-	r.restore(before)
+	r.restore(before, r.button_states())
 	is_true("restoring the cells puts a pushed box back", r.index.cells_3D.has(c(3,2,0)) and not r.index.cells_3D.has(c(4,2,0)))
 	same("  and the room announces it, so the collision plane follows", announced[0], 1)
 	free_room(r)
@@ -832,6 +858,555 @@ func folders() -> void:
 	is_true("  its loose boxes too", has_warning(loose, "is not a GridEntity"))
 	is_true("  but a box in a structure leaves it to the structure", not has_warning(s.boxes()[0], "the rules skip"))
 	free_room(r)
+
+
+func powerables_on_faces() -> void:
+	section("powerables on the faces of a box")
+
+	var r := room([[c(2,2,0)]])
+	var on_top := wire(r, c(2,2,0), TOP, [POS_X])
+	var on_side := wire(r, c(2,2,0), FACE_POS_X, [UP])
+	same("a box answers what is on each face", at(r,2,2,0).powerable_on(TOP), on_top)
+	same("  and lists one per face", at(r,2,2,0).powerables().size(), 2)
+	var second := wire(r, c(2,2,0), TOP, [NEG_X])
+	same("with two on one face, the first counts", at(r,2,2,0).powerable_on(TOP), on_top)
+	same("  and only it is listed", at(r,2,2,0).powerables().size(), 2)
+	is_true("  the second warns", has_warning(second, "already on this face"))
+	is_true("  the first does not", not has_warning(on_top, "already on this face"))
+	is_true("  nor does one alone on its face", not has_warning(on_side, "already on this face"))
+	free_room(r)
+
+	var loose := Wire.new()
+	root.add_child(loose)
+	is_true("a powerable outside a box warns", has_warning(loose, "must be a child of a Box"))
+	root.remove_child(loose)
+	loose.free()
+
+	r = room([[c(2,2,0)]])
+	var stale := wire(r, c(2,2,0), TOP, [POS_X, UP])
+	same("a direction along its face's normal never counts, even ticked", stale.allowed_directions(), [Vector3i(1, 0, 0)])
+	is_true("  and the inspector hides those two",
+		hidden_in_inspector(stale, "connects_up") and hidden_in_inspector(stale, "connects_down") and not hidden_in_inspector(stale, "connects_pos_x"))
+	var side := wire(r, c(2,2,0), FACE_NEG_X, [])
+	is_true("  on a side face it hides the two along x", hidden_in_inspector(side, "connects_neg_x") and not hidden_in_inspector(side, "connects_up"))
+	is_true("plates, doors and buttons have no face to choose",
+		hidden_in_inspector(plate(r, c(3,3,-1), []), "face") and hidden_in_inspector(door(r, c(4,4,-1), Box.Facing.POS_X, []), "face")
+		and hidden_in_inspector(button(r, c(5,5,-1), [], false), "face"))
+	free_room(r)
+
+
+func connections_in_3d() -> void:
+	section("3D: how powerables connect")
+
+	var r := room([])
+	var a := wire(r, c(1,2,-1), TOP, [POS_X])
+	var b := wire(r, c(2,2,-1), TOP, [NEG_X])
+	is_true("flat: two neighbouring tops", connects(r, a, b, D3))
+	free_room(r)
+
+	r = room([])
+	a = wire(r, c(1,2,-1), TOP, [POS_X])
+	b = wire(r, c(2,2,-1), TOP, [POS_Y])
+	is_true("both sides must allow the edge they share", not connects(r, a, b, D3) and r.index.connected_powerables(a, D3).is_empty())
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	var on_top := wire(r, c(2,2,0), TOP, [POS_X])
+	var on_side := wire(r, c(2,2,0), FACE_POS_X, [UP, DOWN])
+	var on_floor := wire(r, c(3,2,-1), TOP, [NEG_X])
+	is_true("over an outer edge: a top and a side of the same box", connects(r, on_top, on_side, D3))
+	is_true("into an inner corner: a side and the floor at its foot", connects(r, on_side, on_floor, D3))
+	add_boxes(r, "OnTop", [c(2,2,1)], false)
+	is_true("  a box on top does not cut the outer edge, seen from either side", connects(r, on_top, on_side, D3))
+	add_boxes(r, "Beside", [c(3,2,1)], false)
+	is_true("  nor does one beside it", connects(r, on_top, on_side, D3))
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	var floor_wire := wire(r, c(1,2,-1), TOP, [POS_X])
+	var under_the_box := wire(r, c(2,2,-1), TOP, [NEG_X])
+	var up_the_box := wire(r, c(2,2,0), FACE_NEG_X, [DOWN])
+	var found := r.index.connected_powerables(floor_wire, D3)
+	is_true("one direction can reach two: the top hidden under a box, and the face going up it",
+		found.has(under_the_box) and found.has(up_the_box) and found.size() == 2)
+	is_true("  a covered face still works", connects(r, floor_wire, under_the_box, D3))
+	free_room(r)
+
+
+func connections_in_2d() -> void:
+	section("2D: only the tops exist, and every plate")
+
+	var r := room([[c(2,2,2)]])
+	var low := wire(r, c(1,2,-1), TOP, [POS_X])
+	var high := wire(r, c(2,2,2), TOP, [NEG_X])
+	is_true("tops connect whatever their heights", connects(r, low, high, D2))
+	is_true("  which they do not in 3D", not connects(r, low, high, D3))
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	var under := wire(r, c(2,2,-1), TOP, [NEG_X])
+	var beside := wire(r, c(1,2,-1), TOP, [POS_X])
+	var side := wire(r, c(2,2,0), FACE_NEG_X, [DOWN])
+	is_true("a wire under a box does not exist", not r.index.is_powerable_considered(under, D2) and not connects(r, beside, under, D2))
+	is_true("  nor does one on a side face", not r.index.is_powerable_considered(side, D2))
+	is_true("  so nothing connects to the side either", r.index.connected_powerables(beside, D2).is_empty())
+	free_room(r)
+
+	r = room([[c(2,2,3)]])
+	var covered := plate(r, c(2,2,-1), [NEG_X])
+	var next_to_it := wire(r, c(1,2,-1), TOP, [POS_X])
+	is_true("a plate under a box still takes part", r.index.is_powerable_considered(covered, D2))
+	is_true("  and connects to the tops beside it", connects(r, covered, next_to_it, D2))
+	free_room(r)
+
+
+func pressing() -> void:
+	section("what presses a plate")
+
+	var r := room([])
+	var p := plate(r, c(2,2,-1), [])
+	is_true("3D: the player standing on it", r.index.is_pressed(p, D3, c(2,2,0)))
+	is_true("  not the player beside it", not r.index.is_pressed(p, D3, c(1,2,0)))
+	is_true("  nor high above it", not r.index.is_pressed(p, D3, c(2,2,3)))
+	is_true("2D: the player on its tile, whatever the height", r.index.is_pressed(p, D2, c(2,2,7)))
+	is_true("  nothing at all", not r.index.is_pressed(p, D2, NOBODY))
+	add_boxes(r, "Resting", [c(2,2,0)], false)
+	is_true("3D: a box resting on it", r.index.is_pressed(p, D3, NOBODY))
+	free_room(r)
+
+	r = room([[c(2,2,3)]])
+	p = plate(r, c(2,2,-1), [])
+	is_true("3D: a box high above does not press it", not r.index.is_pressed(p, D3, NOBODY))
+	is_true("2D: it does, since height does not exist there", r.index.is_pressed(p, D2, NOBODY))
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	var on_a_side := wire(r, c(2,2,0), FACE_POS_X, [])
+	is_true("a face other than the top is never pressed", not r.index.is_pressed(on_a_side, D3, c(3,2,0)))
+	free_room(r)
+
+
+func activity() -> void:
+	section("which powerables are active")
+
+	var r := room([])
+	var source := button(r, c(0,2,-1), [POS_X], true)
+	var first := wire(r, c(1,2,-1), TOP, [NEG_X, POS_X])
+	var second := wire(r, c(2,2,-1), TOP, [NEG_X, POS_X])
+	var end := door(r, c(3,2,-1), Box.Facing.POS_Y, [NEG_X, POS_X])
+	var past_the_door := wire(r, c(4,2,-1), TOP, [NEG_X])
+	var active := r.index.active_powerables(D3, NOBODY)
+	is_true("a switched-on button powers a chain of wires", active.has(source) and active.has(first) and active.has(second))
+	is_true("  and the door at its end", active.has(end))
+	is_true("  which passes nothing on", not active.has(past_the_door))
+	source.switched_on = false
+	is_true("switched off, nothing is active", r.index.active_powerables(D3, NOBODY).is_empty())
+	free_room(r)
+
+	r = room([])
+	var start := button(r, c(0,1,-1), [POS_X], false)
+	var loop: Array[Powerable] = [
+		wire(r, c(1,1,-1), TOP, [NEG_X, POS_X, POS_Y]),
+		wire(r, c(2,1,-1), TOP, [NEG_X, POS_Y]),
+		wire(r, c(2,2,-1), TOP, [NEG_X, NEG_Y]),
+		wire(r, c(1,2,-1), TOP, [POS_X, NEG_Y]),
+	]
+	is_true("a loop of wires never powers itself", r.index.active_powerables(D3, NOBODY).is_empty())
+	start.switched_on = true
+	same("  a button lights all of it", count_active(r, loop, D3), 4)
+	start.switched_on = false
+	same("  and switched off again, nothing in it stays on", count_active(r, loop, D3), 0)
+	free_room(r)
+
+	r = room([])
+	button(r, c(1,2,-1), [POS_X], true)
+	var switched_off := button(r, c(2,2,-1), [NEG_X, POS_X], false)
+	var pressed_by_nobody := plate(r, c(3,2,-1), [NEG_X])
+	active = r.index.active_powerables(D3, NOBODY)
+	is_true("a signal never switches a button on", not active.has(switched_off))
+	is_true("  nor presses a plate", not active.has(pressed_by_nobody))
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	var hidden := button(r, c(2,2,-1), [POS_X], true)
+	is_true("a switched-on button under a box is active in 3D", is_active(r, hidden, D3))
+	is_true("  but does not exist in 2D", not is_active(r, hidden, D2))
+	free_room(r)
+
+
+func the_four_use_cases() -> void:
+	section("the four use cases")
+
+	# Un pilar con cables en las tapas al pie de cada lado y uno encima, ninguno por sus paredes.
+	var r := room([[c(2,2,0), c(2,2,1), c(2,2,2)]])
+	button(r, c(0,2,-1), [POS_X], true)
+	var before_the_pillar := wire(r, c(1,2,-1), TOP, [NEG_X, POS_X])
+	var over_the_pillar := wire(r, c(2,2,2), TOP, [NEG_X, POS_X])
+	var past_the_pillar := wire(r, c(3,2,-1), TOP, [NEG_X, POS_X])
+	is_true("1. 3D: the signal stops at the foot of the pillar",
+		is_active(r, before_the_pillar, D3) and not is_active(r, over_the_pillar, D3) and not is_active(r, past_the_pillar, D3))
+	is_true("   2D: it goes across the pillar's top", is_active(r, over_the_pillar, D2) and is_active(r, past_the_pillar, D2))
+	free_room(r)
+
+	# Un cable recto con un techo muy por encima de una de sus baldosas.
+	r = room([[c(2,2,3)]])
+	button(r, c(0,2,-1), [POS_X], true)
+	var line: Array[Powerable] = []
+	for x in range(1, 5):
+		line.append(wire(r, c(x,2,-1), TOP, [NEG_X, POS_X]))
+	same("2. 3D: the whole line is powered", count_active(r, line, D3), 4)
+	is_true("   2D: only up to the roof", is_active(r, line[0], D2) and not is_active(r, line[1], D2) and not is_active(r, line[2], D2) and not is_active(r, line[3], D2))
+	free_room(r)
+
+	# Una placa con un techo muy por encima, y cables saliendo de ella que el techo no tapa.
+	r = room([[c(2,2,3)]])
+	plate(r, c(2,2,-1), [NEG_X, POS_X])
+	var left := wire(r, c(1,2,-1), TOP, [POS_X])
+	var right := wire(r, c(3,2,-1), TOP, [NEG_X])
+	is_true("3. 3D: the wires light only while the plate is pressed",
+		not is_active(r, left, D3) and is_active(r, left, D3, c(2,2,0)) and is_active(r, right, D3, c(2,2,0)))
+	is_true("   2D: at once, because the roof is now on the plate", is_active(r, left, D2) and is_active(r, right, D2))
+	free_room(r)
+
+	r = room([[c(1,2,0)]])
+	plate(r, c(2,2,-1), [POS_X])
+	var lit_by_the_crate := wire(r, c(3,2,-1), TOP, [NEG_X])
+	r.try_to_move_grabbed_box(at(r,1,2,0), E, D2)
+	is_true("   a crate pushed onto a plate in 2D presses it in both views", is_active(r, lit_by_the_crate, D2) and is_active(r, lit_by_the_crate, D3))
+	free_room(r)
+
+	# Un cable con un tramo en una caja que se mueve.
+	r = room([[c(0,2,0)], [c(1,2,0)], [c(2,2,0)], [c(3,2,0)]])
+	button(r, c(0,2,0), [POS_X], true)
+	wire(r, c(1,2,0), TOP, [NEG_X, POS_X])
+	var moving := wire(r, c(2,2,0), TOP, [NEG_X, POS_X])
+	var at_the_end := wire(r, c(3,2,0), TOP, [NEG_X])
+	is_true("4. the line is whole", is_active(r, at_the_end, D3) and is_active(r, at_the_end, D2))
+	r.try_to_move_grabbed_box(at(r,2,2,0), S, D3)
+	is_true("   pushing a piece out breaks it", not is_active(r, moving, D3) and not is_active(r, at_the_end, D3) and not is_active(r, at_the_end, D2))
+	r.try_to_move_grabbed_box(at(r,2,3,0), Vector2i(0,-1), D2)
+	is_true("   pushing it back mends it", is_active(r, moving, D3) and is_active(r, at_the_end, D3) and is_active(r, at_the_end, D2))
+	free_room(r)
+
+	# Dos cajas puentean un hueco del cable del piso: en 3D subiendo y bajando por sus caras.
+	r = room([[c(2,2,0)], [c(3,2,0)]])
+	button(r, c(0,2,-1), [POS_X], true)
+	wire(r, c(1,2,-1), TOP, [NEG_X, POS_X])
+	wire(r, c(2,2,0), FACE_NEG_X, [DOWN, UP])
+	wire(r, c(2,2,0), TOP, [NEG_X, POS_X])
+	wire(r, c(3,2,0), TOP, [NEG_X, POS_X])
+	wire(r, c(3,2,0), FACE_POS_X, [UP, DOWN])
+	var past_the_bridge := wire(r, c(4,2,-1), TOP, [NEG_X])
+	is_true("   crates with wires on their tops and outer sides bridge a gap in both views",
+		is_active(r, past_the_bridge, D3) and is_active(r, past_the_bridge, D2))
+	r.try_to_move_grabbed_box(at(r,2,2,0), S, D3)
+	is_true("   pushing one out breaks the bridge", not is_active(r, past_the_bridge, D3) and not is_active(r, past_the_bridge, D2))
+	free_room(r)
+
+	r = room([[c(2,2,0)]])
+	button(r, c(0,2,-1), [POS_X], true)
+	wire(r, c(1,2,-1), TOP, [NEG_X, POS_X])
+	wire(r, c(2,2,0), TOP, [NEG_X, POS_X])
+	past_the_bridge = wire(r, c(3,2,-1), TOP, [NEG_X])
+	is_true("   a crate with a wire on its top only bridges in 2D", not is_active(r, past_the_bridge, D3) and is_active(r, past_the_bridge, D2))
+	free_room(r)
+
+
+func running_power() -> void:
+	section("the room works power out and reacts")
+
+	var r := room([])
+	var b := button(r, c(1,2,-1), [POS_X], false)
+	var w := wire(r, c(2,2,-1), TOP, [NEG_X, POS_X])
+	var d := door(r, c(3,2,-1), Box.Facing.POS_Y, [NEG_X])
+	var changes := [0]
+	r.power_changed.connect(func() -> void: changes[0] += 1)
+	r.update_power(D3, NOBODY, NO_BODY)
+	same("with nothing on, nothing is announced", changes[0], 0)
+	is_true("  and the door is drawn closed", d._slab.visible)
+	r.press(b)
+	r.update_power(D3, NOBODY, NO_BODY)
+	same("a change is announced once", changes[0], 1)
+	is_true("  the wire lights up", w._dots.albedo_color == Wire.LIT_RED)
+	is_true("  and the open door is not drawn", not d._slab.visible)
+	r.update_power(D3, NOBODY, NO_BODY)
+	same("working it out again with nothing new announces nothing", changes[0], 1)
+	r.press(b)
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("switched off, the wire goes dark and the door closes", w._dots.albedo_color == Wire.DARK and d._slab.visible)
+	free_room(r)
+
+
+func doors() -> void:
+	section("doors open, closed and held open")
+
+	var r := room([])
+	var d := door(r, c(3,2,-1), Box.Facing.NEG_X, [POS_X])
+	var b := button(r, c(4,2,-1), [NEG_X], false)
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("an unpowered door is closed, and the index knows it", r.index.closed_doors.has(d))
+	b.switched_on = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("a powered one is open", not r.index.closed_doors.has(d))
+	b.switched_on = false
+	d.always_open = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("one authored always open needs no signal", not r.index.closed_doors.has(d))
+	free_room(r)
+
+	r = room([[c(3,2,0)]])
+	d = door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("a box in its cell holds it open", not r.index.closed_doors.has(d))
+	free_room(r)
+
+	r = room([])
+	d = door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	var across_the_edge := Rect2(2.7, 2.2, 0.6, 0.6)
+	r.update_power(D3, c(3,2,0), across_the_edge)
+	is_true("the player's body across its edge holds it open", not r.index.closed_doors.has(d))
+	is_true("  and the room keeps checking it", r.doors_stopped_by_the_player.has(d))
+	r.update_power(D3, c(3,2,2), across_the_edge)
+	is_true("  but not from another height", r.index.closed_doors.has(d) and r.doors_stopped_by_the_player.is_empty())
+	r.update_power(D3, c(3,2,0), Rect2(3.2, 2.2, 0.6, 0.6))
+	is_true("  it closes once the body is clear", r.index.closed_doors.has(d) and r.doors_stopped_by_the_player.is_empty())
+	free_room(r)
+
+	r = room([])
+	d = door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	r.rebuild_index()
+	r.update_power(D3, NOBODY, NO_BODY)
+	r.rebuild_index()
+	is_true("rebuilding the index keeps the closed doors", r.index.closed_doors.has(d))
+	free_room(r)
+
+
+func doors_in_the_move_rules() -> void:
+	section("a closed door keeps every box out of its cell")
+
+	var r := room([[c(4,2,0)]])
+	var d := door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("a box cannot be pushed in", not r.try_to_move_grabbed_box(at(r,4,2,0), W, D3))
+	d.always_open = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("  but into an open one it can", r.try_to_move_grabbed_box(at(r,4,2,0), W, D3))
+	d.always_open = false
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("  and then holds it open", not r.index.closed_doors.has(d))
+	free_room(r)
+
+	# Plataforma, pilar, un jinete apoyado en los dos, y una caja con una puerta al lado del pilar.
+	r = room([[c(4,2,0)], [c(3,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
+	d = door(r, c(3,3,0), Box.Facing.POS_Y, [])
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("a rider that would enter it stays behind", r.try_to_move_grabbed_box(at(r,4,2,0), S, D3))
+	is_true("  the platform moved and the rider did not", r.index.cells_3D.has(c(4,3,0)) and r.index.cells_3D.has(c(3,2,1)) and r.index.cells_3D.has(c(4,2,1)))
+	free_room(r)
+
+	r = room([[c(4,2,0)], [c(3,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
+	d = door(r, c(3,3,0), Box.Facing.POS_Y, [])
+	d.always_open = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	r.try_to_move_grabbed_box(at(r,4,2,0), S, D3)
+	is_true("  with the door open it comes along", r.index.cells_3D.has(c(3,3,1)) and r.index.cells_3D.has(c(4,3,1)))
+	free_room(r)
+
+	r = room([[c(2,2,0)], [c(3,2,1)]])
+	d = door(r, c(2,2,0), Box.Facing.POS_X, [])
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("a door's own box may not carry its cell under a box", not r.try_to_move_grabbed_box(at(r,2,2,0), E, D3))
+	d.always_open = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("  unless the door is open", r.try_to_move_grabbed_box(at(r,2,2,0), E, D3))
+	free_room(r)
+
+	r = room([[c(2,2,0)], [c(3,2,0)]], [], [1])
+	d = door(r, c(3,2,0), Box.Facing.NEG_X, [])
+	r.update_power(D2, NOBODY, NO_BODY)
+	is_true("2D: a box may not land in a closed doorway", not r.try_to_move_grabbed_box(at(r,2,2,0), E, D2))
+	d.always_open = true
+	r.update_power(D2, NOBODY, NO_BODY)
+	is_true("  but may in an open one", r.try_to_move_grabbed_box(at(r,2,2,0), E, D2) and r.index.cells_3D.has(c(3,2,1)))
+	free_room(r)
+
+	r = room([[c(1,2,0), c(1,3,0)]])
+	plate(r, c(2,2,-1), [POS_Y])
+	d = door(r, c(2,3,-1), Box.Facing.NEG_X, [NEG_Y])
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("moves judge doors as before: one the move itself would open still blocks it",
+		not r.try_to_move_grabbed_box(at(r,1,2,0), E, D3))
+	free_room(r)
+
+
+func doors_and_the_player() -> void:
+	section("a closed door is a wall for the player")
+
+	var r := room([])
+	var d := door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	r.update_power(D3, NOBODY, NO_BODY)
+	same("3D: at the player's level it is an edge collider", r.index.colliders_plane(0, D3).get(Vector2i(3,2)), [LevelIndex.ColliderType.NEG_X])
+	same("2D: on a top, too", r.index.colliders_plane(0, D2).get(Vector2i(3,2)), [LevelIndex.ColliderType.NEG_X])
+	d.always_open = true
+	r.update_power(D3, NOBODY, NO_BODY)
+	is_true("  open, it is not", not r.index.colliders_plane(0, D3).has(Vector2i(3,2)))
+	free_room(r)
+
+	r = room([[c(3,2,3)]], [], [0])
+	d = door(r, c(3,2,-1), Box.Facing.NEG_X, [])
+	r.update_power(D2, NOBODY, NO_BODY)
+	is_true("2D: hidden under a box, it is not there at all", not r.index.colliders_plane(0, D2).has(Vector2i(3,2)))
+	free_room(r)
+
+	r = room([[c(4,2,0)]])
+	d = door(r, c(3,2,-1), Box.Facing.POS_X, [])
+	r.update_power(D3, c(3,2,0), body_in(Vector2i(3,2)))
+	is_true("a push may not step the player across a closed door", not r.move_grabbed_box(at(r,4,2,0), E, c(3,2,0), D3))
+	free_room(r)
+
+	r = room([[c(4,2,0)]])
+	d = door(r, c(2,2,-1), Box.Facing.POS_X, [])
+	r.update_power(D3, c(3,2,0), body_in(Vector2i(3,2)))
+	is_true("a pull may not step the player back across one", not r.move_grabbed_box(at(r,4,2,0), W, c(3,2,0), D3))
+	d.always_open = true
+	r.update_power(D3, c(3,2,0), body_in(Vector2i(3,2)))
+	is_true("  open, it may", r.move_grabbed_box(at(r,4,2,0), W, c(3,2,0), D3))
+	free_room(r)
+
+	r = room([[c(4,2,0)]])
+	handle_3d(at(r,4,2,0), Box.Facing.NEG_X)
+	d = door(r, c(3,2,-1), Box.Facing.POS_X, [])
+	r.update_power(D3, c(3,2,0), body_in(Vector2i(3,2)))
+	is_true("E does not reach through a closed door on the player's own edge", r.index.choose_what_to_interact_with(c(3,2,0), Vector2(1,0), D3) == null)
+	free_room(r)
+
+	r = room([[c(3,2,0)]], [], [0])
+	at(r,3,2,0).movable_2d_neg_x = true
+	d = door(r, c(3,2,0), Box.Facing.NEG_X, [])
+	r.update_power(D2, c(2,2,0), body_in(Vector2i(2,2)))
+	is_true("2D: nor through one on the far side of the edge", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2) == null)
+	d.always_open = true
+	r.update_power(D2, c(2,2,0), body_in(Vector2i(2,2)))
+	same("  open, it does", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), at(r,3,2,0))
+	free_room(r)
+
+
+func buttons() -> void:
+	section("buttons on E")
+
+	var r := room([])
+	var b := button(r, c(3,2,-1), [], false)
+	same("3D: a button on top of the floor beside the player", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), b)
+	add_boxes(r, "OnIt", [c(3,2,0)], false)
+	is_true("  but not with a box on it", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
+	free_room(r)
+
+	r = room([[c(3,2,2)]])
+	b = button(r, c(3,2,2), [], false)
+	same("2D: a button on the neighbouring top, whatever its height", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), b)
+	is_true("3D: one high above the player is out of reach", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3) == null)
+	free_room(r)
+
+	r = room([[c(3,2,0)]], [], [0])
+	at(r,3,2,0).movable_2d_neg_x = true
+	b = button(r, c(3,2,0), [], false)
+	same("2D: a button wins over a handle on the edge of its tile", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D2), b)
+	free_room(r)
+
+	r = room([[c(2,3,0)]])
+	handle_3d(at(r,2,3,0), Box.Facing.NEG_Y)
+	b = button(r, c(3,2,-1), [], false)
+	same("buttons and handles are ranked together by facing", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(0,1), D3), at(r,2,3,0))
+	same("  and the one faced wins", r.index.choose_what_to_interact_with(c(2,2,0), Vector2(1,0), D3), b)
+	free_room(r)
+
+	r = room([])
+	b = button(r, c(3,2,-1), [POS_X], false)
+	var w := wire(r, c(4,2,-1), TOP, [NEG_X])
+	var announced := [0]
+	r.buttons_changed.connect(func() -> void: announced[0] += 1)
+	var before := r.button_states()
+	r.press(b)
+	is_true("a press switches it on, and the room announces it", b.switched_on and announced[0] == 1)
+	is_true("  so its wire is powered", is_active(r, w, D3))
+	r.press(b)
+	is_true("another press switches it off", not b.switched_on and not is_active(r, w, D3))
+	r.press(b)
+	r.restore(r.box_cells(), before)
+	is_true("restoring puts it back as it was", not b.switched_on)
+	same("  and announces it", announced[0], 4)
+	free_room(r)
+
+
+func button_pedestals() -> void:
+	section("a button's pedestal is in the player's way")
+
+	var r := room([])
+	button(r, c(3,2,-1), [], false)
+	same("3D: at the player's level it is an obstacle in the middle of its tile", r.index.colliders_plane(0, D3).get(Vector2i(3,2)), [LevelIndex.ColliderType.BUTTON])
+	same("2D: on a top, too", r.index.colliders_plane(0, D2).get(Vector2i(3,2)), [LevelIndex.ColliderType.BUTTON])
+	free_room(r)
+
+	r = room([[c(3,2,1)]], [], [0])
+	button(r, c(3,2,-1), [], false)
+	is_true("3D: standing on a platform above it, it is not in the way", not r.index.colliders_plane(2, D3).has(Vector2i(3,2)))
+	is_true("2D: hidden under a box, it is not there at all", not r.index.colliders_plane(0, D2).has(Vector2i(3,2)))
+	free_room(r)
+
+	r = room([[c(4,2,0)]])
+	button(r, c(2,2,-1), [], false)
+	is_true("a pull may not step the player back onto a button's tile", not r.move_grabbed_box(at(r,4,2,0), W, c(3,2,0), D3))
+	free_room(r)
+
+	r = room([])
+	button(r, c(2,2,-1), [], false)
+	is_true("a spawn point on a button's tile is flagged", has_warning(r, "cannot stand at player_spawn_point"))
+	free_room(r)
+
+
+func wire(r: Room, cell: Vector3i, face: Powerable.Face, directions: Array) -> Wire:
+	return put(r, cell, Wire.new(), face, directions) as Wire
+
+func plate(r: Room, cell: Vector3i, directions: Array) -> PressurePlate:
+	return put(r, cell, PressurePlate.new(), TOP, directions) as PressurePlate
+
+func button(r: Room, cell: Vector3i, directions: Array, switched_on: bool) -> ButtonPowerable:
+	var new_button := ButtonPowerable.new()
+	new_button.switched_on = switched_on
+	return put(r, cell, new_button, TOP, directions) as ButtonPowerable
+
+func door(r: Room, cell: Vector3i, edge: Box.Facing, directions: Array) -> Door:
+	var new_door := Door.new()
+	new_door.edge = edge
+	return put(r, cell, new_door, TOP, directions) as Door
+
+func put(r: Room, cell: Vector3i, powerable: Powerable, face: Powerable.Face, directions: Array) -> Powerable:
+	powerable.face = face
+	for checkbox: StringName in directions:
+		powerable.set(checkbox, true)
+	at(r, cell.x, cell.y, cell.z).add_child(powerable)
+	return powerable
+
+func is_active(r: Room, powerable: Powerable, perspective: Room.Perspective, player_cell := NOBODY) -> bool:
+	return r.index.active_powerables(perspective, player_cell).has(powerable)
+
+func count_active(r: Room, powerables: Array[Powerable], perspective: Room.Perspective) -> int:
+	var active := r.index.active_powerables(perspective, NOBODY)
+	return powerables.filter(func(powerable: Powerable) -> bool: return active.has(powerable)).size()
+
+## Los dos lados se ven: una conexión que va en un solo sentido es un error.
+func connects(r: Room, a: Powerable, b: Powerable, perspective: Room.Perspective) -> bool:
+	return r.index.connected_powerables(a, perspective).has(b) and r.index.connected_powerables(b, perspective).has(a)
+
+## El cuerpo del jugador centrado en esa columna, visto desde arriba.
+func body_in(column: Vector2i) -> Rect2:
+	return Rect2(Vector2(column) + Vector2(0.2, 0.2), Vector2(0.6, 0.6))
+
+func hidden_in_inspector(node: Object, property_name: String) -> bool:
+	for property in node.get_property_list():
+		if property.name == property_name:
+			return property.usage & PROPERTY_USAGE_EDITOR == 0
+	return true
 
 
 func add_folder(parent: Node, folder_name: String, cell: Vector3i) -> GridEntity:

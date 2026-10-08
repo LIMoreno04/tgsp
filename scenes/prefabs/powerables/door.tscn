@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ddydvmksjpvpe"]
+
+[ext_resource type="Script" path="res://scripts/powerables/door.gd" id="1_4cebu"]
+
+[node name="Door" type="Node3D" unique_id=718444061]
+script = ExtResource("1_4cebu")

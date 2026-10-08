@@ -26,6 +26,8 @@ var _cell_of: Dictionary[Box, Vector3i] = {} # En una snapshot hipotética una c
 var _lowest_z := 0
 var _highest_z := 0
 
+var closed_doors: Array[Door] = []
+
 
 func add(box: Box, cell: Vector3i) -> void:
 	if cells_3D.has(cell):
@@ -66,6 +68,9 @@ func without(boxes: Array[Box]) -> LevelIndex:
 		var column := column_of(box)
 		if rest.grid_2D.get(column) == box:
 			rest._recalculate_the_top(column)
+	for door in closed_doors:
+		if not boxes.has(door.box):
+			rest.closed_doors.append(door)
 	return rest
 
 ## Esta snapshot, con algunas cajas movidas un paso.
@@ -73,6 +78,7 @@ func moved(boxes: Array[Box], step: Vector3i) -> LevelIndex:
 	var after := without(boxes)
 	for box in boxes:
 		after.add(box, cell_of(box) + step)
+	after.closed_doors = closed_doors
 	return after
 
 
@@ -174,7 +180,10 @@ func can_move_grabbed_box(box: Box, direction: Vector2i, perspective: Room.Persp
 		return false
 	if would_uncover_a_column_it_could_not_go_over(unit, direction, perspective):
 		return false
-	return not would_leave_anything_floating(unit, step_after_landing(unit, direction, perspective))
+	var step := step_after_landing(unit, direction, perspective)
+	if would_put_a_box_in_a_closed_door(unit, step):
+		return false
+	return not would_leave_anything_floating(unit, step)
 
 
 func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direction: Vector2i, perspective: Room.Perspective) -> bool:
@@ -182,8 +191,12 @@ func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direct
 		return false
 	if Room.is_3d(perspective):
 		for structure_box in structure:
-			var occupant: Box = cells_3D.get(cell_of(structure_box) + Vector3i(direction.x, direction.y, 0))
+			var destination := cell_of(structure_box) + Vector3i(direction.x, direction.y, 0)
+			var occupant: Box = cells_3D.get(destination)
 			if occupant != null and not structure.has(occupant) and not already_moving.has(occupant):
+				return false
+			var door := closed_door_at(destination)
+			if door != null and not structure.has(door.box) and not already_moving.has(door.box):
 				return false
 		return true
 	elif Room.is_2d(perspective):
@@ -236,6 +249,14 @@ func step_after_landing(unit: Array[Box], direction: Vector2i, perspective: Room
 static func keeps_its_height(boxes: Array[Box]) -> bool:
 	for box in boxes:
 		if box.keeps_height:
+			return true
+	return false
+
+
+func would_put_a_box_in_a_closed_door(unit: Array[Box], step: Vector3i) -> bool:
+	var after := moved(unit, step)
+	for door in after.closed_doors:
+		if after.cells_3D.has(after.cell_of_door(door)):
 			return true
 	return false
 
@@ -296,15 +317,13 @@ static func contains_terrain(boxes: Array[Box]) -> bool:
 #==================Jugador==================
 
 func floor_of(cell: Vector3i, perspective: Room.Perspective) -> Box:
-	var floor_box: Box = null
 	if Room.is_3d(perspective):
-		floor_box = cells_3D.get(cell + GRID_DOWN)
+		return cells_3D.get(cell + GRID_DOWN)
 	elif Room.is_2d(perspective):
-		floor_box = top_of(Vector2i(cell.x, cell.y))
+		return top_of(Vector2i(cell.x, cell.y))
 	else:
 		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
-
-	return floor_box
+		return null
 
 func can_player_be_on(player_position: Vector3i, perspective: Room.Perspective) -> bool:
 	var floor_box := floor_of(player_position, perspective)
@@ -320,40 +339,65 @@ func is_occluded(cell: Vector3i) -> bool:
 	var roof := top_of(Vector2i(cell.x, cell.y))
 	return roof != null and cell_of(roof).z >= cell.z
 
-func has_grab_barrier(column: Vector2i, facing: Box.Facing, perspective: Room.Perspective) -> bool:
+func has_stripe_on(column: Vector2i, facing: Box.Facing, perspective: Room.Perspective) -> bool:
 	if not Room.is_2d(perspective):
 		return false
 	var tile := top_of(column)
 	return tile != null and tile.walkable and tile.movable_2d_from(facing)
 
+func has_barrier_on(column: Vector2i, facing: Box.Facing, perspective: Room.Perspective, player_height: int) -> bool:
+	return has_stripe_on(column, facing, perspective) or has_closed_door_on(column, facing, perspective, player_height)
 
-func choose_box_to_grab(player_cell: Vector3i, facing: Vector2, perspective: Room.Perspective) -> Box:
+
+
+func choose_what_to_interact_with(player_cell: Vector3i, facing: Vector2, perspective: Room.Perspective) -> Node3D:
 	var player_column := Vector2i(player_cell.x, player_cell.y)
-	var chosen: Box = null
+	var chosen: Node3D = null
 	var best_alignment := -INF
 	for direction: Vector2i in NEIGHBOURS_2D:
-		if has_grab_barrier(player_column, Box.facing_toward(direction), perspective):
+		# Una raya en la propia baldosa, o una puerta cerrada de cualquiera de los dos lados del borde.
+		if has_barrier_on(player_column, Box.facing_toward(direction), perspective, player_cell.z):
 			continue
-		var neighbour: Box = null
-		if Room.is_3d(perspective):
-			neighbour = cells_3D.get(player_cell + Vector3i(direction.x, direction.y, 0))
-		elif Room.is_2d(perspective):
-			neighbour = top_of(player_column + direction)
-		else:
-			assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
-			return null
-		if neighbour == null:
+		if has_closed_door_on(player_column + direction, Box.facing_toward(-direction), perspective, player_cell.z):
 			continue
-		var face_toward_player := Box.facing_toward(-direction)
-		if Room.is_3d(perspective) and not neighbour.movable_3d_from(face_toward_player):
-			continue
-		if Room.is_2d(perspective) and not neighbour.movable_2d_from(face_toward_player):
+		var reachable := _what_can_be_interacted_toward(player_cell, direction, perspective)
+		if reachable == null:
 			continue
 		var alignment := facing.dot(Vector2(direction))
 		if alignment > best_alignment:
-			chosen = neighbour
+			chosen = reachable
 			best_alignment = alignment
+	#if chosen == null:
+		#implementar que busque botones en las diagonales no bloqueadas.
+	
 	return chosen
+
+func _what_can_be_interacted_toward(player_cell: Vector3i, direction: Vector2i, perspective: Room.Perspective) -> Node3D:
+	var face_toward_player := Box.facing_toward(-direction)
+	if Room.is_3d(perspective):
+		var neighbour: Box = cells_3D.get(player_cell + Vector3i(direction.x, direction.y, 0))
+		if neighbour == null:
+			var floor_beside: Box = cells_3D.get(player_cell + Vector3i(direction.x, direction.y, -1))
+			return _button_on_top_of(floor_beside)
+		return neighbour if neighbour.movable_3d_from(face_toward_player) else null
+	elif Room.is_2d(perspective):
+		var neighbour := top_of(Vector2i(player_cell.x, player_cell.y) + direction)
+		var button := _button_on_top_of(neighbour)
+		if button != null:
+			return button
+		return neighbour if neighbour != null and neighbour.movable_2d_from(face_toward_player) else null
+	else:
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+		return null
+
+static func _button_on_top_of(box: Box) -> ButtonPowerable:
+	if box == null:
+		return null
+	return box.powerable_on(Powerable.Face.TOP) as ButtonPowerable
+
+
+func has_button_on(column: Vector2i, perspective: Room.Perspective, player_height: int) -> bool:
+	return _button_on_top_of(floor_of(Vector3i(column.x, column.y, player_height), perspective)) != null
 
 
 func can_player_move_grabbed_box(box: Box, direction: Vector2i, player_cell: Vector3i, perspective: Room.Perspective) -> bool:
@@ -366,17 +410,19 @@ func can_player_move_grabbed_box(box: Box, direction: Vector2i, player_cell: Vec
 	var destination := player_cell + Vector3i(direction.x, direction.y, 0)
 	if not after.can_player_be_on(destination, perspective):
 		return false
-	return not would_player_cross_a_stripe(player_cell, direction, after, perspective)
+	if after.has_button_on(Vector2i(destination.x, destination.y), perspective, destination.z):
+		return false
+	return not would_player_cross_a_barrier(player_cell, direction, after, perspective)
 
 
-func would_player_cross_a_stripe(player_cell: Vector3i, direction: Vector2i, after: LevelIndex, perspective: Room.Perspective) -> bool:
+func would_player_cross_a_barrier(player_cell: Vector3i, direction: Vector2i, after: LevelIndex, perspective: Room.Perspective) -> bool:
 	var leaving := Vector2i(player_cell.x, player_cell.y)
-	if has_grab_barrier(leaving, Box.facing_toward(direction), perspective):
+	if has_barrier_on(leaving, Box.facing_toward(direction), perspective, player_cell.z):
 		return true
-	return after.has_grab_barrier(leaving + direction, Box.facing_toward(-direction), perspective)
+	return after.has_barrier_on(leaving + direction, Box.facing_toward(-direction), perspective, player_cell.z)
 
 
-enum ColliderType { POS_X, NEG_X, POS_Y, NEG_Y, SOLID }
+enum ColliderType { POS_X, NEG_X, POS_Y, NEG_Y, SOLID, BUTTON }
 
 const EDGE_COLLIDER_ON: Dictionary[Box.Facing, ColliderType] = {
 	Box.Facing.POS_X: ColliderType.POS_X,
@@ -385,7 +431,8 @@ const EDGE_COLLIDER_ON: Dictionary[Box.Facing, ColliderType] = {
 	Box.Facing.NEG_Y: ColliderType.NEG_Y,
 }
 
-## [SOLID] = collider tapando la celda entera, [POS_X, NEG_Y, etc] = collider sólo en esos bordes de la celda (sólo en 2D)
+## [SOLID] = collider tapando la celda entera, [POS_X, NEG_Y, etc] = collider sólo en esos bordes de la celda,
+## [BUTTON] = un botón en el medio de la celda
 ## Básicamente agarra todas las columnas del plano + las que están al lado de las caminables (así agarra agujeros y el borde del mapa)
 func colliders_plane(height: int, perspective: Room.Perspective) -> Dictionary[Vector2i, Array]:
 	var columns_to_test: Dictionary[Vector2i, bool] = {}
@@ -400,11 +447,157 @@ func colliders_plane(height: int, perspective: Room.Perspective) -> Dictionary[V
 		if not can_player_be_on(Vector3i(column.x, column.y, height), perspective):
 			colliders[column] = [ColliderType.SOLID]
 			continue
-		var edges := []
+		var obstacles := []
 		for direction: Vector2i in NEIGHBOURS_2D:
 			var facing := Box.facing_toward(direction)
-			if has_grab_barrier(column, facing, perspective):
-				edges.append(EDGE_COLLIDER_ON[facing])
-		if not edges.is_empty():
-			colliders[column] = edges
+			if has_barrier_on(column, facing, perspective, height):
+				obstacles.append(EDGE_COLLIDER_ON[facing])
+		if has_button_on(column, perspective, height):
+			obstacles.append(ColliderType.BUTTON)
+		if not obstacles.is_empty():
+			colliders[column] = obstacles
 	return colliders
+
+
+#==================Powerables==================
+
+func every_powerable() -> Array[Powerable]:
+	var powerables: Array[Powerable] = []
+	for box: Box in cells_3D.values():
+		powerables.append_array(box.powerables())
+	return powerables
+
+
+
+func is_powerable_considered(powerable: Powerable, perspective: Room.Perspective) -> bool:
+	if Room.is_3d(perspective):
+		return true
+	elif Room.is_2d(perspective):
+		if powerable is PressurePlate:
+			return true
+		return powerable.face == Powerable.Face.TOP and top_of(column_of(powerable.box)) == powerable.box
+	else:
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+		return false
+
+
+## Todos los powerables conectados a uno dado; tienen que
+## permitir la dirección que apunta al borde compartido con este.
+func connected_powerables(powerable: Powerable, perspective: Room.Perspective) -> Array[Powerable]:
+	var connected: Array[Powerable] = []
+	if not is_powerable_considered(powerable, perspective):
+		return connected
+	if Room.is_3d(perspective):
+		var cell := cell_of(powerable.box)
+		var normal := powerable.normal()
+		for direction in powerable.allowed_directions():
+			var beside: Box = cells_3D.get(cell + direction)
+			var in_the_corner: Box = cells_3D.get(cell + direction + normal)
+			_connect_if_it_points_back(connected, beside, powerable.face, -direction) #la caja de al lado, misma cara
+			_connect_if_it_points_back(connected, powerable.box, Powerable.face_toward(direction), normal) #la propia caja, otra cara dando la vuelta a un borde
+			_connect_if_it_points_back(connected, in_the_corner, Powerable.face_toward(-direction), -normal) #la caja de la esquina, cara que mira de vuelta doblando hacia adentro
+	elif Room.is_2d(perspective):
+		for direction in powerable.allowed_directions():
+			for neighbour in _powerables_considered_in_2d_in(column_of(powerable.box) + Vector2i(direction.x, direction.y)):
+				if neighbour.allowed_directions().has(-direction):
+					connected.append(neighbour)
+	else:
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+	return connected
+
+## Si esa cara de esa caja tiene un powerable que permite la dirección que apunta al borde compartido.
+static func _connect_if_it_points_back(connected: Array[Powerable], box: Box, face: Powerable.Face, toward_the_shared_edge: Vector3i) -> void:
+	if box == null:
+		return
+	var neighbour := box.powerable_on(face)
+	if neighbour != null and neighbour.allowed_directions().has(toward_the_shared_edge):
+		connected.append(neighbour)
+
+## El powerable que esté en la cell de más arriba + cada pressure plate tapada.
+func _powerables_considered_in_2d_in(column: Vector2i) -> Array[Powerable]:
+	var found: Array[Powerable] = []
+	for z in range(_highest_z, _lowest_z - 1, -1):
+		var box: Box = cells_3D.get(Vector3i(column.x, column.y, z))
+		if box == null:
+			continue
+		for powerable in box.powerables():
+			if is_powerable_considered(powerable, Room.Perspective.TOP_2D):
+				found.append(powerable)
+	return found
+
+
+## En principio solo lo usa la pressure plate. Dice si hay algo encima.
+func is_pressed(powerable: Powerable, perspective: Room.Perspective, player_cell: Vector3i) -> bool:
+	if powerable.face != Powerable.Face.TOP:
+		return false
+	if Room.is_3d(perspective):
+		var above := cell_of(powerable.box) + GRID_UP
+		return player_cell == above or cells_3D.has(above)
+	elif Room.is_2d(perspective):
+		var column := column_of(powerable.box)
+		return Vector2i(player_cell.x, player_cell.y) == column or top_of(column) != powerable.box
+	else:
+		assert(false, "Error CATASTRÓFICO: Perspectiva no definida")
+		return false
+
+
+func active_powerables(perspective: Room.Perspective, player_cell: Vector3i) -> Dictionary[Powerable, bool]:
+	var active: Dictionary[Powerable, bool] = {}
+	var to_ask: Array[Powerable] = []
+	for powerable in every_powerable():
+		if is_powerable_considered(powerable, perspective):
+			to_ask.append(powerable)
+	while not to_ask.is_empty():
+		var powerable: Powerable = to_ask.pop_back()
+		if active.has(powerable):
+			continue
+		var neighbours := connected_powerables(powerable, perspective)
+		var active_neighbours: Array[Powerable] = []
+		for neighbour in neighbours:
+			if active.has(neighbour):
+				active_neighbours.append(neighbour)
+		if powerable.activation_condition(active_neighbours, is_pressed(powerable, perspective, player_cell)):
+			active[powerable] = true
+			to_ask.append_array(neighbours)
+	return active
+
+
+#==================Puertas==================
+
+func cell_of_door(door: Door) -> Vector3i:
+	return cell_of(door.box) + GRID_UP
+
+
+func door_is_open(door: Door, active: Dictionary[Powerable, bool], perspective: Room.Perspective, player_height: int, player_body: Rect2) -> bool:
+	if active.has(door) or door.always_open:
+		return true
+	return cells_3D.has(cell_of_door(door)) or is_body_across(door, perspective, player_height, player_body)
+
+
+func is_at_the_player_level(powerable: Powerable, perspective: Room.Perspective, player_height: int) -> bool:
+	var column := column_of(powerable.box)
+	return powerable.box == floor_of(Vector3i(column.x, column.y, player_height), perspective)
+
+## `player_body` es el cuerpo visto desde arriba, en unidades de la grilla. La franja de la puerta
+## es la misma que su collider; `strip_along` la mide desde el centro de su baldosa.
+func is_body_across(door: Door, perspective: Room.Perspective, player_height: int, player_body: Rect2) -> bool:
+	if not is_at_the_player_level(door, perspective, player_height):
+		return false
+	var strip := Box.strip_along(door.edge, Door.THICKNESS)
+	strip.position += Vector2(column_of(door.box)) + Vector2(0.5, 0.5)
+	return player_body.intersects(strip)
+
+
+func closed_door_at(cell: Vector3i) -> Door:
+	for door in closed_doors:
+		if cell_of_door(door) == cell:
+			return door
+	return null
+
+## Si hay una puerta cerrada especificamente en esa casilla, con esa orientación y a la altura del jugador.
+func has_closed_door_on(column: Vector2i, facing: Box.Facing, perspective: Room.Perspective, player_height: int) -> bool:
+	var player_floor := floor_of(Vector3i(column.x, column.y, player_height), perspective)
+	for door in closed_doors:
+		if door.box == player_floor and door.edge == facing:
+			return true
+	return false

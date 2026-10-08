@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c642hbaofr5wg"]
+
+[ext_resource type="Script" path="res://scripts/powerables/wire.gd" id="1_4cp8p"]
+
+[node name="Wire" type="Node3D" unique_id=1252154467]
+script = ExtResource("1_4cp8p")

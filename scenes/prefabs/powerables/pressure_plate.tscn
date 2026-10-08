@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cg1khe0lncw3c"]
+
+[ext_resource type="Script" path="res://scripts/powerables/pressure_plate.gd" id="1_kn5pp"]
+
+[node name="PressurePlate" type="Node3D" unique_id=284517106]
+script = ExtResource("1_kn5pp")
