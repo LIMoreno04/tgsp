@@ -57,6 +57,7 @@ func run(tree_root: Node) -> void:
 	structure_warnings()
 	room_warnings()
 	folders()
+	resizing_the_room()
 	powerables_on_faces()
 	connections_in_3d()
 	connections_in_2d()
@@ -74,6 +75,35 @@ func run(tree_root: Node) -> void:
 	lasers_in_power()
 	beams_and_the_player()
 	a_door_held_by_its_own_laser()
+	the_levels()
+
+
+## Los niveles de verdad, como están guardados: ninguna Structure con cajas fuera de sus dimensions
+## (Delete excess las borraría) ni dos cajas en una celda. Se instancian sin entrar al árbol, así que
+## no corre nada de su juego.
+func the_levels() -> void:
+	section("the levels in scenes/levels, as saved")
+
+	var levels_found := 0
+	for file in DirAccess.get_files_at("res://scenes/levels"):
+		if not file.ends_with(".tscn"):
+			continue
+		levels_found += 1
+		var level := (load("res://scenes/levels/" + file) as PackedScene).instantiate()
+		var overflowing := PackedStringArray()
+		var sharing_a_cell := PackedStringArray()
+		for node in level.find_children("*", "", true, false):
+			var structure := node as Structure
+			if structure == null:
+				continue
+			if has_warning(structure, "outside its dimensions"):
+				overflowing.append(String(structure.name))
+			if has_warning(structure, "share the cell"):
+				sharing_a_cell.append(String(structure.name))
+		same("%s: no structure holds a box outside its dimensions" % file, overflowing, PackedStringArray())
+		same("  nor two boxes in one cell", sharing_a_cell, PackedStringArray())
+		level.free()
+	is_true("(the levels found: %d)" % levels_found, levels_found >= 2)
 
 
 func index() -> void:
@@ -803,6 +833,44 @@ func structure_warnings() -> void:
 	is_true("  one mixing terrain with other boxes says so", has_warning(platform, "Some of its boxes are terrain"))
 	free_room(r)
 
+	r = room([[c(0,2,2), c(1,2,2)]])
+	platform = at(r,0,2,2).get_parent() as Structure
+	is_true("a structure whose boxes lie outside its dimensions says so", has_warning(platform, "2 of its boxes lie outside its dimensions"))
+	platform.dimensions = Vector3i(2, 3, 3)
+	is_true("  one whose dimensions cover them does not", not has_warning(platform, "outside its dimensions"))
+	platform.dimensions = Vector3i(1, 3, 3)
+	var counted := has_warning(platform, "1 of its boxes lies outside its dimensions, so Delete excess would delete it.")
+	platform.remove_excess()
+	is_true("  Delete excess deletes exactly the boxes it counts", counted and platform.boxes().size() == 1 and platform.boxes()[0].cell == c(0,2,2))
+	free_room(r)
+
+	r = room([])
+	var prism := add_structure(r, "Prism", c(1,1,0), [c(1,2,3)])
+	prism.dimensions = Vector3i(2, 3, 4)
+	is_true("a box in the last cell of its dimensions, on every axis, is inside", not has_warning(prism, "outside its dimensions"))
+	var past_the_edge: Array[Vector3i] = [c(2,0,0), c(0,3,0), c(0,0,4), c(-1,0,0), c(0,-1,0), c(0,0,-1)]
+	var each_past_the_edge_is_flagged := true
+	for cell in past_the_edge:
+		var extra := Structure.BOX_SCENE.instantiate() as Box
+		extra.cell = cell
+		prism.add_child(extra)
+		each_past_the_edge_is_flagged = each_past_the_edge_is_flagged and has_warning(prism, "1 of its boxes lies outside its dimensions, so Delete excess would delete it.")
+		prism.remove_child(extra)
+		extra.free()
+	is_true("  one past the edge, on either side of any axis, is outside, and the warning says it of one box", each_past_the_edge_is_flagged)
+	free_room(r)
+
+	r = room([])
+	var filled := add_structure(r, "Filled", c(2,2,0), [])
+	filled.dimensions = Vector3i(2, 2, 1)
+	filled.fill()
+	is_true("Fill fills only the prism, so it never leaves a box outside", filled.boxes().size() == 4 and not has_warning(filled, "outside its dimensions"))
+	filled.dimensions = Vector3i(1, 2, 1)
+	is_true("  shrinking the dimensions leaves two outside", has_warning(filled, "2 of its boxes lie outside its dimensions"))
+	filled.remove_excess()
+	is_true("  and Delete excess leaves exactly the prism", filled.boxes().size() == 2 and not has_warning(filled, "outside its dimensions"))
+	free_room(r)
+
 	r = room([[c(1,1,0)]])
 	is_true("an unrotated box says nothing about its transform", not has_warning(at(r,1,1,0), "Rotated or scaled"))
 	at(r,1,1,0).rotation = Vector3(0, PI / 2, 0)
@@ -862,6 +930,96 @@ func folders() -> void:
 	is_true("  its structures say so", has_warning(s, "Plain, between this and the Room, is not a GridEntity"))
 	is_true("  its loose boxes too", has_warning(loose, "is not a GridEntity"))
 	is_true("  but a box in a structure leaves it to the structure", not has_warning(s.boxes()[0], "the rules skip"))
+	free_room(r)
+
+
+func resizing_the_room() -> void:
+	section("resizing the room: the shell keeps its holes, and what a shrink trims")
+
+	var r := room([])
+	same("a fresh shell fills its whole frame", boxes_in_the_shell(r), 6 * 6 + 7 * 5 + 6 * 5)
+	free_room(r)
+
+	r = room([])
+	remove_box(r, c(2,2,-1))
+	remove_box(r, c(-1,3,1))
+	resize(r, ROOM_SIZE + Vector3i(1, 1, 1))
+	is_true("a hole in the floor survives growing", not r.index.cells_3D.has(c(2,2,-1)))
+	is_true("  and so does a hole in a wall", not r.index.cells_3D.has(c(-1,3,1)))
+	resize(r, ROOM_SIZE)
+	is_true("  and both survive shrinking", not r.index.cells_3D.has(c(2,2,-1)) and not r.index.cells_3D.has(c(-1,3,1)))
+	free_room(r)
+
+	r = room([])
+	resize(r, ROOM_SIZE + Vector3i(1, 0, 0))
+	is_true("growing fills the new row of the floor", every_box_is(r, floor_row(6), &"is_floor"))
+	is_true("  and the new column of the wall", every_box_is(r, wall_y_column(6), &"is_wall"))
+	free_room(r)
+
+	r = room([])
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	is_true("a shrink trims what falls outside", no_box_in(r, floor_row(5) + wall_y_column(5)))
+	same("  and nothing else", boxes_in_the_shell(r), 5 * 6 + 7 * 5 + 5 * 5)
+	free_room(r)
+
+	r = room([])
+	remove_box(r, c(5,4,-1))
+	var on_the_edge := wire(r, c(5,2,-1), TOP, [POS_X])
+	var cut_off := boxes_at(r, floor_row(5) + wall_y_column(5))
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	resize(r, ROOM_SIZE)
+	is_true("undoing a shrink, back to the size before it, brings back the very same boxes", boxes_at(r, floor_row(5) + wall_y_column(5)) == cut_off)
+	is_true("  with what was on them", at(r,5,2,-1).powerable_on(TOP) == on_the_edge)
+	is_true("  and the holes among them", not r.index.cells_3D.has(c(5,4,-1)))
+	free_room(r)
+
+	r = room([])
+	var floor_before: Array[Node] = r.get_node("RoomShell/Floor").get_children()
+	var wall_before: Array[Node] = r.get_node("RoomShell/WallX").get_children()
+	resize(r, ROOM_SIZE - Vector3i(1, 2, 1))
+	resize(r, ROOM_SIZE)
+	is_true("  each back in its place among the boxes of its part, so the saved level is the same", r.get_node("RoomShell/Floor").get_children() == floor_before and r.get_node("RoomShell/WallX").get_children() == wall_before)
+	free_room(r)
+
+	r = room([])
+	cut_off = boxes_at(r, floor_row(5))
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	resize(r, ROOM_SIZE + Vector3i(1, 0, 0))
+	is_true("growing to another size brings fresh boxes instead", every_box_is(r, floor_row(5), &"is_floor") and not has_any_of(boxes_at(r, floor_row(5)), cut_off))
+	free_room(r)
+
+	r = room([])
+	var row_5 := boxes_at(r, floor_row(5))
+	var row_4 := boxes_at(r, floor_row(4))
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	resize(r, ROOM_SIZE - Vector3i(2, 0, 0))
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	resize(r, ROOM_SIZE)
+	is_true("undoing two shrinks in a row brings each one's boxes back", boxes_at(r, floor_row(4)) == row_4 and boxes_at(r, floor_row(5)) == row_5)
+	free_room(r)
+
+	r = room([])
+	resize(r, ROOM_SIZE + Vector3i(1, 0, 0))
+	var grown := boxes_at(r, floor_row(6))
+	resize(r, ROOM_SIZE)
+	resize(r, ROOM_SIZE + Vector3i(1, 0, 0))
+	is_true("undoing a grow and redoing it keeps the boxes it made", boxes_at(r, floor_row(6)) == grown)
+	free_room(r)
+
+	r = room([])
+	var kept := at(r,5,0,-1)
+	resize(r, ROOM_SIZE - Vector3i(1, 0, 0))
+	free_room(r)
+	is_true("what a shrink keeps is freed with the room", not is_instance_valid(kept))
+
+	r = room([])
+	var the_shell_holds_its_boxes := true
+	for size: Vector3i in [ROOM_SIZE + Vector3i(2, 1, 1), ROOM_SIZE - Vector3i(2, 2, 1), ROOM_SIZE, ROOM_SIZE - Vector3i(1, 0, 0), ROOM_SIZE + Vector3i(0, 3, 0), ROOM_SIZE]:
+		resize(r, size)
+		for part: Structure in r.get_node("RoomShell").get_children():
+			if has_warning(part, "outside its dimensions") or has_warning(part, "share the cell"):
+				the_shell_holds_its_boxes = false
+	is_true("through growing, shrinking and going back, no part of the shell holds a box outside its dimensions or two in one cell", the_shell_holds_its_boxes)
 	free_room(r)
 
 
@@ -1795,6 +1953,55 @@ func remove_box(r: Room, cell: Vector3i) -> void:
 	box.get_parent().remove_child(box)
 	box.queue_free()
 	r.rebuild_index()
+
+func resize(r: Room, size: Vector3i) -> void:
+	r.dimensions = size
+	r.rebuild_index()
+
+func boxes_in_the_shell(r: Room) -> int:
+	var count := 0
+	for part: Structure in r.get_node("RoomShell").get_children():
+		count += part.boxes().size()
+	return count
+
+## La fila x del piso, a lo largo de y.
+func floor_row(x: int) -> Array:
+	var cells := []
+	for y in ROOM_SIZE.y:
+		cells.append(c(x, y, -1))
+	return cells
+
+## La columna x de la pared en y = -1, de abajo arriba.
+func wall_y_column(x: int) -> Array:
+	var cells := []
+	for z in range(-1, ROOM_SIZE.z):
+		cells.append(c(x, -1, z))
+	return cells
+
+func every_box_is(r: Room, cells: Array, flag: StringName) -> bool:
+	for cell: Vector3i in cells:
+		if not r.index.cells_3D.has(cell) or not r.index.cells_3D[cell].get(flag):
+			return false
+	return true
+
+func no_box_in(r: Room, cells: Array) -> bool:
+	for cell: Vector3i in cells:
+		if r.index.cells_3D.has(cell):
+			return false
+	return true
+
+## La caja de cada celda, o null donde no hay.
+func boxes_at(r: Room, cells: Array) -> Array:
+	var boxes := []
+	for cell: Vector3i in cells:
+		boxes.append(r.index.cells_3D.get(cell))
+	return boxes
+
+func has_any_of(boxes: Array, others: Array) -> bool:
+	for box in boxes:
+		if others.has(box):
+			return true
+	return false
 
 func free_room(r: Room) -> void:
 	root.remove_child(r)

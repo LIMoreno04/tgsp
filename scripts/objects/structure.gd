@@ -45,9 +45,8 @@ func fill() -> void:
 
 
 func remove_excess() -> void:
-	var prism := prism_cells()
 	for box in boxes():
-		if not prism.has(box.cell):
+		if not _is_in_the_prism(box.cell):
 			_delete(box)
 
 
@@ -64,6 +63,19 @@ func mark_exposed_tops_walkable() -> void:
 func mark_all_unwalkable() -> void:
 	for box in boxes():
 		box.walkable = false
+
+
+## Delete excess y su aviso usan la misma regla, así nunca dicen cosas distintas. Mira los bordes en
+## vez de buscar en prism_cells(): cada caja recorrería el prisma entero, y un piso tiene cientos.
+func _is_in_the_prism(cell_in_structure: Vector3i) -> bool:
+	return cell_in_structure.clamp(Vector3i.ZERO, dimensions - Vector3i.ONE) == cell_in_structure
+
+
+## Una caja que entra, sale o cambia de lugar entre sus hermanas (Fill, Delete excess, Clear, o a mano
+## en el dock: duplicada, borrada, arrastrada) cambia lo que avisa. Sólo en el editor, como el aviso.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_CHILD_ORDER_CHANGED and Engine.is_editor_hint():
+		update_configuration_warnings()
 
 
 func _cells_with_a_box() -> Dictionary[Vector3i, bool]:
@@ -87,6 +99,11 @@ func _get_configuration_warnings() -> PackedStringArray:
 		if seen.has(box.cell):
 			warnings.append("Two boxes share the cell %s." % box.cell)
 		seen[box.cell] = true
+	var outside := boxes().filter(func(box: Box) -> bool: return not _is_in_the_prism(box.cell)).size()
+	if outside == 1:
+		warnings.append("1 of its boxes lies outside its dimensions, so Delete excess would delete it.")
+	elif outside > 1:
+		warnings.append("%d of its boxes lie outside its dimensions, so Delete excess would delete them." % outside)
 	for child in get_children():
 		if child is Structure:
 			warnings.append("Structures cannot be nested, but %s is one." % child.name)

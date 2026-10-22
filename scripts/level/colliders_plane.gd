@@ -23,7 +23,9 @@ var _layers: Dictionary[LevelIndex.ColliderType, GridMap] = {}
 var _rebuild_pending := false
 
 var _debug_mesh := ImmediateMesh.new()
-var _debug_view := MeshInstance3D.new()
+## Se crea al entrar al árbol: creado antes, un plano que se libera sin haber entrado (una prueba que
+## instancia un nivel para leerlo) lo dejaría suelto, sin liberar.
+var _debug_view: MeshInstance3D
 var _debug_plane_material := _debug_material(DEBUG_PLANE_COLOUR, BaseMaterial3D.BLEND_MODE_MUL)
 var _debug_collider_material := _debug_material(DEBUG_COLLIDER_COLOUR)
 var _debug_body_material := _debug_material(DEBUG_BODY_COLOUR)
@@ -36,6 +38,7 @@ func _ready() -> void:
 	room.power_changed.connect(request_rebuild)
 	room.perspective_manager.perspective_changed.connect(request_rebuild.unbind(1))
 	request_rebuild()
+	_debug_view = MeshInstance3D.new()
 	_debug_view.name = "DebugView"
 	_debug_view.mesh = _debug_mesh
 	_debug_view.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

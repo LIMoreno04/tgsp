@@ -37,7 +37,8 @@ func _ready() -> void:
 
 ## 3D: mirando hacia abajo desde la esquina +x +y
 ## 2D: mirando derecho para abajo, con +x a la derecha y +y para abajo en pantalla.
-func _pose_for(perspective: Room.Perspective) -> Basis:
+## Estática, como frame, para que la vista del editor de niveles se ponga donde estaría esta cámara.
+static func pose_for(perspective: Room.Perspective) -> Basis:
 	if Room.is_3d(perspective):
 		var elevation := deg_to_rad(ELEVATION_3D_DEGREES)
 		var toward_the_room := Vector3(-1, 0, -1).normalized() * cos(elevation) + Vector3.DOWN * sin(elevation)
@@ -51,7 +52,7 @@ func _shadow_opacity_for(perspective: Room.Perspective) -> float:
 func _jump_to(perspective: Room.Perspective) -> void:
 	_room_reach = room.maximum_reach()
 	_room_centre = room.volumetric_center()
-	_frame(_pose_for(perspective))
+	_frame(pose_for(perspective))
 	if light != null:
 		light.shadow_opacity = _shadow_opacity_for(perspective)
 
@@ -60,7 +61,7 @@ func _turn_to(perspective: Room.Perspective) -> void:
 	is_transitioning = true
 	perspective_change_started.emit()
 	_from_pose = basis
-	_to_pose = _pose_for(perspective)
+	_to_pose = pose_for(perspective)
 	var turn := create_tween().set_parallel()
 	turn.tween_method(_frame_between, 0.0, 1.0, TURN_SECONDS)
 	if light != null:
@@ -76,21 +77,24 @@ func _finish_turn() -> void:
 	perspective_change_finished.emit()
 
 
-## Mirando desde `pose`, con el cuarto centrado y entero en la pantalla.
 func _frame(pose: Basis) -> void:
-	basis = pose
-	position = _room_centre + pose.z * DISTANCE
-	size = _size_to_show_room(pose)
+	frame(self, pose, _room_reach, _room_centre, get_viewport().get_visible_rect().size.aspect())
+
+## Mirando desde `pose`, con el cuarto centrado y entero en la pantalla. Estática para que el editor
+## de niveles encuadre su vista con la misma cuenta que el juego.
+static func frame(camera: Camera3D, pose: Basis, room_reach: Vector3i, room_centre: Vector3, aspect: float) -> void:
+	camera.basis = pose
+	camera.position = room_centre + pose.z * DISTANCE
+	camera.size = size_to_show_room(pose, room_reach, room_centre, aspect)
 
 ## El alto de la vista que deja ver todo el cuarto, cáscara incluida, desde esa pose.
-func _size_to_show_room(pose: Basis) -> float:
+static func size_to_show_room(pose: Basis, room_reach: Vector3i, room_centre: Vector3, aspect: float) -> float:
 	var shell_corner := Vector3(-1, -1, -1)
-	var room_box := AABB(shell_corner, GridCoordsProvider.grid_to_godot(_room_reach) - shell_corner)
+	var room_box := AABB(shell_corner, GridCoordsProvider.grid_to_godot(room_reach) - shell_corner)
 	var half_width := 0.0
 	var half_height := 0.0
 	for corner in 8:
-		var from_centre := room_box.get_endpoint(corner) - _room_centre
+		var from_centre := room_box.get_endpoint(corner) - room_centre
 		half_width = maxf(half_width, absf(from_centre.dot(pose.x)))
 		half_height = maxf(half_height, absf(from_centre.dot(pose.y)))
-	var aspect := get_viewport().get_visible_rect().size.aspect()
 	return 2.0 * maxf(half_height, half_width / aspect) * MARGIN

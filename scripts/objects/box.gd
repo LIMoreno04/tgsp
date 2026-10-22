@@ -113,6 +113,13 @@ func _ask_the_parent_to_check_its_warnings() -> void:
 	if get_parent() != null:
 		get_parent().update_configuration_warnings()
 
+## Su Structure también avisa si dos cajas comparten celda o si alguna quedó fuera de sus dimensions.
+## Corre después de GridEntity._notification, que ya le dio la celda nueva. Sólo bajo una Structure:
+## el aviso del Room arma un índice entero.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED and Engine.is_editor_hint() and global_name_of(get_parent()) == &"Structure":
+		_ask_the_parent_to_check_its_warnings()
+
 
 func _validate_property(property: Dictionary) -> void:
 	if property.name.contains("movable") and is_terrain():
