@@ -44,6 +44,7 @@ func run(tree_root: Node) -> void:
 	floors_and_terrain_flags()
 	refusals()
 	landing_2d()
+	settling_pieces_2d()
 	floor_to_floor_2d()
 	staying_connected()
 	player_queries()
@@ -338,6 +339,55 @@ func landing_2d() -> void:
 	is_true("  the stepped column landed on top", r.index.cells_3D.has(c(1,1,1)))
 	is_true("  the flat column rose with it", r.index.cells_3D.has(c(1,0,1)))
 	same("  no box lost or duplicated", r.index.cells_3D.size(), before)
+	free_room(r)
+
+
+# El escalón es cube(), caminable: dos de alto en x = 0..1, y = 0..1.
+func settling_pieces_2d() -> void:
+	section("2D landing: each piece of the unit then settles on its own")
+
+	var r := room([[c(1,0,2), c(2,0,2), c(2,0,0), c(3,0,0)], cube()], [], [1])
+	var before := r.index.cells_3D.size()
+	same("two pieces stacked with a gap make one unit in 2D", r.index.boxes_that_would_move(at(r,3,0,0), W, D2).size(), 4)
+	is_true("pushed up the ledge, it climbs", r.try_to_move_grabbed_box(at(r,3,0,0), W, D2))
+	is_true("  the lower piece rose onto the ledge", r.index.cells_3D.has(c(1,0,2)) and r.index.cells_3D.has(c(2,0,2)))
+	is_true("  and the upper one settled right on it, instead of rising with it",
+		r.index.cells_3D.has(c(0,0,3)) and r.index.cells_3D.has(c(1,0,3)) and not r.index.cells_3D.has(c(0,0,4)))
+	same("  no box lost or duplicated", r.index.cells_3D.size(), before)
+	free_room(r)
+
+	r = room([[c(1,0,2), c(2,0,2), c(2,0,0), c(3,0,0)], cube()], [], [1])
+	is_true("the same stack pushed away from the ledge", r.try_to_move_grabbed_box(at(r,3,0,0), E, D2))
+	is_true("  the lower piece slid along the floor", r.index.cells_3D.has(c(3,0,0)) and r.index.cells_3D.has(c(4,0,0)))
+	is_true("  and the upper one dropped onto it", r.index.cells_3D.has(c(2,0,1)) and r.index.cells_3D.has(c(3,0,1)))
+	free_room(r)
+
+	r = room([[c(1,1,2), c(2,1,0)], cube()], [], [1])
+	is_true("a piece pushed off the ledge's end, beside the rest of its unit", r.try_to_move_grabbed_box(at(r,2,1,0), S, D2))
+	is_true("  drops to the floor", r.index.cells_3D.has(c(1,2,0)) and r.index.cells_3D.has(c(2,2,0)))
+	free_room(r)
+
+	r = room([[c(3,3,0), c(3,3,2)]])
+	is_true("a gap authored in a column", r.try_to_move_grabbed_box(at(r,3,3,2), E, D2))
+	is_true("  closes at the first push", r.index.cells_3D.has(c(4,3,1)) and r.index.cells_3D.has(c(4,3,0)))
+	free_room(r)
+
+	r = room([[c(4,2,0), c(5,2,2)]])
+	is_true("a piece pushed out over nothing is refused, even with the rest of its unit on the floor",
+		not r.try_to_move_grabbed_box(at(r,4,2,0), E, D2))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(4,2,0)) and r.index.cells_3D.has(c(5,2,2)))
+	free_room(r)
+
+	r = room([[c(2,2,0), c(3,2,2)], [c(4,3,0), c(4,3,1), c(4,3,2)]], [1])
+	keep_height(r, [c(2,2,0), c(3,2,2)])
+	is_true("a piece that keeps its height does not drop", r.try_to_move_grabbed_box(at(r,2,2,0), S, D2))
+	is_true("  it stays at its height, held by the wall it touches", r.index.cells_3D.has(c(3,3,2)))
+	free_room(r)
+
+	r = room([[c(2,2,0), c(3,2,2)]])
+	keep_height(r, [c(2,2,0), c(3,2,2)])
+	is_true("  and one that would touch nothing is refused rather than dropped", not r.try_to_move_grabbed_box(at(r,2,2,0), S, D2))
+	is_true("  and nothing moved", r.index.cells_3D.has(c(2,2,0)) and r.index.cells_3D.has(c(3,2,2)))
 	free_room(r)
 
 

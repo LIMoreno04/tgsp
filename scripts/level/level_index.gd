@@ -180,12 +180,12 @@ func can_move_grabbed_box(box: Box, direction: Vector2i, perspective: Room.Persp
 		return false
 	if would_uncover_a_column_it_could_not_go_over(unit, direction, perspective):
 		return false
-	var step := step_after_landing(unit, direction, perspective)
-	if would_put_a_box_in_a_closed_door(unit, step):
+	var after := after_the_move(unit, direction, perspective)
+	if would_put_a_box_in_a_closed_door(after):
 		return false
-	if would_put_a_box_on_a_button(unit, step):
+	if would_put_a_box_on_a_button(unit, after):
 		return false
-	return not would_leave_anything_floating(unit, step)
+	return not would_leave_anything_floating(unit, after)
 
 
 func can_move_one_cell(structure: Array[Box], already_moving: Array[Box], direction: Vector2i, perspective: Room.Perspective) -> bool:
@@ -230,6 +230,14 @@ func would_uncover_a_column_it_could_not_go_over(unit: Array[Box], direction: Ve
 	return false
 
 
+## La snapshot después del movimiento, con cada caja donde termina.
+func after_the_move(unit: Array[Box], direction: Vector2i, perspective: Room.Perspective) -> LevelIndex:
+	var after := moved(unit, step_after_landing(unit, direction, perspective))
+	if not Room.is_2d(perspective):
+		return after
+	return after._with_the_pieces_settled(unit)
+
+
 # calcula el cambio de altura (mecánica de aterrizar)
 func step_after_landing(unit: Array[Box], direction: Vector2i, perspective: Room.Perspective) -> Vector3i:
 	var step := Vector3i(direction.x, direction.y, 0)
@@ -255,15 +263,64 @@ static func keeps_its_height(boxes: Array[Box]) -> bool:
 	return false
 
 
-func would_put_a_box_in_a_closed_door(unit: Array[Box], step: Vector3i) -> bool:
-	var after := moved(unit, step)
+# En 2D la unidad puede juntar piezas que en 3D no se tocan, y aterrizar entera puede dejar alguna en el aire.
+func _with_the_pieces_settled(unit: Array[Box]) -> LevelIndex:
+	var pieces := pieces_of(unit)
+	var settled: LevelIndex = self
+	var some_piece_dropped := true
+	while some_piece_dropped:
+		some_piece_dropped = false
+		for piece: Array[Box] in pieces:
+			var drop := settled._how_far_it_can_drop(piece)
+			if drop > 0:
+				settled = settled.moved(piece, GRID_DOWN * drop)
+				some_piece_dropped = true
+	return settled
+
+## Las partes de la unidad que se tocan cara a cara: cada una es un cuerpo aparte en 3D.
+func pieces_of(unit: Array[Box]) -> Array[Array]:
+	var only_the_unit := LevelIndex.new()
+	for unit_box in unit:
+		only_the_unit.add(unit_box, cell_of(unit_box))
+	var pieces: Array[Array] = []
+	var already_in_a_piece: Array[Box] = []
+	for unit_box in unit:
+		if already_in_a_piece.has(unit_box):
+			continue
+		var piece := only_the_unit.boxes_of_same_structure_connected_to(unit_box, Room.Perspective.ISO_3D)
+		pieces.append(piece)
+		already_in_a_piece.append_array(piece)
+	return pieces
+
+## Cuántas celdas baja hasta apoyarse. Nada si ya se apoya, si mantiene su altura o si abajo no hay nada.
+func _how_far_it_can_drop(piece: Array[Box]) -> int:
+	if is_held(piece) or keeps_its_height(piece):
+		return 0
+	var gaps: Array[int] = []
+	for piece_box in piece:
+		var under := _first_box_under(piece_box)
+		if under != null and not piece.has(under):
+			gaps.append(cell_of(piece_box).z - cell_of(under).z - 1)
+	if gaps.is_empty():
+		return 0
+	return gaps.min()
+
+func _first_box_under(box: Box) -> Box:
+	var cell := cell_of(box)
+	for z in range(cell.z - 1, _lowest_z - 1, -1):
+		var under: Box = cells_3D.get(Vector3i(cell.x, cell.y, z))
+		if under != null:
+			return under
+	return null
+
+
+func would_put_a_box_in_a_closed_door(after: LevelIndex) -> bool:
 	for door in after.closed_doors:
 		if after.cells_3D.has(after.cell_of_door(door)):
 			return true
 	return false
 
-func would_put_a_box_on_a_button(unit: Array[Box], step: Vector3i) -> bool:
-	var after := moved(unit, step)
+func would_put_a_box_on_a_button(unit: Array[Box], after: LevelIndex) -> bool:
 	for unit_box in unit:
 		var cell := after.cell_of(unit_box)
 		if _button_on_top_of(after.cells_3D.get(cell - GRID_UP)) != null:
@@ -273,10 +330,12 @@ func would_put_a_box_on_a_button(unit: Array[Box], step: Vector3i) -> bool:
 	return false
 
 
-func would_leave_anything_floating(unit: Array[Box], step: Vector3i) -> bool:
-	var after := moved(unit, step)
+func would_leave_anything_floating(unit: Array[Box], after: LevelIndex) -> bool:
 	if not after.is_held(unit):
 		return true
+	for piece: Array[Box] in after.pieces_of(unit):
+		if not after.is_held(piece):
+			return true
 	for left_behind in pieces_left_behind(unit):
 		if not contains_terrain(left_behind) and not after.is_held(left_behind):
 			return true
@@ -429,7 +488,7 @@ func can_player_move_grabbed_box(box: Box, direction: Vector2i, player_cell: Vec
 		return false
 	if not can_move_grabbed_box(box, direction, perspective):
 		return false
-	var after := moved(unit, step_after_landing(unit, direction, perspective))
+	var after := after_the_move(unit, direction, perspective)
 	var destination := player_cell + Vector3i(direction.x, direction.y, 0)
 	if not after.can_player_be_on(destination, perspective):
 		return false
