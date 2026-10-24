@@ -70,6 +70,7 @@ func run(tree_root: Node) -> void:
 	doors_and_the_player()
 	buttons()
 	button_pedestals()
+	boxes_and_button_pedestals()
 	wall_buttons()
 	where_a_beam_goes()
 	lasers_in_power()
@@ -1537,6 +1538,36 @@ func button_pedestals() -> void:
 	r = room([])
 	button(r, c(2,2,-1), [], false)
 	is_true("a spawn point on a button's tile is flagged", has_warning(r, "cannot stand at player_spawn_point"))
+	free_room(r)
+
+
+func boxes_and_button_pedestals() -> void:
+	section("no box may end up right above a button")
+
+	var r := room([[c(4,2,0)]])
+	button(r, c(3,2,-1), [], false)
+	is_true("3D: a box cannot be pushed onto a button's tile", not r.try_to_move_grabbed_box(at(r,4,2,0), W, D3))
+	is_true("  but away from it it can", r.try_to_move_grabbed_box(at(r,4,2,0), E, D3))
+	free_room(r)
+
+	r = room([[c(4,2,0)]])
+	button(r, c(3,2,-1), [], false)
+	is_true("2D: nor onto a button on the floor", not r.try_to_move_grabbed_box(at(r,4,2,0), W, D2))
+	free_room(r)
+
+	r = room([[c(2,2,0)], [c(3,2,0)]], [], [1])
+	button(r, c(3,2,0), [], false)
+	is_true("2D: nor land on a button on a top", not r.try_to_move_grabbed_box(at(r,2,2,0), E, D2))
+	free_room(r)
+
+	r = room([[c(2,2,0)], [c(3,2,1)]])
+	button(r, c(2,2,0), [], false)
+	is_true("a button's own box may not carry it under a box", not r.try_to_move_grabbed_box(at(r,2,2,0), E, D3))
+	free_room(r)
+
+	r = room([[c(3,2,0)], [c(4,2,0)], [c(4,2,1)]])
+	button(r, c(3,2,0), [], false, Powerable.Face.NEG_Y)
+	is_true("a button on a side is not in the way", r.try_to_move_grabbed_box(at(r,4,2,1), W, D3))
 	free_room(r)
 
 

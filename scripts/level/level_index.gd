@@ -183,6 +183,8 @@ func can_move_grabbed_box(box: Box, direction: Vector2i, perspective: Room.Persp
 	var step := step_after_landing(unit, direction, perspective)
 	if would_put_a_box_in_a_closed_door(unit, step):
 		return false
+	if would_put_a_box_on_a_button(unit, step):
+		return false
 	return not would_leave_anything_floating(unit, step)
 
 
@@ -257,6 +259,16 @@ func would_put_a_box_in_a_closed_door(unit: Array[Box], step: Vector3i) -> bool:
 	var after := moved(unit, step)
 	for door in after.closed_doors:
 		if after.cells_3D.has(after.cell_of_door(door)):
+			return true
+	return false
+
+func would_put_a_box_on_a_button(unit: Array[Box], step: Vector3i) -> bool:
+	var after := moved(unit, step)
+	for unit_box in unit:
+		var cell := after.cell_of(unit_box)
+		if _button_on_top_of(after.cells_3D.get(cell - GRID_UP)) != null:
+			return true
+		if _button_on_top_of(unit_box) != null and after.cells_3D.has(cell + GRID_UP):
 			return true
 	return false
 
