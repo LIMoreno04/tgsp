@@ -114,9 +114,9 @@ func move_grabbed_box(box: Box, direction: Vector2i, player_cell: Vector3i, pers
 
 func _move_the_unit_of(grabbed: Box, direction: Vector2i, perspective: Perspective) -> void:
 	var unit := index.boxes_that_would_move(grabbed, direction, perspective)
-	var step := index.step_after_landing(unit, direction, perspective)
+	var after := index.after_the_move(unit, direction, perspective)
 	for unit_box in unit:
-		unit_box.cell += step
+		unit_box.cell += after.cell_of(unit_box) - index.cell_of(unit_box)
 	rebuild_index()
 	moved.emit()
 
