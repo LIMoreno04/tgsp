@@ -1,8 +1,8 @@
 @tool
 class_name BoxBrushTool
 extends LevelEditorTool
-## Pinta cajas de un tipo. Un trazo hace un grupo nuevo; con Shift al empezar sobre una caja, suma al
-## grupo de esa caja. El botón derecho borra cajas; Ctrl + trazo les pone las banderas de la brocha.
+## Pinta cajas de un tipo. Un trazo hace una Structure nueva; con Shift al empezar sobre una caja, suma a la
+## Structure de esa caja. El botón derecho borra cajas; Ctrl + trazo les pone las banderas de la brocha.
 
 enum Stroke { NONE, PAINT, ERASE, REPAINT }
 
@@ -174,7 +174,7 @@ func press(hit: GridPicker.Hit, event: InputEventMouseButton) -> void:
 	_last = _start
 	_stroke_layer = _start.z
 	_base_cells = [_start]
-	_extending = group_extended_by(hit) if event.shift_pressed else null
+	_extending = structure_extended_by(hit) if event.shift_pressed else null
 
 
 func drag(hit: GridPicker.Hit, _event: InputEventMouseMotion) -> void:
@@ -196,14 +196,14 @@ func drag(hit: GridPicker.Hit, _event: InputEventMouseMotion) -> void:
 				_boxes.append(box)
 
 
-## El grupo que Shift extendería desde ahí: el de la caja apuntada, salvo la cáscara o una caja suelta.
-func group_extended_by(hit: GridPicker.Hit) -> Structure:
+## La Structure que Shift extendería desde ahí: la de la caja apuntada, salvo la cáscara o una caja suelta.
+func structure_extended_by(hit: GridPicker.Hit) -> Structure:
 	if not hit.has_box:
 		return null
-	var group := hit.box.get_parent() as Structure
-	if group == null or edits().is_shell_part(group):
+	var structure := hit.box.get_parent() as Structure
+	if structure == null or edits().is_shell_part(structure):
 		return null
-	return group
+	return structure
 
 
 func _box_on_the_stroke_layer(hit: GridPicker.Hit) -> Box:
@@ -274,16 +274,16 @@ func _draw_the_hover(preview: LevelEditorPreview) -> void:
 	var cells: Array[Vector3i] = []
 	for up in brush.height:
 		cells.append(_hover_target + Vector3i(0, 0, up))
-	var extending: Structure = group_extended_by(_hover_hit) if Input.is_key_pressed(KEY_SHIFT) else null
+	var extending: Structure = structure_extended_by(_hover_hit) if Input.is_key_pressed(KEY_SHIFT) else null
 	if extending != null and LevelEdits.would_mix_terrain(extending, brush.is_terrain()):
-		refusal = "A group is either all terrain or holds none: make it a group of its own."
+		refusal = "A structure is either all terrain or holds none: make it a structure of its own."
 	_draw_the_stroke(preview, cells)
 
 
 func _draw_the_stroke(preview: LevelEditorPreview, cells: Array[Vector3i]) -> void:
 	var extending := _extending if _stroke == Stroke.PAINT else null
 	if extending != null and LevelEdits.would_mix_terrain(extending, brush.is_terrain()):
-		refusal = "A group is either all terrain or holds none: make it a group of its own."
+		refusal = "A structure is either all terrain or holds none: make it a structure of its own."
 	var free: Array[Vector3i] = []
 	for cell in cells:
 		if index().cells_3D.has(cell):
@@ -323,7 +323,7 @@ func status() -> String:
 				var low := _start.min(_last)
 				var high := _start.max(_last)
 				text += " · %d × %d" % [high.x - low.x + 1, high.y - low.y + 1]
-			text += " · extends " + String(_extending.name) if _extending != null else " · new group"
+			text += " · extends " + String(_extending.name) if _extending != null else " · new structure"
 			return text
 		Stroke.ERASE:
 			return "Erase %d box%s" % [_boxes.size(), "" if _boxes.size() == 1 else "es"]
@@ -334,13 +334,13 @@ func status() -> String:
 	var where := "%s at %s" % [brush.label(), describe(_hover_target)]
 	if index().cells_3D.has(_hover_target):
 		return where + " · occupied"
-	var extending := group_extended_by(_hover_hit) if Input.is_key_pressed(KEY_SHIFT) else null
+	var extending := structure_extended_by(_hover_hit) if Input.is_key_pressed(KEY_SHIFT) else null
 	if extending != null:
 		return where + " · extends " + String(extending.name)
 	if brush.is_terrain() and edits().shell_part_at(_hover_target) != null:
 		return where + " · joins the shell"
-	return where + " · new group"
+	return where + " · new structure"
 
 
 func hint() -> String:
-	return "Left: place · Shift + left: extend that group · Right: erase · Ctrl + drag: repaint · Alt + click: pick"
+	return "Left: place · Shift + left: extend that structure · Right: erase · Ctrl + drag: repaint · Alt + click: pick"

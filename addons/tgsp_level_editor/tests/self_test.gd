@@ -43,7 +43,7 @@ func run(plugin: EditorPlugin, screen: LevelEditorScreen) -> int:
 	await _test_painting(room)
 	await _test_erasing(room)
 	await _test_the_shell(room)
-	await _test_moving_and_grouping(room)
+	await _test_moving_joining_and_splitting(room)
 	await _test_power(room)
 	await _test_folders_and_names(room)
 	await _test_copy_and_paste(room)
@@ -136,24 +136,24 @@ func _test_painting(room: Room) -> void:
 	edits.paint(brush, [Vector3i(1, 1, 0), Vector3i(2, 1, 0)], null, null)
 	await _settle()
 	var first := _box_at(room, Vector3i(1, 1, 0))
-	var group := first.get_parent() as Structure if first != null else null
-	_check("Painting two Movable boxes makes one group", group != null and group.boxes().size() == 2 and group.name == "Movable")
-	if group == null:
+	var structure := first.get_parent() as Structure if first != null else null
+	_check("Painting two Movable boxes makes one structure", structure != null and structure.boxes().size() == 2 and structure.name == "Movable")
+	if structure == null:
 		return
-	_check("  anchored at its low corner", group.cell == Vector3i(1, 1, 0) and group.dimensions == Vector3i(2, 1, 1))
+	_check("  anchored at its low corner", structure.cell == Vector3i(1, 1, 0) and structure.dimensions == Vector3i(2, 1, 1))
 	_check("  with the Movable flags", first.movable_3d_pos_x and first.movable_3d_neg_y and first.movable_2d_whole_face and not first.walkable)
-	_check("  owned by the level, so saved", group.owner == _screen.level_root and first.owner == _screen.level_root)
+	_check("  owned by the level, so saved", structure.owner == _screen.level_root and first.owner == _screen.level_root)
 	await _undo()
-	_check("  undo takes them away", _box_at(room, Vector3i(1, 1, 0)) == null and not is_instance_valid(group.get_parent()))
+	_check("  undo takes them away", _box_at(room, Vector3i(1, 1, 0)) == null and not is_instance_valid(structure.get_parent()))
 	await _redo()
-	_check("  redo brings back the same nodes", _box_at(room, Vector3i(1, 1, 0)) == first and first.get_parent() == group and group.owner == _screen.level_root)
+	_check("  redo brings back the same nodes", _box_at(room, Vector3i(1, 1, 0)) == first and first.get_parent() == structure and structure.owner == _screen.level_root)
 
-	edits.paint(brush, [Vector3i(0, 1, 0)], group, null)
+	edits.paint(brush, [Vector3i(0, 1, 0)], structure, null)
 	await _settle()
-	_check("Shift-extending moves the anchor to the new low corner", group.cell == Vector3i(0, 1, 0) and group.dimensions == Vector3i(3, 1, 1) and group.boxes().size() == 3)
+	_check("Shift-extending moves the anchor to the new low corner", structure.cell == Vector3i(0, 1, 0) and structure.dimensions == Vector3i(3, 1, 1) and structure.boxes().size() == 3)
 	_check("  without moving any box in the world", _box_at(room, Vector3i(1, 1, 0)) == first and first.cell == Vector3i(1, 0, 0))
 	await _undo()
-	_check("  undo puts the anchor back", group.cell == Vector3i(1, 1, 0) and first.cell == Vector3i(0, 0, 0) and group.boxes().size() == 2)
+	_check("  undo puts the anchor back", structure.cell == Vector3i(1, 1, 0) and first.cell == Vector3i(0, 0, 0) and structure.boxes().size() == 2)
 	await _redo()
 
 	edits.paint(brush, [Vector3i(1, 1, 0), Vector3i(5, 1, 0)], null, null)
@@ -182,21 +182,21 @@ func _test_painting(room: Room) -> void:
 func _test_erasing(room: Room) -> void:
 	var edits := _screen.edits
 	var middle := _box_at(room, Vector3i(1, 1, 0))
-	var group := middle.get_parent() as Structure
-	var order_before := _names_in_order(group)
+	var structure := middle.get_parent() as Structure
+	var order_before := _names_in_order(structure)
 	edits.erase([_box_at(room, Vector3i(0, 1, 0))], [])
 	await _settle()
-	_check("Erasing the low corner re-anchors the group", group.cell == Vector3i(1, 1, 0) and group.boxes().size() == 2 and middle.cell == Vector3i.ZERO)
+	_check("Erasing the low corner re-anchors the structure", structure.cell == Vector3i(1, 1, 0) and structure.boxes().size() == 2 and middle.cell == Vector3i.ZERO)
 	await _undo()
-	_check("  undo brings it back, in its place in the tree", _names_in_order(group) == order_before and group.cell == Vector3i(0, 1, 0))
+	_check("  undo brings it back, in its place in the tree", _names_in_order(structure) == order_before and structure.cell == Vector3i(0, 1, 0))
 	await _redo()
 	await _undo()
-	var all_boxes := group.boxes()
+	var all_boxes := structure.boxes()
 	edits.erase(all_boxes, [])
 	await _settle()
-	_check("Erasing a whole group deletes the group", not group.is_inside_tree())
+	_check("Erasing a whole structure deletes the structure", not structure.is_inside_tree())
 	await _undo()
-	_check("  undo brings the group back with its boxes", group.is_inside_tree() and group.boxes().size() == 3 and group.owner == _screen.level_root and all_boxes[0].owner == _screen.level_root)
+	_check("  undo brings the structure back with its boxes", structure.is_inside_tree() and structure.boxes().size() == 3 and structure.owner == _screen.level_root and all_boxes[0].owner == _screen.level_root)
 
 	var low := _box_at(room, Vector3i(6, 1, 0))
 	edits.erase([_box_at(room, Vector3i(6, 1, 1))], [])
@@ -230,7 +230,7 @@ func _test_the_shell(room: Room) -> void:
 	edits.paint(BoxBrush.for_kind(BoxBrush.Kind.MOVABLE), [Vector3i(5, 5, -1)], null, null)
 	await _settle()
 	var crate := _box_at(room, Vector3i(5, 5, -1))
-	_check("A Movable box in the hole makes its own group", crate != null and crate.get_parent() != floor_part)
+	_check("A Movable box in the hole makes its own structure", crate != null and crate.get_parent() != floor_part)
 	await _undo()
 	edits.set_room_size(Vector3i(9, 6, 3))
 	await _settle()
@@ -241,40 +241,40 @@ func _test_the_shell(room: Room) -> void:
 
 #==================Mover y agrupar==================
 
-func _test_moving_and_grouping(room: Room) -> void:
+func _test_moving_joining_and_splitting(room: Room) -> void:
 	var edits := _screen.edits
 	var corner := _box_at(room, Vector3i(0, 1, 0))
-	var group := corner.get_parent() as Structure
-	var boxes := group.boxes()
+	var structure := corner.get_parent() as Structure
+	var boxes := structure.boxes()
 	_check("Moving onto another box is refused", not edits.move(boxes, Vector3i(3, 0, 0)))
-	_check("Moving a whole group moves its node", edits.move(boxes, Vector3i(0, 1, 0)))
+	_check("Moving a whole structure moves its node", edits.move(boxes, Vector3i(0, 1, 0)))
 	await _settle()
-	_check("  every box one cell over", _box_at(room, Vector3i(0, 2, 0)) == corner and group.cell == Vector3i(0, 2, 0))
+	_check("  every box one cell over", _box_at(room, Vector3i(0, 2, 0)) == corner and structure.cell == Vector3i(0, 2, 0))
 	await _undo()
 	_check("  undo moves it back", _box_at(room, Vector3i(0, 1, 0)) == corner)
 	edits.move([corner], Vector3i(0, -1, 0))
 	await _settle()
-	_check("Moving one box of a group re-anchors the group", _box_at(room, Vector3i(0, 0, 0)) == corner and group.cell == Vector3i(0, 0, 0) and group.dimensions == Vector3i(3, 2, 1))
+	_check("Moving one box of a structure re-anchors the structure", _box_at(room, Vector3i(0, 0, 0)) == corner and structure.cell == Vector3i(0, 0, 0) and structure.dimensions == Vector3i(3, 2, 1))
 	await _undo()
 	var floor_box := _box_at(room, Vector3i(3, 3, -1))
 	_check("The shell's boxes don't move", not edits.move([floor_box], Vector3i(0, 0, 1)))
 
 	var lone := _box_at(room, Vector3i(5, 1, 0))
-	var lone_group := lone.get_parent()
-	var merged := edits.group([corner, lone])
+	var lone_structure := lone.get_parent()
+	var merged := edits.join_into_one_structure([corner, lone])
 	await _settle()
-	_check("Group puts boxes from two groups in one new group", merged != null and corner.get_parent() == merged and lone.get_parent() == merged and not lone_group.is_inside_tree())
+	_check("Join puts boxes from two structures into one new structure", merged != null and corner.get_parent() == merged and lone.get_parent() == merged and not lone_structure.is_inside_tree())
 	_check("  without moving them", _box_at(room, Vector3i(0, 1, 0)) == corner and _box_at(room, Vector3i(5, 1, 0)) == lone)
 	await _undo()
-	_check("  undo gives each its group back", corner.get_parent() == group and lone.get_parent() == lone_group and lone_group.is_inside_tree())
-	edits.ungroup([group])
+	_check("  undo gives each its structure back", corner.get_parent() == structure and lone.get_parent() == lone_structure and lone_structure.is_inside_tree())
+	edits.split_into_one_box_structures([structure])
 	await _settle()
 	var parents := {}
 	for x in 3:
 		parents[_box_at(room, Vector3i(x, 1, 0)).get_parent()] = true
-	_check("Ungroup gives each box its own group", group.boxes().size() == 1 and parents.size() == 3)
+	_check("Split gives each box its own structure", structure.boxes().size() == 1 and parents.size() == 3)
 	await _undo()
-	_check("  undo puts them together again", group.boxes().size() == 3)
+	_check("  undo puts them together again", structure.boxes().size() == 3)
 
 
 #==================Powerables==================
@@ -370,17 +370,17 @@ func _test_folders_and_names(room: Room) -> void:
 	folder.set(&"cell", Vector3i(10, 0, 0))
 	await _settle()
 	var box := _box_at(room, Vector3i(6, 1, 0))
-	var group := box.get_parent() as Structure
-	edits.move_into([group] as Array[Node], folder)
+	var structure := box.get_parent() as Structure
+	edits.move_into([structure] as Array[Node], folder)
 	await _settle()
-	_check("Moving a group into a folder keeps it where it is", group.get_parent() == folder and _box_at(room, Vector3i(6, 1, 0)) == box and group.cell == Vector3i(-4, 1, 0))
+	_check("Moving a structure into a folder keeps it where it is", structure.get_parent() == folder and _box_at(room, Vector3i(6, 1, 0)) == box and structure.cell == Vector3i(-4, 1, 0))
 	await _undo()
-	_check("  undo takes it out again", group.get_parent() == room and group.cell == Vector3i(6, 1, 0))
-	edits.rename(group, "Tower")
+	_check("  undo takes it out again", structure.get_parent() == room and structure.cell == Vector3i(6, 1, 0))
+	edits.rename(structure, "Tower")
 	await _settle()
-	_check("Rename renames", group.name == "Tower")
+	_check("Rename renames", structure.name == "Tower")
 	await _undo()
-	_check("  and undo gives the old name back", group.name != "Tower")
+	_check("  and undo gives the old name back", structure.name != "Tower")
 
 
 #==================Copiar y pegar==================
@@ -392,13 +392,13 @@ func _test_copy_and_paste(room: Room) -> void:
 	edits.place_piece(&"LaserEmitter", crate, Powerable.Face.POS_Y, {&"always_on": true})
 	await _settle()
 	var clip := edits.copy([crate])
-	_check("Copy takes the box and its piece", clip.groups.size() == 1 and clip.groups[0]["pieces"].size() == 1)
+	_check("Copy takes the box and its piece", clip.structures.size() == 1 and clip.structures[0]["pieces"].size() == 1)
 	_check("A paste onto a box is refused", not edits.can_paste(clip, Vector3i(5, 1, 0)))
 	var pasted := edits.paste(clip, Vector3i(5, 4, 0), null)
 	await _settle()
 	var copy := _box_at(room, Vector3i(5, 4, 0))
 	var emitter := copy.powerable_on(Powerable.Face.POS_Y) if copy != null else null
-	_check("Paste makes a new group with the same box and piece", pasted.size() == 1 and copy != null and copy.movable_3d_pos_x and emitter is LaserEmitter and emitter.always_on)
+	_check("Paste makes a new structure with the same box and piece", pasted.size() == 1 and copy != null and copy.movable_3d_pos_x and emitter is LaserEmitter and emitter.always_on)
 	_check("  owned by the level", copy != null and copy.owner == _screen.level_root and emitter != null and emitter.owner == _screen.level_root)
 	await _undo()
 	_check("  undo takes the paste away", _box_at(room, Vector3i(5, 4, 0)) == null)
@@ -485,7 +485,7 @@ func _test_real_input(room: Room) -> void:
 	await _settle()
 	var a := _box_at(room, Vector3i(0, 5, 0))
 	var c := _box_at(room, Vector3i(2, 5, 0))
-	_check("A drag paints a row as one group", a != null and c != null and a.get_parent() == c.get_parent() and _box_at(room, Vector3i(1, 5, 0)) != null)
+	_check("A drag paints a row as one structure", a != null and c != null and a.get_parent() == c.get_parent() and _box_at(room, Vector3i(1, 5, 0)) != null)
 	_click(view, _top_of(view, Vector3i(3, 0, 0)), MOUSE_BUTTON_RIGHT)
 	await _settle()
 	_check("A right-click erases the box", _box_at(room, Vector3i(3, 0, 0)) == null)
@@ -500,7 +500,7 @@ func _test_real_input(room: Room) -> void:
 	_key(view, KEY_V)
 	_click(view, _top_of(view, Vector3i(1, 5, 0)), MOUSE_BUTTON_LEFT)
 	await _settle()
-	_check("V and a click select the whole group", _screen.selected_boxes.size() == 3 and _screen.is_selected(a))
+	_check("V and a click select the whole structure", _screen.selected_boxes.size() == 3 and _screen.is_selected(a))
 	_key(view, KEY_D, true)
 	_check("Ctrl + D deselects", _screen.selected_boxes.is_empty())
 	_click(view, _top_of(view, Vector3i(1, 5, 0)), MOUSE_BUTTON_LEFT)
@@ -535,7 +535,7 @@ func _test_every_tool_by_input(room: Room, view: LevelEditorView) -> void:
 	_drag(view, [_top_of(view, Vector3i(3, 4, -1)), _top_of(view, Vector3i(4, 5, -1))], MOUSE_BUTTON_LEFT)
 	await _settle()
 	var corner := _box_at(room, Vector3i(3, 4, 0))
-	_check("A Rectangle drag paints the whole rectangle as one group", corner != null and corner.get_parent() is Structure and (corner.get_parent() as Structure).boxes().size() == 4)
+	_check("A Rectangle drag paints the whole rectangle as one structure", corner != null and corner.get_parent() is Structure and (corner.get_parent() as Structure).boxes().size() == 4)
 	_screen.use_tool(brush_tool)
 	_check("Reselecting a brush puts its options back", brush_tool.brush.shape == BoxBrush.Shape.PAINT)
 	var shift_click := InputEventMouseButton.new()
@@ -549,7 +549,7 @@ func _test_every_tool_by_input(room: Room, view: LevelEditorView) -> void:
 	view._gui_input(shift_release)
 	await _settle()
 	var on_top := _box_at(room, Vector3i(3, 4, 1))
-	_check("Shift + click on a box extends its group", on_top != null and on_top.get_parent() == corner.get_parent())
+	_check("Shift + click on a box extends its structure", on_top != null and on_top.get_parent() == corner.get_parent())
 
 	_screen.use_tool_named("Handles")
 	var side := view.camera.unproject_position(GridCoordsProvider.grid_to_godot(Vector3i(4, 4, 0)) + Vector3(1.0, 0.5, 0.5))
@@ -613,11 +613,11 @@ func _test_every_tool_by_input(room: Room, view: LevelEditorView) -> void:
 	_check("Double-click selects one box", _screen.selected_boxes.size() == 1)
 	_click(view, _top_of(view, Vector3i(3, 4, 1)), MOUSE_BUTTON_LEFT)
 	await _settle()
-	var group_size := _screen.selected_boxes.size()
+	var structure_size := _screen.selected_boxes.size()
 	var grabbed_before := corner.world_cell
 	_drag(view, [_top_of(view, Vector3i(3, 4, 1)), _top_of(view, Vector3i(3, 3, 1))], MOUSE_BUTTON_LEFT)
 	await _settle()
-	_check("Dragging a selected group moves it", group_size == 5 and corner.world_cell != grabbed_before)
+	_check("Dragging a selected structure moves it", structure_size == 5 and corner.world_cell != grabbed_before)
 	await _undo()
 
 	_key(view, KEY_C, true)
@@ -652,10 +652,10 @@ func _test_the_editor_shortcuts(room: Room, view: LevelEditorView) -> void:
 	EditorInterface.get_selection().add_node(painted.get_parent())
 	await _frames(2)
 	view.grab_focus()
-	var groups_before := room.get_child_count()
+	var structures_before := room.get_child_count()
 	_press_for_real(KEY_D, true)
 	await _frames(5)
-	_check("Ctrl + D in the view doesn't duplicate nodes", room.get_child_count() == groups_before)
+	_check("Ctrl + D in the view doesn't duplicate nodes", room.get_child_count() == structures_before)
 	view.grab_focus()
 	_press_for_real(KEY_Z, true)
 	await _frames(5)
@@ -704,10 +704,10 @@ func _middle_drag(view: LevelEditorView, by: Vector2, shift: bool) -> void:
 
 func _test_the_selection_sync(room: Room) -> void:
 	var some_box := _box_at(room, Vector3i(0, 1, 0))
-	var group := some_box.get_parent() as Structure
-	_screen.select(group.boxes(), [])
+	var structure := some_box.get_parent() as Structure
+	_screen.select(structure.boxes(), [])
 	await _frames(3)
-	_check("Selecting a group shows its Structure in Godot's selection", EditorInterface.get_selection().get_selected_nodes().has(group))
+	_check("Selecting a structure shows its node in Godot's selection", EditorInterface.get_selection().get_selected_nodes().has(structure))
 	var floor_box := _box_at(room, Vector3i(6, 0, -1))
 	EditorInterface.get_selection().clear()
 	EditorInterface.get_selection().add_node(floor_box)
@@ -788,12 +788,12 @@ func _test_undo_and_redo_everything(room: Room) -> void:
 	var steps: Array[Array] = [
 		["paint a Movable row", func() -> void: edits.paint(BoxBrush.for_kind(BoxBrush.Kind.MOVABLE), [row, row + Vector3i(1, 0, 0), row + Vector3i(2, 0, 0)], null, null)],
 		["paint a Walkable column", func() -> void: edits.paint(_brush_of_height(BoxBrush.Kind.WALKABLE, 2), [Vector3i(4, 0, 5), Vector3i(4, 0, 6)], null, null)],
-		["extend the row", func() -> void: edits.paint(BoxBrush.for_kind(BoxBrush.Kind.MOVABLE), [row + Vector3i(0, 1, 0)], _group_at(room, row), null)],
+		["extend the row", func() -> void: edits.paint(BoxBrush.for_kind(BoxBrush.Kind.MOVABLE), [row + Vector3i(0, 1, 0)], _structure_at(room, row), null)],
 		["erase the middle of the row", func() -> void: edits.erase([_box_at(room, row + Vector3i(1, 0, 0))] as Array[Box], [])],
-		["move the row", func() -> void: edits.move(_group_at(room, row).boxes(), Vector3i(0, 2, 0))],
+		["move the row", func() -> void: edits.move(_structure_at(room, row).boxes(), Vector3i(0, 2, 0))],
 		["nudge it twice (one action)", _nudge_twice.bind(room, row + Vector3i(0, 2, 0))],
-		["group boxes of two groups", func() -> void: edits.group([_box_at(room, Vector3i(2, 2, 5)), _box_at(room, Vector3i(4, 0, 6))] as Array[Box])],
-		["ungroup it", func() -> void: edits.ungroup([_group_at(room, Vector3i(2, 2, 5))] as Array[Structure])],
+		["join boxes of two structures", func() -> void: edits.join_into_one_structure([_box_at(room, Vector3i(2, 2, 5)), _box_at(room, Vector3i(4, 0, 6))] as Array[Box])],
+		["split it", func() -> void: edits.split_into_one_box_structures([_structure_at(room, Vector3i(2, 2, 5))] as Array[Structure])],
 		["paint a Block bridge", func() -> void: edits.paint(BoxBrush.for_kind(BoxBrush.Kind.BLOCK), [bridge, bridge + Vector3i(1, 0, 0), bridge + Vector3i(2, 0, 0), bridge + Vector3i(3, 0, 0), bridge + Vector3i(4, 0, 0)], null, null)],
 		["place a button", func() -> void: edits.place_piece(&"ButtonPowerable", _box_at(room, bridge), Powerable.Face.TOP, {})],
 		["lay a wire from it", func() -> void: edits.lay_wire(_tops_between(bridge, bridge + Vector3i(3, 0, 0)), Room.Perspective.ISO_3D)],
@@ -805,23 +805,23 @@ func _test_undo_and_redo_everything(room: Room) -> void:
 		["repaint two boxes", func() -> void: edits.repaint([_box_at(room, bridge + Vector3i(1, 0, 0)), _box_at(room, bridge + Vector3i(2, 0, 0))] as Array[Box], BoxBrush.for_kind(BoxBrush.Kind.MOVABLE))],
 		["switch the button on", func() -> void: edits.set_piece_properties([_box_at(room, bridge).powerable_on(Powerable.Face.TOP)] as Array[Powerable], {&"switched_on": true}, "Starts on: on")],
 		["move the door to another edge", func() -> void: edits.set_piece_properties([_box_at(room, bridge + Vector3i(4, 0, 0)).powerable_on(Powerable.Face.TOP)] as Array[Powerable], {&"edge": Box.Facing.NEG_Y}, "Move the door")],
-		["rename the bridge", func() -> void: edits.rename(_group_at(room, bridge), "Bridge")],
+		["rename the bridge", func() -> void: edits.rename(_structure_at(room, bridge), "Bridge")],
 		["make a folder", func() -> void: _chaos_folder = edits.new_folder(room)],
-		["move the bridge into it", func() -> void: edits.move_into([_group_at(room, bridge)] as Array[Node], _chaos_folder)],
-		["paste a copy of the bridge", func() -> void: edits.paste(edits.copy(_group_at(room, bridge).boxes()), Vector3i(0, 0, 8), null)],
+		["move the bridge into it", func() -> void: edits.move_into([_structure_at(room, bridge)] as Array[Node], _chaos_folder)],
+		["paste a copy of the bridge", func() -> void: edits.paste(edits.copy(_structure_at(room, bridge).boxes()), Vector3i(0, 0, 8), null)],
 		["grow the room", func() -> void: edits.set_room_size(room.dimensions + Vector3i(1, 1, 0))],
 		["shrink the room", func() -> void: edits.set_room_size(room.dimensions - Vector3i(2, 2, 0))],
 		["erase a floor box", func() -> void: edits.erase([_box_at(room, Vector3i(2, 2, -1))] as Array[Box], [])],
 		["move the spawn", func() -> void: edits.set_spawn(Vector3i(1, 1, 0))],
 		["start in 2D", func() -> void: edits.set_starting_perspective(Room.Perspective.TOP_2D)],
 		["delete the folder", func() -> void: edits.delete_nodes([_chaos_folder] as Array[Node], "Delete the folder")],
-		["erase a box with a piece, emptying its group", func() -> void: edits.erase([_box_at(room, Vector3i(4, 0, 5))] as Array[Box], [])],
+		["erase a box with a piece, emptying its structure", func() -> void: edits.erase([_box_at(room, Vector3i(4, 0, 5))] as Array[Box], [])],
 	]
 	var before: Array[PackedStringArray] = []
 	var after: Array[PackedStringArray] = []
 	var all_did_something := true
 	var index_always_right := true
-	var groups_always_hold_their_boxes := true
+	var structures_always_hold_their_boxes := true
 	for step in steps:
 		before.append(_fingerprint())
 		(step[1] as Callable).call()
@@ -833,9 +833,9 @@ func _test_undo_and_redo_everything(room: Room) -> void:
 		if not _index_matches_the_tree(room):
 			print("      the index is wrong after: ", step[0])
 			index_always_right = false
-		if not _every_group_holds_its_boxes(room):
-			print("      a group holds a box outside its dimensions after: ", step[0])
-			groups_always_hold_their_boxes = false
+		if not _every_structure_holds_its_boxes(room):
+			print("      a structure holds a box outside its dimensions after: ", step[0])
+			structures_always_hold_their_boxes = false
 	_check("Every one of %d mixed edits changes the level" % steps.size(), all_did_something)
 	# Cuántos de los pasos están hechos ahora: al final se deshacen justo esos, ni uno más.
 	var done := steps.size()
@@ -851,9 +851,9 @@ func _test_undo_and_redo_everything(room: Room) -> void:
 		if not _index_matches_the_tree(room):
 			print("      the index is wrong after undoing: ", steps[i][0])
 			index_always_right = false
-		if not _every_group_holds_its_boxes(room):
-			print("      a group holds a box outside its dimensions after undoing: ", steps[i][0])
-			groups_always_hold_their_boxes = false
+		if not _every_structure_holds_its_boxes(room):
+			print("      a structure holds a box outside its dimensions after undoing: ", steps[i][0])
+			structures_always_hold_their_boxes = false
 	_check("  undoing them one by one goes back through every earlier state, exactly", undo_matches)
 	var redo_matches := undo_matches
 	if undo_matches:
@@ -868,7 +868,7 @@ func _test_undo_and_redo_everything(room: Room) -> void:
 				index_always_right = false
 	_check("  redoing them goes forward through every later state, exactly", redo_matches)
 	_check("  and the index always says what the tree says", index_always_right)
-	_check("  and every group, the shell's too, always holds its boxes inside its dimensions (Delete excess would delete nothing)", groups_always_hold_their_boxes)
+	_check("  and every structure, the shell's too, always holds its boxes inside its dimensions (Delete excess would delete nothing)", structures_always_hold_their_boxes)
 	for i in done:
 		await _undo()
 	_check("  (all undone again for the tests that follow)", _same_fingerprint(_fingerprint(), before[0], "the final undo"))
@@ -878,7 +878,7 @@ var _chaos_folder: Node3D
 
 
 func _nudge_twice(room: Room, cell: Vector3i) -> void:
-	var boxes := _group_at(room, cell).boxes()
+	var boxes := _structure_at(room, cell).boxes()
 	_screen.edits.move(boxes, Vector3i(1, 0, 0), true, "Nudge")
 	_screen.edits.move(boxes, Vector3i(1, 0, 0), true, "Nudge")
 
@@ -889,7 +889,7 @@ func _brush_of_height(kind: BoxBrush.Kind, height: int) -> BoxBrush:
 	return brush
 
 
-func _group_at(room: Room, cell: Vector3i) -> Structure:
+func _structure_at(room: Room, cell: Vector3i) -> Structure:
 	var box := _box_at(room, cell)
 	return box.get_parent() as Structure if box != null else null
 
@@ -954,14 +954,14 @@ func _index_matches_the_tree(room: Room) -> bool:
 
 ## Toda Structure del nivel, la cáscara también, con sus cajas dentro de sus dimensions: así Delete
 ## excess, en el Inspector, nunca borra nada que el editor puso.
-func _every_group_holds_its_boxes(room: Room) -> bool:
+func _every_structure_holds_its_boxes(room: Room) -> bool:
 	for node in room.find_children("*", "", true, false):
-		var group := node as Structure
-		if group == null:
+		var structure := node as Structure
+		if structure == null:
 			continue
-		for box in group.boxes():
-			if not group._is_in_the_prism(box.cell):
-				print("        %s: a box at %s, outside %s" % [group.name, box.cell, group.dimensions])
+		for box in structure.boxes():
+			if not structure._is_in_the_prism(box.cell):
+				print("        %s: a box at %s, outside %s" % [structure.name, box.cell, structure.dimensions])
 				return false
 	return true
 
@@ -1089,17 +1089,17 @@ func _column_top(room: Room, column: Vector2i) -> Vector3i:
 #==================Lo que cambia por fuera==================
 
 func _test_changes_from_outside(room: Room) -> void:
-	var group := _group_at(room, Vector3i(0, 1, 0))
+	var structure := _structure_at(room, Vector3i(0, 1, 0))
 	var free_cell := Vector3i(0, 1, 7)
 	_check("(the cell for this test is free)", _box_at(room, free_cell) == null)
 	var extra := (load("res://scenes/prefabs/box.tscn") as PackedScene).instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE) as Box
-	extra.cell = free_cell - group.world_cell
-	group.add_child(extra, true)
+	extra.cell = free_cell - structure.world_cell
+	structure.add_child(extra, true)
 	extra.owner = _screen.level_root
 	await _settle()
 	_check("A box added outside the history (a Structure's Fill) shows up in the index", _box_at(room, free_cell) == extra)
 	_screen.select([extra] as Array[Box], [])
-	group.remove_child(extra)
+	structure.remove_child(extra)
 	extra.free()
 	await _settle()
 	_check("  and when it goes, the index and the selection forget it", _box_at(room, free_cell) == null and _screen.selected_boxes.is_empty())
@@ -1114,66 +1114,66 @@ func _test_changes_from_outside(room: Room) -> void:
 	await _undo()
 	_check("  and so does its undo", _box_at(room, Vector3i(0, 1, 0)) == box)
 
-	# Lo que se cambia a mano en el dock de escena no pasa por la historia: el aviso del grupo tiene que
+	# Lo que se cambia a mano en el dock de escena no pasa por la historia: el aviso de la Structure tiene que
 	# llegar igual, enseguida (la señal con la que el dock de escena redibuja sus avisos).
 	var warned: Array[Node] = []
 	var listen := func(node: Node) -> void: warned.append(node)
 	_tree.node_configuration_warning_changed.connect(listen)
-	var group_of_three := box.get_parent() as Structure
+	var structure_of_three := box.get_parent() as Structure
 	var cell_before := box.cell
 	box.cell = cell_before + Vector3i(0, 0, 4)
 	await _settle()
-	_check("A box moved out of its group's dimensions by hand makes the group warn at once", warned.has(group_of_three) and _warns(group_of_three, "1 of its boxes lies outside its dimensions"))
-	_check("  and Problems lists it", _screen._problems.collect().any(func(problem: Array) -> bool: return problem[0] == group_of_three and String(problem[1]).contains("outside its dimensions")))
+	_check("A box moved out of its structure's dimensions by hand makes the structure warn at once", warned.has(structure_of_three) and _warns(structure_of_three, "1 of its boxes lies outside its dimensions"))
+	_check("  and Problems lists it", _screen._problems.collect().any(func(problem: Array) -> bool: return problem[0] == structure_of_three and String(problem[1]).contains("outside its dimensions")))
 	warned.clear()
 	box.cell = cell_before
 	await _settle()
-	_check("  moving it back clears it at once", warned.has(group_of_three) and not _warns(group_of_three, "outside its dimensions"))
+	_check("  moving it back clears it at once", warned.has(structure_of_three) and not _warns(structure_of_three, "outside its dimensions"))
 	warned.clear()
 	# Uno arrastrado desde otro lado, fuera del prisma (un duplicado en la misma celda pasa por el mismo
 	# camino, pero el índice del Room avisa con errores en la salida, y la prueba no los quiere).
 	var dragged_in := (load("res://scenes/prefabs/box.tscn") as PackedScene).instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE) as Box
 	dragged_in.cell = Vector3i(0, 0, 5)
-	_check("(its cell is free)", _box_at(room, group_of_three.world_cell + dragged_in.cell) == null)
-	group_of_three.add_child(dragged_in, true)
+	_check("(its cell is free)", _box_at(room, structure_of_three.world_cell + dragged_in.cell) == null)
+	structure_of_three.add_child(dragged_in, true)
 	dragged_in.owner = _screen.level_root
 	await _settle()
-	_check("A box added to a group by hand (dragged in from elsewhere) makes the group warn at once", warned.has(group_of_three) and _warns(group_of_three, "1 of its boxes lies outside its dimensions"))
+	_check("A box added to a structure by hand (dragged in from elsewhere) makes the structure warn at once", warned.has(structure_of_three) and _warns(structure_of_three, "1 of its boxes lies outside its dimensions"))
 	warned.clear()
-	group_of_three.remove_child(dragged_in)
+	structure_of_three.remove_child(dragged_in)
 	dragged_in.free()
 	await _settle()
-	_check("  and taking it out clears it at once", warned.has(group_of_three) and not _warns(group_of_three, "outside its dimensions"))
+	_check("  and taking it out clears it at once", warned.has(structure_of_three) and not _warns(structure_of_three, "outside its dimensions"))
 	_tree.node_configuration_warning_changed.disconnect(listen)
-	_check("(the group is as it was)", group_of_three.boxes().size() == 3 and _box_at(room, Vector3i(0, 1, 0)) == box and _index_matches_the_tree(room))
+	_check("(the structure is as it was)", structure_of_three.boxes().size() == 3 and _box_at(room, Vector3i(0, 1, 0)) == box and _index_matches_the_tree(room))
 
 
 #==================Los paneles==================
 
 func _test_the_panels(room: Room) -> void:
 	var view := _screen.view
-	var groups := _screen._groups
+	var structures := _screen._structures
 	_screen.refresh_panels()
 	await _settle()
 	var two: Array[TreeItem] = []
-	for item in LevelEditorGroupsPanel._all_items(groups.tree.get_root()):
+	for item in LevelEditorStructuresPanel._all_items(structures.tree.get_root()):
 		var node: Node = item.get_metadata(0)
 		if node is Structure and not _screen.edits.is_shell_part(node) and two.size() < 2:
 			two.append(item)
 	var a := two[0].get_metadata(0) as Structure
 	var b := two[1].get_metadata(0) as Structure
-	groups.tree.deselect_all()
+	structures.tree.deselect_all()
 	two[0].select(0)
 	two[1].select(0)
-	groups._on_multi_selected(two[1], 0, true)
+	structures._on_multi_selected(two[1], 0, true)
 	await _frames(3)
-	_check("Groups: selecting two rows selects both groups", _screen.selected_boxes.size() == a.boxes().size() + b.boxes().size())
+	_check("Structures panel: selecting two rows selects both structures", _screen.selected_boxes.size() == a.boxes().size() + b.boxes().size())
 	var marked := 0
-	for item in LevelEditorGroupsPanel._all_items(groups.tree.get_root()):
+	for item in LevelEditorStructuresPanel._all_items(structures.tree.get_root()):
 		if item.is_selected(0):
 			marked += 1
 	_check("  and both rows stay marked", marked == 2)
-	groups._delete()
+	structures._delete()
 	await _settle()
 	_check("  Delete deletes both", not a.is_inside_tree() and not b.is_inside_tree())
 	await _undo()
@@ -1182,14 +1182,14 @@ func _test_the_panels(room: Room) -> void:
 	_screen.select([one_box] as Array[Box], [])
 	await _settle()
 	marked = 0
-	for item in LevelEditorGroupsPanel._all_items(groups.tree.get_root()):
+	for item in LevelEditorStructuresPanel._all_items(structures.tree.get_root()):
 		if item.is_selected(0):
 			marked += 1
-	_check("  a group with only some of its boxes selected isn't marked", a.boxes().size() == 1 or marked == 0)
+	_check("  a structure with only some of its boxes selected isn't marked", a.boxes().size() == 1 or marked == 0)
 	_screen.select(a.boxes(), [])
 	await _settle()
-	groups._fill_move_to()
-	var popup := groups._move_to.get_popup()
+	structures._fill_move_to()
+	var popup := structures._move_to.get_popup()
 	var folder_id := -1
 	for i in popup.item_count:
 		var target: Node = popup.get_item_metadata(i)
@@ -1200,9 +1200,9 @@ func _test_the_panels(room: Room) -> void:
 	if folder_id >= 0:
 		var folder: Node = popup.get_item_metadata(popup.get_item_index(folder_id))
 		var cell_before := a.boxes()[0].world_cell
-		groups._move_into(folder_id)
+		structures._move_into(folder_id)
 		await _settle()
-		_check("  and moves the marked group into one, keeping its cells", a.get_parent() == folder and a.boxes()[0].world_cell == cell_before)
+		_check("  and moves the marked structure into one, keeping its cells", a.get_parent() == folder and a.boxes()[0].world_cell == cell_before)
 		await _undo()
 
 	_screen.use_tool_named("Select")
@@ -1212,42 +1212,42 @@ func _test_the_panels(room: Room) -> void:
 			hidden_folder = child
 	_check("(a folder to hide)", hidden_folder != null)
 	if hidden_folder != null:
-		_click_the_eye_of(groups, hidden_folder)
+		_click_the_eye_of(structures, hidden_folder)
 		var up_high := Vector3i(1, 1, 8)
 		_screen.edits.paint(BoxBrush.for_kind(BoxBrush.Kind.BLOCK), [up_high], null, hidden_folder)
 		await _settle()
 		var inside := _box_at(room, up_high)
-		_check("A group painted into a hidden folder is hidden too", inside != null and hidden_folder.is_ancestor_of(inside) and not view.is_box_visible(inside))
+		_check("A structure painted into a hidden folder is hidden too", inside != null and hidden_folder.is_ancestor_of(inside) and not view.is_box_visible(inside))
 		_check("  and the mouse goes through it", inside != null and view.pick(_top_of(view, up_high)).box != inside)
-		_click_the_eye_of(groups, hidden_folder)
+		_click_the_eye_of(structures, hidden_folder)
 		await _settle()
 		_check("  until the folder is shown again", inside != null and view.is_box_visible(inside) and view.pick(_top_of(view, up_high)).box == inside)
 		await _undo()
-		var folder_row := _row_of(groups, hidden_folder)
-		groups.tree.deselect_all()
+		var folder_row := _row_of(structures, hidden_folder)
+		structures.tree.deselect_all()
 		folder_row.select(0)
-		groups._on_multi_selected(folder_row, 0, true)
+		structures._on_multi_selected(folder_row, 0, true)
 		await _frames(3)
-		_check("Groups: clicking a folder makes it where new groups go", _screen.current_folder() == hidden_folder and groups._back_to_the_room.visible)
-		groups._back_to_the_room.pressed.emit()
+		_check("Structures panel: clicking a folder makes it where new structures go", _screen.current_folder() == hidden_folder and structures._back_to_the_room.visible)
+		structures._back_to_the_room.pressed.emit()
 		await _settle()
-		_check("  and Back to the Room sends them under the Room again", _screen.current_folder() == null and not groups._back_to_the_room.visible)
-	var named_row := _row_of(groups, _group_at(room, Vector3i(0, 1, 0)))
-	groups.tree.deselect_all()
+		_check("  and Back to the Room sends them under the Room again", _screen.current_folder() == null and not structures._back_to_the_room.visible)
+	var named_row := _row_of(structures, _structure_at(room, Vector3i(0, 1, 0)))
+	structures.tree.deselect_all()
 	named_row.select(0)
-	_check("Groups: double-clicking a row opens its name for typing", groups._on_item_activated())
-	groups.refresh()
+	_check("Structures panel: double-clicking a row opens its name for typing", structures._on_item_activated())
+	structures.refresh()
 	view.grab_focus()
 	await _settle()
 
 	_screen.use_tool_named("Select")
 	var props := _screen._properties
-	var movable := _group_at(room, Vector3i(0, 1, 0))
+	var movable := _structure_at(room, Vector3i(0, 1, 0))
 	_screen.select(movable.boxes(), [])
 	await _settle()
 	_toggle_check(props, "Keeps its height", true)
 	await _settle()
-	_check("Properties: Keeps its height goes to the group", movable.boxes().all(func(each: Box) -> bool: return each.keeps_height))
+	_check("Properties: Keeps its height goes to the structure", movable.boxes().all(func(each: Box) -> bool: return each.keeps_height))
 	await _undo()
 	_screen.select([movable.boxes()[0]] as Array[Box], [])
 	await _settle()
@@ -1259,13 +1259,13 @@ func _test_the_panels(room: Room) -> void:
 	await _settle()
 	_toggle_check(props, "Floor tile (terrain)", true)
 	await _settle()
-	_check("  Floor on part of a group is refused, saying why", not movable.boxes()[0].is_floor and _screen._status.text.contains("terrain"))
+	_check("  Floor on part of a structure is refused, saying why", not movable.boxes()[0].is_floor and _screen._status.text.contains("terrain"))
 	_screen.select(movable.boxes(), [])
 	await _settle()
 	_toggle_check(props, "Floor tile (terrain)", true)
 	await _settle()
 	var first := movable.boxes()[0]
-	_check("  Floor on the whole group makes it floor, with no hidden handles left", first.is_floor and first.walkable and not first.movable_3d_pos_x and not first.movable_2d_whole_face)
+	_check("  Floor on the whole structure makes it floor, with no hidden handles left", first.is_floor and first.walkable and not first.movable_3d_pos_x and not first.movable_2d_whole_face)
 	await _undo()
 	_check("  and undo gives the handles back", not first.is_floor and first.movable_3d_pos_x)
 	_press_button(props, "", "settings of Wall")
@@ -1275,7 +1275,7 @@ func _test_the_panels(room: Room) -> void:
 	var wall := BoxBrush.for_kind(BoxBrush.Kind.WALL)
 	_screen.repaint_boxes([movable.boxes()[0]] as Array[Box], wall)
 	await _settle()
-	_check("Repaint: one box of a group can't turn into terrain alone", not movable.boxes()[0].is_wall and _screen._status.text.contains("skipped"))
+	_check("Repaint: one box of a structure can't turn into terrain alone", not movable.boxes()[0].is_wall and _screen._status.text.contains("skipped"))
 	var shell_box := _box_at(room, Vector3i(4, 4, -1))
 	_screen.repaint_boxes([shell_box] as Array[Box], BoxBrush.for_kind(BoxBrush.Kind.MOVABLE))
 	await _settle()
@@ -1339,19 +1339,19 @@ func _warns(node: Node, fragment: String) -> bool:
 	return false
 
 
-func _row_of(groups: LevelEditorGroupsPanel, node: Node) -> TreeItem:
-	groups.refresh()
-	for item in LevelEditorGroupsPanel._all_items(groups.tree.get_root()):
+func _row_of(structures: LevelEditorStructuresPanel, node: Node) -> TreeItem:
+	structures.refresh()
+	for item in LevelEditorStructuresPanel._all_items(structures.tree.get_root()):
 		if item.get_metadata(0) == node:
 			return item
 	return null
 
 
-func _click_the_eye_of(groups: LevelEditorGroupsPanel, node: Node) -> void:
-	groups.refresh()
-	for item in LevelEditorGroupsPanel._all_items(groups.tree.get_root()):
+func _click_the_eye_of(structures: LevelEditorStructuresPanel, node: Node) -> void:
+	structures.refresh()
+	for item in LevelEditorStructuresPanel._all_items(structures.tree.get_root()):
 		if item.get_metadata(0) == node:
-			groups._on_button_clicked(item, 1, LevelEditorGroupsPanel.EYE_COLUMN_BUTTON, MOUSE_BUTTON_LEFT)
+			structures._on_button_clicked(item, 1, LevelEditorStructuresPanel.EYE_COLUMN_BUTTON, MOUSE_BUTTON_LEFT)
 			return
 	print("      no row for ", node.name)
 
@@ -1392,24 +1392,24 @@ func _test_more_shortcuts_and_tools(room: Room) -> void:
 	view.grab_focus()
 	var one := _box_at(room, Vector3i(0, 1, 0))
 	var other := _box_at(room, Vector3i(6, 4, 0))
-	_check("(two loose groups for the group keys)", one != null and other != null and one.get_parent() != other.get_parent())
+	_check("(two separate structures for the join and split keys)", one != null and other != null and one.get_parent() != other.get_parent())
 	_screen.select([one, other] as Array[Box], [])
 	_key(view, KEY_G, true)
 	await _settle()
-	_check("Ctrl + G groups the selection", one.get_parent() == other.get_parent())
+	_check("Ctrl + G joins the selection into one structure", one.get_parent() == other.get_parent())
 	_key(view, KEY_G, true, true)
 	await _settle()
-	_check("Ctrl + Shift + G ungroups it", one.get_parent() != other.get_parent())
+	_check("Ctrl + Shift + G splits it into one-box structures", one.get_parent() != other.get_parent())
 	await _undo()
 	await _undo()
 	_check("  (both undone)", one.get_parent() != other.get_parent() and _box_at(room, Vector3i(0, 1, 0)) == one)
 
-	var group := one.get_parent() as Structure
-	_screen.select(group.boxes(), [])
+	var structure := one.get_parent() as Structure
+	_screen.select(structure.boxes(), [])
 	await _settle()
 	_key(view, KEY_F2)
 	await _frames(2)
-	_check("F2 puts the cursor in the group's name", _screen.group_name_field != null and _screen.group_name_field.has_focus())
+	_check("F2 puts the cursor in the structure's name", _screen.structure_name_field != null and _screen.structure_name_field.has_focus())
 	view.grab_focus()
 	var before := one.world_cell
 	_key(view, KEY_PLUS, false, false, true)
@@ -1424,7 +1424,7 @@ func _test_more_shortcuts_and_tools(room: Room) -> void:
 	var block_tool := _screen.box_tools[BoxBrush.Kind.BLOCK]
 	_screen.use_tool(block_tool)
 	block_tool._set_height(3)
-	_screen.select(group.boxes(), [])
+	_screen.select(structure.boxes(), [])
 	_key(view, KEY_C, true)
 	_check("Ctrl + C says what it copied", _screen._status.text.begins_with("Copied"))
 	_key(view, KEY_V, true)
@@ -1459,7 +1459,7 @@ func _test_more_shortcuts_and_tools(room: Room) -> void:
 	var first_count := _screen.selected_boxes.size()
 	_click_with(view, _top_of(view, Vector3i(6, 4, 0)), MOUSE_BUTTON_LEFT, true, false, false)
 	await _settle()
-	_check("  Shift + click adds a group", _screen.selected_boxes.size() > first_count and _screen.is_selected(other))
+	_check("  Shift + click adds a structure", _screen.selected_boxes.size() > first_count and _screen.is_selected(other))
 	_click_with(view, _top_of(view, Vector3i(6, 4, 0)), MOUSE_BUTTON_LEFT, true, false, false)
 	await _settle()
 	_check("  and Shift + click on it again takes it out", _screen.selected_boxes.size() == first_count and not _screen.is_selected(other))
@@ -1478,14 +1478,14 @@ func _test_more_shortcuts_and_tools(room: Room) -> void:
 	await _settle()
 	_check("  a click on the floor selects just that floor box", _screen.selected_boxes.size() == 1 and _screen.selected_boxes[0] == _box_at(room, floor_tile))
 	var from_the_floor := _top_of(view, floor_tile)
-	var past_a_group := view.cell_on_screen(one.world_cell)
-	past_a_group += (past_a_group - from_the_floor).normalized() * 30.0
-	_drag(view, [from_the_floor, past_a_group], MOUSE_BUTTON_LEFT)
+	var past_a_structure := view.cell_on_screen(one.world_cell)
+	past_a_structure += (past_a_structure - from_the_floor).normalized() * 30.0
+	_drag(view, [from_the_floor, past_a_structure], MOUSE_BUTTON_LEFT)
 	await _settle()
 	var any_shell := _screen.selected_boxes.any(func(each: Box) -> bool: return _screen.edits.is_shell_part(each.get_parent()))
 	_check("  a drag that starts on the floor draws a rectangle instead, and it leaves the shell out", not _screen.selected_boxes.is_empty() and not any_shell)
 	_check("  (nothing moved: the floor doesn't)", _box_at(room, floor_tile) != null)
-	_screen.select(group.boxes(), [])
+	_screen.select(structure.boxes(), [])
 	await _settle()
 	var lift_from := one.world_cell
 	_drag_with_a_key(view, _top_of(view, one.world_cell), _top_of(view, one.world_cell) + Vector2(0, 2), KEY_PLUS)
@@ -1535,7 +1535,7 @@ func _test_more_shortcuts_and_tools(room: Room) -> void:
 		var turning_on: bool = not hit_there.box.get(flag)
 		_click_with(view, side, MOUSE_BUTTON_LEFT, true, false, false)
 		await _settle()
-		_check("Handles: Shift + click sets that side on every box of the group facing out that way (%d)" % reached.size(), reached.all(func(each: Box) -> bool: return each.get(flag) == turning_on))
+		_check("Handles: Shift + click sets that side on every box of the structure facing out that way (%d)" % reached.size(), reached.all(func(each: Box) -> bool: return each.get(flag) == turning_on))
 		await _undo()
 
 	_screen.use_tool(movable_tool)
@@ -1738,15 +1738,15 @@ func _test_the_saved_file() -> void:
 	_check("The 2D view hides the shadows", light != null and light.shadow_opacity == 0.0)
 	if not _on_the_scratch_level():
 		return
-	var hidden_group := _group_at(_screen.room, Vector3i(0, 1, 0))
-	_screen.view.hidden_groups[hidden_group] = true
+	var hidden_structure := _structure_at(_screen.room, Vector3i(0, 1, 0))
+	_screen.view.hidden_structures[hidden_structure] = true
 	_screen.change_layer(0)
 	_screen.view.apply_hiding()
 	EditorInterface.save_scene()
 	await _settle()
 	_check("  and puts them back after saving", light != null and light.shadow_opacity == 0.0)
-	_check("Hidden groups and layer mode hide boxes while saving...", not (hidden_group.boxes()[0].get_node(^"Mesh") as Node3D).visible)
-	_screen.view.hidden_groups.erase(hidden_group)
+	_check("Hidden structures and layer mode hide boxes while saving...", not (hidden_structure.boxes()[0].get_node(^"Mesh") as Node3D).visible)
+	_screen.view.hidden_structures.erase(hidden_structure)
 	_screen.leave_layer_mode()
 	_screen.toggle_2d()
 	await _until_the_turn_ends()
@@ -1842,31 +1842,31 @@ func _screenshots() -> void:
 	await _shot(folder, "07_handles_with_shift")
 	await _hold_shift(false)
 
-	var group := _big_group_in_sight(room, view)
+	var structure := _big_structure_in_sight(room, view)
 	_screen.use_tool_named("Select")
-	if group != null:
-		_screen.select(group.boxes(), [])
+	if structure != null:
+		_screen.select(structure.boxes(), [])
 		_screen._tabs.current_tab = 0
-		var other := _big_group_in_sight(room, view, group)
+		var other := _big_structure_in_sight(room, view, structure)
 		if other != null:
 			await _hover_cell(other.boxes()[0].world_cell)
 	await _frames(4)
-	await _shot(folder, "08_group_selected_and_another_hovered")
+	await _shot(folder, "08_structure_selected_and_another_hovered")
 
-	if group != null:
-		var second := _big_group_in_sight(room, view, group)
+	if structure != null:
+		var second := _big_structure_in_sight(room, view, structure)
 		if second != null:
 			_screen.add_to_selection(second.boxes())
 	_screen._tabs.current_tab = 1
 	await _frames(4)
-	await _shot(folder, "09_groups_panel_two_groups")
+	await _shot(folder, "09_structures_panel_two_structures")
 
-	if group != null:
-		_screen.select(group.boxes(), [])
-		var grab_at := _top_of(view, _highest_box_of(group).world_cell)
+	if structure != null:
+		_screen.select(structure.boxes(), [])
+		var grab_at := _top_of(view, _highest_box_of(structure).world_cell)
 		_press_and_move(view, grab_at, grab_at + Vector2(70, 25))
 		await _frames(4)
-		await _shot(folder, "10_moving_a_group")
+		await _shot(folder, "10_moving_a_structure")
 		_screen.current_tool.cancel()
 		_release(view, grab_at + Vector2(70, 25))
 		await _frames(2)
@@ -1896,9 +1896,9 @@ func _screenshots() -> void:
 	await _frames(6)
 	await _shot(folder, "13_door_ghost_on_an_edge")
 
-	if group != null:
+	if structure != null:
 		_screen.use_tool_named("Select")
-		_screen.select(group.boxes(), [])
+		_screen.select(structure.boxes(), [])
 		_screen.copy_selection()
 		await _frames(2)
 		await _shot(folder, "14_flash_copied")
@@ -2016,19 +2016,19 @@ func _free_top_near_the_middle(room: Room, view: LevelEditorView) -> Vector3i:
 	return best
 
 
-func _big_group_in_sight(room: Room, view: LevelEditorView, not_this: Structure = null) -> Structure:
+func _big_structure_in_sight(room: Room, view: LevelEditorView, not_this: Structure = null) -> Structure:
 	for each in room.find_children("*", "", true, false):
-		var group := each as Structure
-		if group == null or group == not_this or _screen.edits.is_shell_part(group) or group.boxes().size() < 3:
+		var structure := each as Structure
+		if structure == null or structure == not_this or _screen.edits.is_shell_part(structure) or structure.boxes().size() < 3:
 			continue
-		if _top_is_in_sight(view, _highest_box_of(group).world_cell):
-			return group
+		if _top_is_in_sight(view, _highest_box_of(structure).world_cell):
+			return structure
 	return null
 
 
-func _highest_box_of(group: Structure) -> Box:
-	var highest := group.boxes()[0]
-	for box in group.boxes():
+func _highest_box_of(structure: Structure) -> Box:
+	var highest := structure.boxes()[0]
+	for box in structure.boxes():
 		if box.world_cell.z > highest.world_cell.z:
 			highest = box
 	return highest

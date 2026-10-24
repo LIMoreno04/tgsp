@@ -1,7 +1,7 @@
 @tool
 class_name RepaintTool
 extends LevelEditorTool
-## Le pone a cajas que ya existen las banderas de la última brocha de cajas, sin cambiarlas de grupo.
+## Le pone a cajas que ya existen las banderas de la última brocha de cajas, sin cambiarlas de Structure.
 ## Lo mismo que Ctrl + trazo con una brocha.
 
 var _stroking := false
@@ -12,7 +12,7 @@ var _hover_hit: GridPicker.Hit = GridPicker.Hit.new()
 func _init(the_screen: LevelEditorScreen) -> void:
 	super(the_screen)
 	title = "Repaint"
-	tooltip = "Give existing boxes the settings of the last box brush, keeping their groups. Ctrl + drag does it from a brush."
+	tooltip = "Give existing boxes the settings of the last box brush, keeping their structures. Ctrl + drag does it from a brush."
 
 
 func _brush() -> BoxBrush:
@@ -69,7 +69,7 @@ func draw(preview: LevelEditorPreview) -> void:
 		if mixes and edits().is_shell_part(box.get_parent()):
 			refusal = "The room shell is terrain: only Floor or Wall can repaint it."
 		elif mixes:
-			refusal = "A group is either all terrain or holds none."
+			refusal = "A structure is either all terrain or holds none."
 		preview.tint_cell(index().cell_of(box), LevelEditorPreview.RED if mixes else LevelEditorPreview.BLUE)
 
 

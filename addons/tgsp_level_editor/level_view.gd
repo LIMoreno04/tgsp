@@ -40,8 +40,8 @@ var view_size := 20.0
 ## La vista 3D a la que vuelve Tab.
 var _3d_was_game_view := true
 
-## Las cajas escondidas por la capa o por el ojo del panel de grupos.
-var hidden_groups: Dictionary[Node, bool] = {}
+## Las cajas escondidas por la capa o por el ojo del panel de Structures.
+var hidden_structures: Dictionary[Node, bool] = {}
 var _hidden_boxes: Dictionary[Box, bool] = {}
 var _bounds_low := Vector3i(-2, -2, -2)
 var _bounds_high := Vector3i(10, 10, 10)
@@ -349,7 +349,7 @@ func hide_the_shadows_again_if_2d() -> void:
 
 #==================Lo que se ve==================
 
-## Esconde las cajas por encima de la capa y las de los grupos con el ojo cerrado. Sólo esconde su
+## Esconde las cajas por encima de la capa y las de las Structures con el ojo cerrado. Sólo esconde su
 ## Mesh y el dibujo de sus powerables, que nunca se guardan.
 func apply_hiding() -> void:
 	if room == null:
@@ -379,11 +379,11 @@ func is_box_visible(box: Box) -> bool:
 	return not is_hidden(box)
 
 
-## Escondido él, su grupo o alguna carpeta de las que lo contienen: lo que se pinte después en una
+## Escondido él, su Structure o alguna carpeta de las que lo contienen: lo que se pinte después en una
 ## carpeta escondida también queda escondido.
 func is_hidden(node: Node) -> bool:
 	while node != null and node != room:
-		if hidden_groups.has(node):
+		if hidden_structures.has(node):
 			return true
 		node = node.get_parent()
 	return false

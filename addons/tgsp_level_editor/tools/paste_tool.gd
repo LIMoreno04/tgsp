@@ -2,7 +2,7 @@
 class_name PasteTool
 extends LevelEditorTool
 ## Lo copiado sigue al mouse como fantasma, con su esquina baja en la celda apuntada; un clic lo pone
-## como grupos nuevos en la carpeta actual, Esc vuelve a la herramienta de antes. Shift + clic lo pone
+## como Structures nuevas en la carpeta actual, Esc vuelve a la herramienta de antes. Shift + clic lo pone
 ## y sigue pegando, para sellar la misma pieza varias veces.
 
 var clip: LevelEdits.Clip
@@ -18,7 +18,7 @@ func _init(the_screen: LevelEditorScreen) -> void:
 
 
 func build_options(bar: HBoxContainer) -> void:
-	caption(bar, "Pasting %d group%s · click to place · Shift + click to place and keep pasting · Esc to cancel" % [clip.groups.size(), "" if clip.groups.size() == 1 else "s"])
+	caption(bar, "Pasting %d structure%s · click to place · Shift + click to place and keep pasting · Esc to cancel" % [clip.structures.size(), "" if clip.structures.size() == 1 else "s"])
 
 
 func hover(hit: GridPicker.Hit) -> void:
@@ -48,8 +48,8 @@ func press(hit: GridPicker.Hit, event: InputEventMouseButton) -> void:
 		return
 	screen.stop_pasting()
 	var boxes: Array[Box] = []
-	for group in pasted:
-		boxes.append_array(group.boxes())
+	for structure in pasted:
+		boxes.append_array(structure.boxes())
 	screen.select(boxes, [])
 
 
@@ -67,8 +67,8 @@ func draw(preview: LevelEditorPreview) -> void:
 		refusal = "Something is in the way."
 	# Fantasmas de verdad mientras sean pocos y quepan; si no, celdas teñidas, que cuestan menos.
 	var as_ghosts := fits and clip.cells.size() <= BoxBrushTool.MOST_GHOSTS
-	for group in clip.groups:
-		for box_data: Dictionary in group["boxes"]:
+	for structure in clip.structures:
+		for box_data: Dictionary in structure["boxes"]:
 			var cell: Vector3i = box_data["cell"] + _at
 			if as_ghosts:
 				var flags: Dictionary[StringName, bool] = {}
@@ -78,7 +78,7 @@ func draw(preview: LevelEditorPreview) -> void:
 				preview.tint_cell(cell, LevelEditorPreview.BLUE if fits else LevelEditorPreview.RED, 0.0)
 			preview.outline_cell(cell, Color(0.3, 0.65, 1.0, 0.8) if fits else Color(1.0, 0.3, 0.25, 0.9), 0.0)
 		if as_ghosts:
-			for piece_data: Dictionary in group["pieces"]:
+			for piece_data: Dictionary in structure["pieces"]:
 				preview.ghost_piece(LevelEdits.PIECE_SCENE[piece_data["type"]], piece_data["cell"] + _at, piece_data["face"], piece_data["properties"])
 
 

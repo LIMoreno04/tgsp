@@ -74,7 +74,7 @@ func _init(level_root: Node, level_room: Room, level_history: LevelEditorHistory
 
 #==================Las cajas==================
 
-## Pinta cajas en las celdas libres de `cells`. `extending`: el grupo al que se suman (Shift), o
+## Pinta cajas en las celdas libres de `cells`. `extending`: la Structure a la que se suman (Shift), o
 ## null para uno nuevo en `folder`. Las de piso o pared en el marco de la cáscara van a esa parte.
 ## Devuelve cuántas cajas puso.
 func paint(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder: Node) -> int:
@@ -85,7 +85,7 @@ func paint(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder
 	if free.is_empty():
 		return 0
 	var into_the_shell: Dictionary[Structure, Array] = {}
-	var into_the_group: Array[Vector3i] = []
+	var into_the_structure: Array[Vector3i] = []
 	for cell in free:
 		var part := shell_part_at(cell) if brush.is_terrain() else null
 		if part != null:
@@ -93,7 +93,7 @@ func paint(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder
 				into_the_shell[part] = []
 			into_the_shell[part].append(cell)
 		else:
-			into_the_group.append(cell)
+			into_the_structure.append(cell)
 
 	_begin("Paint %d %s box%s" % [free.size(), brush.label(), "" if free.size() == 1 else "es"])
 	for part: Structure in into_the_shell:
@@ -101,39 +101,39 @@ func paint(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder
 		cells_in_part.assign(into_the_shell[part])
 		for cell in cells_in_part:
 			_add_new_box(part, cell - part.world_cell, brush.flags_for(_is_the_top_of_its_column(cell, cells_in_part), {}))
-	if not into_the_group.is_empty():
-		_paint_into_a_group(brush, into_the_group, extending, folder)
+	if not into_the_structure.is_empty():
+		_paint_into_a_structure(brush, into_the_structure, extending, folder)
 	_commit()
 	return free.size()
 
 
-func _paint_into_a_group(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder: Node) -> void:
-	var group := extending
+func _paint_into_a_structure(brush: BoxBrush, cells: Array[Vector3i], extending: Structure, folder: Node) -> void:
+	var structure := extending
 	var final_cells: Dictionary[Box, Vector3i] = {}
-	if group == null:
-		group = STRUCTURE_SCENE.instantiate(edit_state) as Structure
-		group.name = brush.group_name()
+	if structure == null:
+		structure = STRUCTURE_SCENE.instantiate(edit_state) as Structure
+		structure.name = brush.structure_name()
 		var parent := folder if folder != null else room
 		var low := _low_corner(cells)
-		group.cell = low - _world_cell_of(parent)
-		group.dimensions = _high_corner(cells) - low + Vector3i.ONE
-		_add(group, parent)
+		structure.cell = low - _world_cell_of(parent)
+		structure.dimensions = _high_corner(cells) - low + Vector3i.ONE
+		_add(structure, parent)
 	else:
-		for box in group.boxes():
+		for box in structure.boxes():
 			final_cells[box] = box.world_cell
 	var all_cells: Array[Vector3i] = cells.duplicate()
 	all_cells.append_array(final_cells.values())
 	var anchor := _low_corner(all_cells)
 	if extending != null:
-		_anchor(group, final_cells, anchor, _high_corner(all_cells) - anchor + Vector3i.ONE)
-	var group_cells: Dictionary[Vector3i, bool] = {}
+		_anchor(structure, final_cells, anchor, _high_corner(all_cells) - anchor + Vector3i.ONE)
+	var structure_cells: Dictionary[Vector3i, bool] = {}
 	for cell in all_cells:
-		group_cells[cell] = true
+		structure_cells[cell] = true
 	for cell in cells:
-		var flags := brush.flags_for(_is_the_top_of_its_column(cell, cells), _outside_edges(cell, group_cells))
-		_add_new_box(group, cell - anchor, flags)
+		var flags := brush.flags_for(_is_the_top_of_its_column(cell, cells), _outside_edges(cell, structure_cells))
+		_add_new_box(structure, cell - anchor, flags)
 	if brush.walkable_tops and extending != null:
-		_stop_covered_boxes_being_walkable(group, cells)
+		_stop_covered_boxes_being_walkable(structure, cells)
 
 
 func _add_new_box(parent: Structure, cell: Vector3i, flags: Dictionary[StringName, bool]) -> Box:
@@ -149,23 +149,23 @@ func _is_the_top_of_its_column(cell: Vector3i, cells: Array[Vector3i]) -> bool:
 	return not cells.has(cell + LevelIndex.GRID_UP)
 
 
-func _outside_edges(cell: Vector3i, group_cells: Dictionary[Vector3i, bool]) -> Dictionary[Box.Facing, bool]:
+func _outside_edges(cell: Vector3i, structure_cells: Dictionary[Vector3i, bool]) -> Dictionary[Box.Facing, bool]:
 	var outside: Dictionary[Box.Facing, bool] = {}
 	for facing: Box.Facing in Box.FACING_DIRECTION:
 		var direction := Box.FACING_DIRECTION[facing]
-		outside[facing] = not group_cells.has(cell + Vector3i(direction.x, direction.y, 0))
+		outside[facing] = not structure_cells.has(cell + Vector3i(direction.x, direction.y, 0))
 	return outside
 
 
-## Una caja caminable tapada por otra del mismo grupo deja de serlo, como lo dejaría "Mark exposed
+## Una caja caminable tapada por otra de la misma Structure deja de serlo, como lo dejaría "Mark exposed
 ## tops walkable".
-func _stop_covered_boxes_being_walkable(group: Structure, painted: Array[Vector3i]) -> void:
-	for box in group.boxes():
+func _stop_covered_boxes_being_walkable(structure: Structure, painted: Array[Vector3i]) -> void:
+	for box in structure.boxes():
 		if box.walkable and not box.is_floor and painted.has(box.world_cell + LevelIndex.GRID_UP):
 			_set_box_flags(box, {&"walkable": false})
 
 
-## Borra cajas y powerables. Lo que queda en un grupo se vuelve a anclar; un grupo vacío se borra.
+## Borra cajas y powerables. Lo que queda en una Structure se vuelve a anclar; una Structure vacía se borra.
 ## `keep_the_arms`: los vecinos de un powerable borrado siguen apuntando adonde estaba, para una conexión
 ## que se arma jugando (una caja con cable que se empuja ahí).
 func erase(boxes: Array[Box], pieces: Array[Powerable], keep_the_arms := false) -> void:
@@ -199,34 +199,34 @@ func erase(boxes: Array[Box], pieces: Array[Powerable], keep_the_arms := false) 
 	_make_the_boxes_under_walkable(boxes, erased_boxes)
 	var touched: Dictionary[Structure, bool] = {}
 	for box in boxes:
-		var group := box.get_parent() as Structure
-		if group != null and not is_shell_part(group):
-			touched[group] = true
-	# Un grupo que se queda sin cajas se borra entero, con ellas adentro.
+		var structure := box.get_parent() as Structure
+		if structure != null and not is_shell_part(structure):
+			touched[structure] = true
+	# Una Structure que se queda sin cajas se borra entera, con ellas adentro.
 	var emptied: Array[Structure] = []
-	for group: Structure in touched:
-		if group.boxes().all(func(box: Box) -> bool: return erased_boxes.has(box)):
-			emptied.append(group)
-	var going_with_their_group: Dictionary[Box, bool] = {}
-	for group in emptied:
-		for box in group.boxes():
-			going_with_their_group[box] = true
+	for structure: Structure in touched:
+		if structure.boxes().all(func(box: Box) -> bool: return erased_boxes.has(box)):
+			emptied.append(structure)
+	var going_with_their_structure: Dictionary[Box, bool] = {}
+	for structure in emptied:
+		for box in structure.boxes():
+			going_with_their_structure[box] = true
 	var removed_alone: Array[Box] = []
 	for box in boxes:
-		if not going_with_their_group.has(box):
+		if not going_with_their_structure.has(box):
 			removed_alone.append(box)
 	for box in _in_removal_order(removed_alone):
 		_remove(box)
-	for group in _in_removal_order(emptied):
-		_remove(group)
-	for group: Structure in touched:
-		if emptied.has(group):
+	for structure in _in_removal_order(emptied):
+		_remove(structure)
+	for structure: Structure in touched:
+		if emptied.has(structure):
 			continue
 		var remaining: Dictionary[Box, Vector3i] = {}
-		for box in group.boxes():
+		for box in structure.boxes():
 			if not erased_boxes.has(box):
 				remaining[box] = box.world_cell
-		_reanchor(group, remaining)
+		_reanchor(structure, remaining)
 	_commit()
 
 
@@ -239,7 +239,7 @@ func _make_the_boxes_under_walkable(boxes: Array[Box], erased: Dictionary[Box, b
 			_set_box_flags(below, {&"walkable": true})
 
 
-## Le pone las banderas de la brocha a cajas que ya existen, sin cambiarlas de grupo.
+## Le pone las banderas de la brocha a cajas que ya existen, sin cambiarlas de Structure.
 func repaint(boxes: Array[Box], brush: BoxBrush) -> void:
 	boxes = _live_boxes(boxes)
 	if boxes.is_empty():
@@ -247,10 +247,10 @@ func repaint(boxes: Array[Box], brush: BoxBrush) -> void:
 	_begin("Repaint %d box%s as %s" % [boxes.size(), "" if boxes.size() == 1 else "es", brush.label()])
 	for box in boxes:
 		var above: Box = room.index.cells_3D.get(box.world_cell + LevelIndex.GRID_UP)
-		var group_cells: Dictionary[Vector3i, bool] = {}
-		for sibling in boxes_of_group_of(box):
-			group_cells[sibling.world_cell] = true
-		_set_box_flags(box, brush.flags_for(above == null, _outside_edges(box.world_cell, group_cells)))
+		var structure_cells: Dictionary[Vector3i, bool] = {}
+		for sibling in boxes_of_the_structure_of(box):
+			structure_cells[sibling.world_cell] = true
+		_set_box_flags(box, brush.flags_for(above == null, _outside_edges(box.world_cell, structure_cells)))
 	_commit()
 
 
@@ -316,7 +316,7 @@ static func flags_of(box: Box) -> Dictionary[StringName, bool]:
 
 #==================Mover y agrupar==================
 
-## Mueve cajas un paso. Un grupo que se mueve entero mueve su nodo; si no, se mueven sus cajas y se
+## Mueve cajas un paso. Una Structure que se mueve entera mueve su nodo; si no, se mueven sus cajas y se
 ## vuelve a anclar. Devuelve false si el paso cae sobre una caja que no se mueve.
 func move(boxes: Array[Box], step: Vector3i, merge_with_the_last := false, verb := "Move") -> bool:
 	boxes = _live_boxes(boxes)
@@ -325,24 +325,24 @@ func move(boxes: Array[Box], step: Vector3i, merge_with_the_last := false, verb 
 	var moving: Dictionary[Box, bool] = {}
 	for box in boxes:
 		moving[box] = true
-	var by_group: Dictionary[Node, Array] = {}
+	var by_structure: Dictionary[Node, Array] = {}
 	for box in boxes:
 		var parent := box.get_parent()
-		if not by_group.has(parent):
-			by_group[parent] = []
-		by_group[parent].append(box)
+		if not by_structure.has(parent):
+			by_structure[parent] = []
+		by_structure[parent].append(box)
 	_begin("%s %d box%s" % [verb, boxes.size(), "" if boxes.size() == 1 else "es"], merge_with_the_last)
-	for parent: Node in by_group:
-		var group := parent as Structure
-		if group != null and by_group[parent].size() == group.boxes().size():
-			_change(group, &"cell", group.cell + step)
-		elif group != null:
+	for parent: Node in by_structure:
+		var structure := parent as Structure
+		if structure != null and by_structure[parent].size() == structure.boxes().size():
+			_change(structure, &"cell", structure.cell + step)
+		elif structure != null:
 			var final_cells: Dictionary[Box, Vector3i] = {}
-			for box in group.boxes():
+			for box in structure.boxes():
 				final_cells[box] = box.world_cell + (step if moving.has(box) else Vector3i.ZERO)
-			_reanchor(group, final_cells)
+			_reanchor(structure, final_cells)
 		else:
-			for box: Box in by_group[parent]:
+			for box: Box in by_structure[parent]:
 				_change(box, &"cell", box.cell + step)
 	_commit()
 	return true
@@ -361,65 +361,65 @@ func can_move(boxes: Array[Box], step: Vector3i) -> bool:
 	return true
 
 
-## Pone las cajas en un grupo nuevo. Los grupos que quedan vacíos se borran.
-func group(boxes: Array[Box]) -> Structure:
+## Pone las cajas en una Structure nueva. Las Structures que quedan vacías se borran.
+func join_into_one_structure(boxes: Array[Box]) -> Structure:
 	var movable: Array[Box] = []
 	for box in _live_boxes(boxes):
 		if not is_shell_part(box.get_parent()):
 			movable.append(box)
 	if movable.is_empty() or mixes_terrain(movable):
 		return null
-	var first_group := movable[0].get_parent()
-	var parent := first_group.get_parent() if first_group is Structure else first_group
+	var first_structure := movable[0].get_parent()
+	var parent := first_structure.get_parent() if first_structure is Structure else first_structure
 	var cells: Array[Vector3i] = []
 	for box in movable:
 		cells.append(box.world_cell)
-	var new_group := STRUCTURE_SCENE.instantiate(edit_state) as Structure
+	var new_structure := STRUCTURE_SCENE.instantiate(edit_state) as Structure
 	var kind := BoxBrush.kind_of(movable[0])
-	new_group.name = BoxBrush.GROUP_NAME[kind]
+	new_structure.name = BoxBrush.STRUCTURE_NAME[kind]
 	var low := _low_corner(cells)
-	new_group.cell = low - _world_cell_of(parent)
-	new_group.dimensions = _high_corner(cells) - low + Vector3i.ONE
-	_begin("Group %d boxes" % movable.size())
-	_add(new_group, parent)
-	_take_boxes_out_of_their_groups(movable, new_group, low)
+	new_structure.cell = low - _world_cell_of(parent)
+	new_structure.dimensions = _high_corner(cells) - low + Vector3i.ONE
+	_begin("Join %d boxes into one structure" % movable.size())
+	_add(new_structure, parent)
+	_take_boxes_out_of_their_structures(movable, new_structure, low)
 	_commit()
-	return new_group
+	return new_structure
 
 
-## Cada caja de los grupos queda en un grupo propio; la primera se queda en el grupo de siempre.
-func ungroup(groups: Array[Structure]) -> void:
+## Cada caja de las Structures queda en una Structure propia; la primera se queda en la de siempre.
+func split_into_one_box_structures(structures: Array[Structure]) -> void:
 	var splitting: Array[Structure] = []
-	for each_group in groups:
-		if is_in_the_level(each_group) and not is_shell_part(each_group) and each_group.boxes().size() > 1:
-			splitting.append(each_group)
+	for each_structure in structures:
+		if is_in_the_level(each_structure) and not is_shell_part(each_structure) and each_structure.boxes().size() > 1:
+			splitting.append(each_structure)
 	if splitting.is_empty():
 		return
-	_begin("Ungroup %d group%s" % [splitting.size(), "" if splitting.size() == 1 else "s"])
-	for each_group in splitting:
-		var boxes := each_group.boxes()
+	_begin("Split %d structure%s into one-box structures" % [splitting.size(), "" if splitting.size() == 1 else "s"])
+	for each_structure in splitting:
+		var boxes := each_structure.boxes()
 		var keep := boxes[0]
 		for box in boxes.slice(1):
 			var alone := STRUCTURE_SCENE.instantiate(edit_state) as Structure
-			alone.name = BoxBrush.GROUP_NAME[BoxBrush.kind_of(box)]
-			alone.cell = box.world_cell - _world_cell_of(each_group.get_parent())
-			_add(alone, each_group.get_parent())
+			alone.name = BoxBrush.STRUCTURE_NAME[BoxBrush.kind_of(box)]
+			alone.cell = box.world_cell - _world_cell_of(each_structure.get_parent())
+			_add(alone, each_structure.get_parent())
 			_reparent(box, alone, Vector3i.ZERO)
-		_reanchor(each_group, {keep: keep.world_cell})
+		_reanchor(each_structure, {keep: keep.world_cell})
 	_commit()
 
 
-func _take_boxes_out_of_their_groups(boxes: Array[Box], into: Structure, into_anchor: Vector3i) -> void:
+func _take_boxes_out_of_their_structures(boxes: Array[Box], into: Structure, into_anchor: Vector3i) -> void:
 	var leaving: Dictionary[Box, bool] = {}
-	var old_groups: Dictionary[Structure, bool] = {}
+	var old_structures: Dictionary[Structure, bool] = {}
 	for box in boxes:
 		leaving[box] = true
 		var old := box.get_parent() as Structure
 		if old != null:
-			old_groups[old] = true
+			old_structures[old] = true
 	for box in _in_removal_order(boxes):
 		_reparent(box, into, box.world_cell - into_anchor)
-	for old: Structure in old_groups:
+	for old: Structure in old_structures:
 		var remaining: Dictionary[Box, Vector3i] = {}
 		for box in old.boxes():
 			if not leaving.has(box):
@@ -430,7 +430,7 @@ func _take_boxes_out_of_their_groups(boxes: Array[Box], into: Structure, into_an
 			_reanchor(old, remaining)
 
 
-#==================Grupos, carpetas y nombres==================
+#==================Structures, carpetas y nombres==================
 
 func rename(node: Node, new_name: String) -> void:
 	new_name = new_name.strip_edges().validate_node_name()
@@ -470,7 +470,7 @@ func move_into(nodes: Array[Node], new_parent: Node) -> void:
 			outermost.append(node)
 	if outermost.is_empty():
 		return
-	_begin("Move %s into %s" % [outermost[0].name if outermost.size() == 1 else "%d groups" % outermost.size(), new_parent.name])
+	_begin("Move %s into %s" % [outermost[0].name if outermost.size() == 1 else "%d structures and folders" % outermost.size(), new_parent.name])
 	for node in _in_removal_order(outermost):
 		_reparent(node as Node3D, new_parent, _world_cell_of(node) - _world_cell_of(new_parent))
 	_commit()
@@ -692,15 +692,15 @@ func set_starting_perspective(perspective: Room.Perspective) -> void:
 
 #==================Copiar y pegar==================
 
-## Una copia de grupos como datos, no como nodos: así pegarla es pintar con banderas exactas.
+## Una copia de Structures como datos, no como nodos: así pegarla es pintar con banderas exactas.
 class Clip:
-	## Cada grupo: {"name": String, "boxes": [{"cell": Vector3i, "flags": Dictionary}], "pieces": [{"cell", "type", "face", "properties"}]}
-	var groups: Array[Dictionary] = []
+	## Cada Structure: {"name": String, "boxes": [{"cell": Vector3i, "flags": Dictionary}], "pieces": [{"cell", "type", "face", "properties"}]}
+	var structures: Array[Dictionary] = []
 	## Todas sus celdas, desde su esquina baja.
 	var cells: Array[Vector3i] = []
 
 	func is_empty() -> bool:
-		return groups.is_empty()
+		return structures.is_empty()
 
 
 func copy(boxes: Array[Box]) -> Clip:
@@ -712,20 +712,20 @@ func copy(boxes: Array[Box]) -> Clip:
 	for box in boxes:
 		world_cells.append(box.world_cell)
 	var low := _low_corner(world_cells)
-	var by_group: Dictionary[Node, Array] = {}
+	var by_structure: Dictionary[Node, Array] = {}
 	for box in boxes:
 		var key: Node = box.get_parent() if box.get_parent() is Structure and not is_shell_part(box.get_parent()) else box
-		if not by_group.has(key):
-			by_group[key] = []
-		by_group[key].append(box)
-	for key: Node in by_group:
-		var data := {"name": String(key.name) if key is Structure else BoxBrush.GROUP_NAME[BoxBrush.kind_of(key)], "boxes": [], "pieces": []}
-		for box: Box in by_group[key]:
+		if not by_structure.has(key):
+			by_structure[key] = []
+		by_structure[key].append(box)
+	for key: Node in by_structure:
+		var data := {"name": String(key.name) if key is Structure else BoxBrush.STRUCTURE_NAME[BoxBrush.kind_of(key)], "boxes": [], "pieces": []}
+		for box: Box in by_structure[key]:
 			data["boxes"].append({"cell": box.world_cell - low, "flags": flags_of(box)})
 			clip.cells.append(box.world_cell - low)
 			for piece in box.powerables():
 				data["pieces"].append({"cell": box.world_cell - low, "type": piece_type(piece), "face": piece.face, "properties": properties_of(piece)})
-		clip.groups.append(data)
+		clip.structures.append(data)
 	return clip
 
 
@@ -750,29 +750,29 @@ func paste(clip: Clip, at: Vector3i, folder: Node) -> Array[Structure]:
 	if not can_paste(clip, at):
 		return pasted
 	var parent := folder if folder != null else room
-	_begin("Paste %d group%s" % [clip.groups.size(), "" if clip.groups.size() == 1 else "s"])
-	for data in clip.groups:
+	_begin("Paste %d structure%s" % [clip.structures.size(), "" if clip.structures.size() == 1 else "s"])
+	for data in clip.structures:
 		var cells: Array[Vector3i] = []
 		for box_data: Dictionary in data["boxes"]:
 			cells.append(box_data["cell"] + at)
 		var low := _low_corner(cells)
-		var new_group := STRUCTURE_SCENE.instantiate(edit_state) as Structure
-		new_group.name = data["name"]
-		new_group.cell = low - _world_cell_of(parent)
-		new_group.dimensions = _high_corner(cells) - low + Vector3i.ONE
-		_add(new_group, parent)
+		var new_structure := STRUCTURE_SCENE.instantiate(edit_state) as Structure
+		new_structure.name = data["name"]
+		new_structure.cell = low - _world_cell_of(parent)
+		new_structure.dimensions = _high_corner(cells) - low + Vector3i.ONE
+		_add(new_structure, parent)
 		var boxes_at: Dictionary[Vector3i, Box] = {}
 		for box_data: Dictionary in data["boxes"]:
 			var flags: Dictionary[StringName, bool] = {}
 			flags.assign(box_data["flags"])
-			boxes_at[box_data["cell"]] = _add_new_box(new_group, box_data["cell"] + at - low, flags)
+			boxes_at[box_data["cell"]] = _add_new_box(new_structure, box_data["cell"] + at - low, flags)
 		for piece_data: Dictionary in data["pieces"]:
 			var piece := PIECE_SCENE[piece_data["type"]].instantiate(edit_state) as Powerable
 			piece.face = piece_data["face"]
 			for property in piece_data["properties"]:
 				piece.set(property, piece_data["properties"][property])
 			_add(piece, boxes_at[piece_data["cell"]])
-		pasted.append(new_group)
+		pasted.append(new_structure)
 	_commit()
 	return pasted
 
@@ -826,12 +826,12 @@ func shell_part_at(cell: Vector3i) -> Structure:
 	return null
 
 
-## Las cajas del grupo de una caja: las de su Structure, o ella sola si está suelta.
-func boxes_of_group_of(box: Box) -> Array[Box]:
-	var group := box.get_parent() as Structure
-	if group == null:
+## Las cajas de la Structure de una caja: las de su Structure, o ella sola si está suelta.
+func boxes_of_the_structure_of(box: Box) -> Array[Box]:
+	var structure := box.get_parent() as Structure
+	if structure == null:
 		return [box]
-	return group.boxes()
+	return structure.boxes()
 
 
 static func mixes_terrain(boxes: Array[Box]) -> bool:
@@ -842,11 +842,11 @@ static func mixes_terrain(boxes: Array[Box]) -> bool:
 	return terrain > 0 and terrain < boxes.size()
 
 
-## Si sumar cajas de ese tipo al grupo mezclaría terreno con lo que no lo es.
-static func would_mix_terrain(group: Structure, terrain: bool) -> bool:
-	if group == null:
+## Si sumar cajas de ese tipo a la Structure mezclaría terreno con lo que no lo es.
+static func would_mix_terrain(structure: Structure, terrain: bool) -> bool:
+	if structure == null:
 		return false
-	for box in group.boxes():
+	for box in structure.boxes():
 		if box.is_terrain() != terrain:
 			return true
 	return false
@@ -965,20 +965,20 @@ func _nodes_owned_with(node: Node) -> Array[Node]:
 	return owned
 
 
-## Vuelve a anclar un grupo para que su celda sea la esquina baja de sus cajas y sus dimensiones las
+## Vuelve a anclar una Structure para que su celda sea la esquina baja de sus cajas y sus dimensiones las
 ## de su caja envolvente, sin que cambie ninguna celda del mundo.
-func _reanchor(group: Structure, final_cells: Dictionary[Box, Vector3i]) -> void:
-	if is_shell_part(group) or final_cells.is_empty():
+func _reanchor(structure: Structure, final_cells: Dictionary[Box, Vector3i]) -> void:
+	if is_shell_part(structure) or final_cells.is_empty():
 		return
 	var cells: Array[Vector3i] = []
 	cells.assign(final_cells.values())
 	var anchor := _low_corner(cells)
-	_anchor(group, final_cells, anchor, _high_corner(cells) - anchor + Vector3i.ONE)
+	_anchor(structure, final_cells, anchor, _high_corner(cells) - anchor + Vector3i.ONE)
 
 
-func _anchor(group: Structure, final_cells: Dictionary[Box, Vector3i], anchor: Vector3i, dimensions: Vector3i) -> void:
-	_change(group, &"cell", anchor - _world_cell_of(group.get_parent()))
-	_change(group, &"dimensions", dimensions)
+func _anchor(structure: Structure, final_cells: Dictionary[Box, Vector3i], anchor: Vector3i, dimensions: Vector3i) -> void:
+	_change(structure, &"cell", anchor - _world_cell_of(structure.get_parent()))
+	_change(structure, &"dimensions", dimensions)
 	for box: Box in final_cells:
 		_change(box, &"cell", final_cells[box] - anchor)
 

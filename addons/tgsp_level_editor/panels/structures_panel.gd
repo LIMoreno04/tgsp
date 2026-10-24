@@ -1,16 +1,16 @@
 @tool
-class_name LevelEditorGroupsPanel
+class_name LevelEditorStructuresPanel
 extends VBoxContainer
-## Las carpetas y los grupos del Room, como el árbol de la escena sin las cajas. Elige grupos (Ctrl y
+## Las carpetas y las Structures del Room, como el árbol de la escena sin las cajas. Elige Structures (Ctrl y
 ## Shift suman, como en el árbol de Godot), los renombra, los esconde en la vista (sin guardar nada) y
-## los mueve entre carpetas. La carpeta elegida es donde van los grupos nuevos.
+## los mueve entre carpetas. La carpeta elegida es donde van las Structures nuevas.
 
 const EYE_COLUMN_BUTTON := 0
 
 var screen: LevelEditorScreen
 var tree := Tree.new()
-var _where_new_groups_go := Label.new()
-## Para volver a mandar los grupos nuevos al Room: el árbol no tiene una fila del Room que elegir.
+var _where_new_structures_go := Label.new()
+## Para volver a mandar las Structures nuevas al Room: el árbol no tiene una fila del Room que elegir.
 var _back_to_the_room: Button
 var _move_to := MenuButton.new()
 var _collapsed: Dictionary[Node, bool] = {}
@@ -20,26 +20,26 @@ var _tree_selection_pending := false
 
 func _init(the_screen: LevelEditorScreen) -> void:
 	screen = the_screen
-	name = "Groups"
+	name = "Structures"
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var actions := HFlowContainer.new()
 	add_child(actions)
 	LevelEditorPropertiesPanel._button(actions, "New folder", "A folder in the selected folder (or the Room). Its cell moves everything in it.", _new_folder)
 	_move_to.text = "Move to"
-	_move_to.tooltip_text = "Move the selected groups or folders into another folder, keeping where they are in the world."
+	_move_to.tooltip_text = "Move the selected structures or folders into another folder, keeping where they are in the world."
 	_move_to.flat = false
 	_move_to.about_to_popup.connect(_fill_move_to)
 	_move_to.get_popup().id_pressed.connect(_move_into)
 	actions.add_child(_move_to)
-	LevelEditorPropertiesPanel._button(actions, "Delete", "Delete the selected groups or folders, and everything in them.", _delete)
+	LevelEditorPropertiesPanel._button(actions, "Delete", "Delete the selected structures or folders, and everything in them.", _delete)
 	var where_row := HBoxContainer.new()
 	add_child(where_row)
-	_where_new_groups_go.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_where_new_groups_go.modulate = Color(1, 1, 1, 0.7)
-	_where_new_groups_go.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	where_row.add_child(_where_new_groups_go)
-	_back_to_the_room = LevelEditorPropertiesPanel._button(where_row, "Back to the Room", "New groups go straight under the Room again.", screen.set_current_folder.bind(null))
+	_where_new_structures_go.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_where_new_structures_go.modulate = Color(1, 1, 1, 0.7)
+	_where_new_structures_go.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	where_row.add_child(_where_new_structures_go)
+	_back_to_the_room = LevelEditorPropertiesPanel._button(where_row, "Back to the Room", "New structures go straight under the Room again.", screen.set_current_folder.bind(null))
 	tree.columns = 2
 	tree.hide_root = true
 	tree.select_mode = Tree.SELECT_MULTI
@@ -61,7 +61,7 @@ func refresh() -> void:
 	tree.clear()
 	var level_room := screen.room
 	if level_room == null:
-		_where_new_groups_go.text = ""
+		_where_new_structures_go.text = ""
 		_back_to_the_room.visible = false
 		_refreshing = false
 		return
@@ -76,11 +76,11 @@ func refresh() -> void:
 			shell_item.set_metadata(0, child)
 			for part in child.get_children():
 				if part is Structure:
-					_add_group(shell_item, part, false)
+					_add_structure(shell_item, part, false)
 		elif child is GridEntity:
 			_add_node(top, child)
 	var folder := screen.current_folder()
-	_where_new_groups_go.text = "New groups go to: %s" % (folder.name if folder != null else "the Room")
+	_where_new_structures_go.text = "New structures go to: %s" % (folder.name if folder != null else "the Room")
 	_back_to_the_room.visible = folder != null
 	_refreshing = false
 	show_the_selection(false)
@@ -88,9 +88,9 @@ func refresh() -> void:
 
 func _add_node(parent_item: TreeItem, node: Node) -> void:
 	if node is Structure:
-		_add_group(parent_item, node, true)
+		_add_structure(parent_item, node, true)
 	elif node is Box:
-		_add_group(parent_item, node, true)
+		_add_structure(parent_item, node, true)
 	elif node is GridEntity:
 		var item := tree.create_item(parent_item)
 		item.set_text(0, node.name)
@@ -106,7 +106,7 @@ func _add_node(parent_item: TreeItem, node: Node) -> void:
 				_add_node(item, child)
 
 
-func _add_group(parent_item: TreeItem, node: Node, editable: bool) -> void:
+func _add_structure(parent_item: TreeItem, node: Node, editable: bool) -> void:
 	var item := tree.create_item(parent_item)
 	var boxes: Array[Box] = []
 	if node is Structure:
@@ -114,7 +114,7 @@ func _add_group(parent_item: TreeItem, node: Node, editable: bool) -> void:
 	else:
 		boxes = [node as Box]
 	item.set_text(0, node.name if node is Structure else "%s (loose box)" % node.name)
-	item.set_text(1, "%s · %d" % [BoxBrush.label_of_group(boxes), boxes.size()])
+	item.set_text(1, "%s · %d" % [BoxBrush.label_of_structure(boxes), boxes.size()])
 	item.set_editable(0, editable)
 	item.set_metadata(0, node)
 	item.set_icon(0, _shade_swatch(screen.shade_of(node)))
@@ -122,7 +122,7 @@ func _add_group(parent_item: TreeItem, node: Node, editable: bool) -> void:
 
 
 func _add_eye(item: TreeItem, node: Node) -> void:
-	var hidden := screen.view.hidden_groups.has(node)
+	var hidden := screen.view.hidden_structures.has(node)
 	var hidden_with_its_folder := not hidden and screen.view.is_hidden(node)
 	var tooltip := "Show it in the view" if hidden else ("Hidden with its folder" if hidden_with_its_folder else "Hide it in the view (nothing is saved)")
 	item.add_button(1, LevelEditorIcons.get_icon("EyeClosed" if hidden or hidden_with_its_folder else "Eye", screen.icon_scale), EYE_COLUMN_BUTTON, false, tooltip)
@@ -161,7 +161,7 @@ func _on_multi_selected(_item: TreeItem, _column: int, _selected: bool) -> void:
 	_select_what_the_tree_marks.call_deferred()
 
 
-## Una carpeta sola pasa a ser donde van los grupos nuevos; los grupos se eligen en la vista.
+## Una carpeta sola pasa a ser donde van las Structures nuevas; las Structures se eligen en la vista.
 func _select_what_the_tree_marks() -> void:
 	_tree_selection_pending = false
 	var nodes := _selected_nodes()
@@ -177,8 +177,8 @@ func _select_what_the_tree_marks() -> void:
 	screen.select(boxes, [])
 
 
-## Sólo marca lo elegido, sin rehacer el árbol: así no se pierde por dónde se estaba mirando. Un grupo
-## se marca si está elegido entero: lo marcado es lo que borran y mueven los botones de arriba.
+## Sólo marca lo elegido, sin rehacer el árbol: así no se pierde por dónde se estaba mirando. Una
+## Structure se marca si está elegida entera: lo marcado es lo que borran y mueven los botones de arriba.
 func show_the_selection(scroll_to_it := true) -> void:
 	var root_item := tree.get_root()
 	if root_item == null:
@@ -239,10 +239,10 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button: in
 	if id != EYE_COLUMN_BUTTON:
 		return
 	var node: Node = item.get_metadata(0)
-	if screen.view.hidden_groups.has(node):
-		screen.view.hidden_groups.erase(node)
+	if screen.view.hidden_structures.has(node):
+		screen.view.hidden_structures.erase(node)
 	else:
-		screen.view.hidden_groups[node] = true
+		screen.view.hidden_structures[node] = true
 	screen.view.apply_hiding()
 	screen.redraw()
 	refresh.call_deferred()
@@ -275,11 +275,11 @@ func _fill_move_to() -> void:
 	popup.set_item_metadata(0, screen.room)
 
 
-## Lo que tocan los botones: las filas marcadas, o si no hay ninguna, los grupos de lo elegido.
+## Lo que tocan los botones: las filas marcadas, o si no hay ninguna, las Structures de lo elegido.
 func _nodes_to_act_on() -> Array[Node]:
 	var nodes := _selected_nodes()
 	if nodes.is_empty():
-		nodes = screen.groups_of(screen.selected_boxes)
+		nodes = screen.structures_of(screen.selected_boxes)
 	return nodes
 
 
@@ -293,9 +293,9 @@ func _move_into(id: int) -> void:
 func _delete() -> void:
 	var nodes := _nodes_to_act_on()
 	if nodes.is_empty():
-		screen.flash("Select the groups or folders to delete first.", true)
+		screen.flash("Select the structures or folders to delete first.", true)
 		return
 	if nodes.has(screen.current_folder()):
 		screen.set_current_folder(null)
-	screen.edits.delete_nodes(nodes, "Delete %s" % (nodes[0].name if nodes.size() == 1 else "%d groups and folders" % nodes.size()))
+	screen.edits.delete_nodes(nodes, "Delete %s" % (nodes[0].name if nodes.size() == 1 else "%d structures and folders" % nodes.size()))
 	screen.forget_freed_selection()

@@ -98,9 +98,9 @@ func _exit_row(exit: ExitDoor) -> void:
 	var where := HBoxContainer.new()
 	box.add_child(where)
 	var place := Label.new()
-	var group := exit.box.get_parent()
-	var its_group := "Room floor" if screen.edits.is_shell_part(group) else (String(group.name) if group is Structure else String(exit.box.name))
-	place.text = "%s · %s" % [its_group, LevelEditorTool.describe(exit.box.world_cell)]
+	var structure := exit.box.get_parent()
+	var its_structure := "Room floor" if screen.edits.is_shell_part(structure) else (String(structure.name) if structure is Structure else String(exit.box.name))
+	place.text = "%s · %s" % [its_structure, LevelEditorTool.describe(exit.box.world_cell)]
 	place.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	where.add_child(place)
 	LevelEditorPropertiesPanel._button(where, "Go to", "Select this exit and frame it.", screen.go_to_piece.bind(exit))

@@ -56,8 +56,8 @@ static func describe_pick(hit: GridPicker.Hit) -> String:
 			settings.append("2D edge " + FACING_TEXT[facing])
 	if hit.box.keeps_height:
 		settings.append("keeps height")
-	var group := hit.box.get_parent()
-	return "Pick: %s box (%s)" % [group.name if group is Structure else "loose", ", ".join(settings) if not settings.is_empty() else "nothing on"]
+	var structure := hit.box.get_parent()
+	return "Pick: %s box (%s)" % [structure.name if structure is Structure else "loose", ", ".join(settings) if not settings.is_empty() else "nothing on"]
 
 
 func hint() -> String:

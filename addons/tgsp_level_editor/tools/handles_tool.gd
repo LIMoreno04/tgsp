@@ -2,7 +2,7 @@
 class_name HandlesTool
 extends LevelEditorTool
 ## Prende y apaga agarraderas apuntándolas: una cara lateral es su agarradera 3D, cerca de un borde de
-## la tapa es esa agarradera 2D, el medio de la tapa es la tapa entera. Shift: en todo el grupo,
+## la tapa es esa agarradera 2D, el medio de la tapa es la tapa entera. Shift: en toda la Structure,
 ## sobre los lados que dan afuera. El botón derecho apaga.
 
 enum Target { NOTHING, SIDE_3D, EDGE_2D, WHOLE_TOP }
@@ -20,7 +20,7 @@ var _hover_hit: GridPicker.Hit = GridPicker.Hit.new()
 func _init(the_screen: LevelEditorScreen) -> void:
 	super(the_screen)
 	title = "Handles"
-	tooltip = "Click a side face for its 3D handle, near a top edge for that 2D handle, the middle of a top for the whole top. Shift: the whole group."
+	tooltip = "Click a side face for its 3D handle, near a top edge for that 2D handle, the middle of a top for the whole top. Shift: the whole structure."
 
 
 func hover(hit: GridPicker.Hit) -> void:
@@ -89,20 +89,20 @@ func press(hit: GridPicker.Hit, event: InputEventMouseButton) -> void:
 	edits().set_flags_per_box(changes_per_box, _describe_change(hit, reference))
 
 
-## Con Shift, todas las cajas del grupo cuyo mismo lado o borde da afuera del grupo.
-func _boxes_reached(hit: GridPicker.Hit, whole_group: bool) -> Array[Box]:
-	if not whole_group:
+## Con Shift, todas las cajas de la Structure cuyo mismo lado o borde da afuera de ella.
+func _boxes_reached(hit: GridPicker.Hit, whole_structure: bool) -> Array[Box]:
+	if not whole_structure:
 		return [hit.box]
-	var group := edits().boxes_of_group_of(hit.box)
+	var structure := edits().boxes_of_the_structure_of(hit.box)
 	var cells: Dictionary[Vector3i, bool] = {}
-	for box in group:
+	for box in structure:
 		cells[box.world_cell] = true
 	var outward := hit.normal
 	if target_of(hit) == Target.EDGE_2D:
 		var direction := Box.FACING_DIRECTION[hit.top_edge as Box.Facing]
 		outward = Vector3i(direction.x, direction.y, 0)
 	var reached: Array[Box] = []
-	for box in group:
+	for box in structure:
 		if box.is_terrain():
 			continue
 		if target_of(hit) == Target.WHOLE_TOP or target_of(hit) == Target.EDGE_2D:
@@ -160,4 +160,4 @@ func status() -> String:
 
 
 func hint() -> String:
-	return "Left: toggle · Right: turn off · Shift: the whole group · Side face: 3D · Top edge: 2D · Middle of the top: whole top"
+	return "Left: toggle · Right: turn off · Shift: the whole structure · Side face: 3D · Top edge: 2D · Middle of the top: whole top"

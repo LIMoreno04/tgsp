@@ -21,8 +21,8 @@ const LABEL: Dictionary[Kind, String] = {
 	Kind.CUSTOM: "Custom",
 }
 
-## El nombre que Godot le da a un grupo nuevo de ese tipo (y numera si se repite).
-const GROUP_NAME: Dictionary[Kind, String] = {
+## El nombre que Godot le da a una Structure nueva de ese tipo (y numera si se repite).
+const STRUCTURE_NAME: Dictionary[Kind, String] = {
 	Kind.FLOOR: "Floor",
 	Kind.WALL: "Wall",
 	Kind.BLOCK: "Block",
@@ -31,7 +31,7 @@ const GROUP_NAME: Dictionary[Kind, String] = {
 	Kind.MOVABLE_3D: "Movable3D",
 	Kind.MOVABLE_2D: "Movable2D",
 	Kind.HANGING_PLATFORM: "HangingPlatform",
-	Kind.CUSTOM: "Group",
+	Kind.CUSTOM: "Structure",
 }
 
 const TOOLTIP: Dictionary[Kind, String] = {
@@ -83,7 +83,7 @@ var whole_top_2d := false
 var edges_2d: Dictionary[Box.Facing, bool] = _no_facings()
 ## En las plataformas caminables las rayas van sólo por fuera: adentro serían paredes en 2D.
 var edges_2d_only_outside := false
-## Para Custom: el grupo del que salió, para nombrar los grupos nuevos.
+## Para Custom: la Structure de la que salió, para nombrar las Structures nuevas.
 var picked_kind := Kind.CUSTOM
 
 
@@ -144,8 +144,8 @@ func label() -> String:
 		return "Custom (%s)" % LABEL[picked_kind]
 	return LABEL[kind]
 
-func group_name() -> String:
-	return GROUP_NAME[picked_kind if kind == Kind.CUSTOM else kind]
+func structure_name() -> String:
+	return STRUCTURE_NAME[picked_kind if kind == Kind.CUSTOM else kind]
 
 func is_terrain() -> bool:
 	return is_floor or is_wall
@@ -156,7 +156,7 @@ func has_handle_options() -> bool:
 
 
 ## Las banderas de una caja pintada. `is_column_top`: si queda arriba de su columna en el trazo.
-## `outside`: qué bordes de la tapa dan afuera del grupo, para las rayas sólo por fuera.
+## `outside`: qué bordes de la tapa dan afuera de la Structure, para las rayas sólo por fuera.
 func flags_for(is_column_top: bool, outside: Dictionary[Box.Facing, bool]) -> Dictionary[StringName, bool]:
 	var flags: Dictionary[StringName, bool] = {}
 	for flag in BOX_FLAGS:
@@ -201,9 +201,9 @@ static func kind_of(box: Box) -> Kind:
 	return Kind.BLOCK
 
 
-## El tipo de un grupo, o "Mixed" si sus cajas no coinciden. Una columna caminable cuenta como
+## El tipo de una Structure, o "Mixed" si sus cajas no coinciden. Una columna caminable cuenta como
 ## Walkable aunque sólo su tapa lo sea.
-static func label_of_group(boxes: Array[Box]) -> String:
+static func label_of_structure(boxes: Array[Box]) -> String:
 	var kinds: Dictionary[Kind, bool] = {}
 	for box in boxes:
 		kinds[kind_of(box)] = true

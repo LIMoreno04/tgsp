@@ -37,7 +37,7 @@ var selected_boxes: Array[Box] = []
 var selected_pieces: Array[Powerable] = []
 var _selected: Dictionary[Box, bool] = {}
 var _current_folder: Node
-var group_name_field: LineEdit
+var structure_name_field: LineEdit
 
 var show_power := false
 var show_beams := true
@@ -65,7 +65,7 @@ var _perspective_button := Button.new()
 var _open_menu := MenuButton.new()
 var _tabs := TabContainer.new()
 var _properties: LevelEditorPropertiesPanel
-var _groups: LevelEditorGroupsPanel
+var _structures: LevelEditorStructuresPanel
 var _level: LevelEditorLevelPanel
 var _problems: LevelEditorProblemsPanel
 var _body := HSplitContainer.new()
@@ -147,11 +147,11 @@ func _build() -> void:
 	_tabs.use_hidden_tabs_for_min_size = true
 	right.add_child(_tabs)
 	_properties = LevelEditorPropertiesPanel.new(self)
-	_groups = LevelEditorGroupsPanel.new(self)
+	_structures = LevelEditorStructuresPanel.new(self)
 	_level = LevelEditorLevelPanel.new(self)
 	_problems = LevelEditorProblemsPanel.new(self)
 	_problems.count_changed.connect(func(count: int) -> void: _tabs.set_tab_title(3, "Problems (%d)" % count if count > 0 else "Problems"))
-	for panel: Control in [_properties, _groups, _level, _problems]:
+	for panel: Control in [_properties, _structures, _level, _problems]:
 		var scroll := ScrollContainer.new()
 		scroll.name = panel.name
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -376,15 +376,15 @@ Game view: the camera exactly where the game's would be · Tab: 2D or 3D · Q, E
 Holding Shift, Ctrl or Alt shows at once what a click would do.
 
 [b]Box brushes (1 to 8)[/b]
-Click to place against the face you point at; drag to paint (or a rectangle). One stroke makes one new group.
-Shift at the start of a stroke on a box: extend that box's group · Ctrl + drag: repaint · Alt + click: pick a box's or a piece's settings.
+Click to place against the face you point at; drag to paint (or a rectangle). One stroke makes one new structure: boxes that move together.
+Shift at the start of a stroke on a box: extend that box's structure · Ctrl + drag: repaint · Alt + click: pick a box's or a piece's settings.
 + and −: layer mode, where new boxes go on that layer and everything above it is hidden · Esc: back to faces.
 
 [b]Select (V)[/b]
-Click: a group (on the room shell, one box) · Double-click: one box · Ctrl + click: the piece on a face · Shift: add or take out.
+Click: a structure (on the room shell, one box) · Double-click: one box · Ctrl + click: the piece on a face · Shift: add or take out.
 Drag on empty space or on the floor: a rectangle. It leaves the room shell out.
 Drag a selection to move it (+ and − lift it meanwhile) · Arrows: nudge it along the grid · Alt + + and Alt + −: up and down.
-Ctrl + D: deselect · Delete or Backspace: delete · Ctrl + G: group · Ctrl + Shift + G: ungroup · F2: rename the group.
+Ctrl + D: deselect · Delete or Backspace: delete · Ctrl + G: join into one structure · Ctrl + Shift + G: split into one-box structures · F2: rename the structure.
 Ctrl + C, Ctrl + V: copy and paste. A ghost follows the mouse: click to place, Shift + click to place and keep pasting, Esc to stop.
 
 [b]Power[/b]
@@ -392,11 +392,11 @@ Wire (W): drag across faces; each two faces in a row get connected both ways. Ri
 Pieces: click a face. Doors and the exit go on the edge of the top nearest the mouse. A new piece connects to the neighbours already pointing at it. Click a piece to select it.
 
 [b]Other tools[/b]
-Handles (H): a side face is its 3D handle, near a top edge that 2D handle, the middle of a top the whole top · Shift: the whole group.
+Handles (H): a side face is its 3D handle, near a top edge that 2D handle, the middle of a top the whole top · Shift: the whole structure.
 Pick: a box's settings into a brush · Repaint: the last brush's settings onto boxes · Eraser: the piece on a face, or else the box · Spawn: where the player starts.
 
 [b]Panels[/b]
-Groups: Ctrl or Shift + click picks several rows; the eye hides a group in this view only (nothing is saved).
+Structures: Ctrl or Shift + click picks several rows; the eye hides a structure or a folder in this view only (nothing is saved).
 Problems: everything Godot warns about in the level, with Show to find it.
 
 [b]Godot's own[/b]
@@ -417,7 +417,7 @@ func set_level(root: Node, level_history: LevelEditorHistory) -> void:
 		each.hover(_hit)
 	_paste_tool.hover(_hit)
 	view.unhide_everything()
-	view.hidden_groups.clear()
+	view.hidden_structures.clear()
 	selected_boxes = []
 	selected_pieces = []
 	_selected.clear()
@@ -444,7 +444,7 @@ func set_level(root: Node, level_history: LevelEditorHistory) -> void:
 			use_tool(box_tools[BoxBrush.Kind.FLOOR])
 		_refresh_everything()
 	else:
-		for panel: Control in [_properties, _groups, _level, _problems]:
+		for panel: Control in [_properties, _structures, _level, _problems]:
 			panel.call(&"refresh")
 		view.preview.clear()
 		view.overlay_3d.clear()
@@ -509,7 +509,7 @@ func refresh_panels() -> void:
 	if room == null:
 		return
 	_properties.refresh()
-	_groups.refresh()
+	_structures.refresh()
 	_level.refresh()
 	_problems.refresh()
 
@@ -789,13 +789,13 @@ func on_key(event: InputEventKey) -> bool:
 			if not ctrl:
 				return false
 			if event.shift_pressed:
-				ungroup_selection()
+				split_the_selection()
 			else:
-				group_selection()
+				join_the_selection()
 		KEY_DELETE, KEY_BACKSPACE:
 			delete_selection()
 		KEY_F2:
-			rename_the_selected_group()
+			rename_the_selected_structure()
 		KEY_H:
 			use_tool_named("Handles")
 		KEY_W:
@@ -933,7 +933,7 @@ func _remember_the_selection(announce := true, refresh_the_panels := true) -> vo
 		_selected[box] = true
 	if refresh_the_panels and not _refresh_pending and room != null:
 		_properties.refresh()
-		_groups.show_the_selection()
+		_structures.show_the_selection()
 	if announce:
 		selection_changed.emit()
 	redraw()
@@ -961,39 +961,39 @@ func select_from_editor(nodes: Array[Node]) -> void:
 	_remember_the_selection(false)
 
 
-## Los nodos que la selección le muestra al editor: las cajas elegidas, o sus grupos si son muchas.
+## Los nodos que la selección le muestra al editor: las cajas elegidas, o sus Structures si son muchas.
 func selection_for_the_editor() -> Array[Node]:
 	var nodes: Array[Node] = []
 	if not selected_pieces.is_empty():
 		nodes.assign(selected_pieces)
 		return nodes
-	if selection_is_whole_groups():
-		for group in groups_of(selected_boxes):
-			nodes.append(group)
+	if selection_is_whole_structures():
+		for structure in structures_of(selected_boxes):
+			nodes.append(structure)
 	else:
 		nodes.assign(selected_boxes.slice(0, 50))
 	return nodes
 
 
-## Los grupos de esas cajas: sus Structures, o la caja misma si está suelta.
-func groups_of(boxes: Array[Box]) -> Array[Node]:
+## Las Structures de esas cajas: sus Structures, o la caja misma si está suelta.
+func structures_of(boxes: Array[Box]) -> Array[Node]:
 	var found: Array[Node] = []
 	for box in boxes:
-		var group: Node = box.get_parent() if box.get_parent() is Structure else box
-		if not found.has(group):
-			found.append(group)
+		var structure: Node = box.get_parent() if box.get_parent() is Structure else box
+		if not found.has(structure):
+			found.append(structure)
 	return found
 
 
-## Si lo elegido son grupos enteros (no la cáscara).
-func selection_is_whole_groups() -> bool:
+## Si lo elegido son Structures enteras (no la cáscara).
+func selection_is_whole_structures() -> bool:
 	if selected_boxes.is_empty():
 		return false
-	for group in groups_of(selected_boxes):
-		if group is Structure:
-			if edits.is_shell_part(group):
+	for structure in structures_of(selected_boxes):
+		if structure is Structure:
+			if edits.is_shell_part(structure):
 				return false
-			for box in (group as Structure).boxes():
+			for box in (structure as Structure).boxes():
 				if not _selected.has(box):
 					return false
 	return true
@@ -1007,7 +1007,7 @@ func current_folder() -> Node:
 
 func set_current_folder(folder: Node) -> void:
 	_current_folder = folder
-	_groups.refresh()
+	_structures.refresh()
 	redraw()
 
 
@@ -1043,37 +1043,37 @@ func delete_selection() -> void:
 	forget_freed_selection()
 
 
-func group_selection() -> void:
+func join_the_selection() -> void:
 	if selected_boxes.is_empty():
 		return
 	if LevelEdits.mixes_terrain(selected_boxes):
-		flash("A group is either all terrain or holds none: these can't be one group.", true)
+		flash("A structure is either all terrain or holds none: these can't be one structure.", true)
 		return
-	var new_group := edits.group(selected_boxes)
-	if new_group != null:
-		_select_the_group.call_deferred(new_group)
+	var new_structure := edits.join_into_one_structure(selected_boxes)
+	if new_structure != null:
+		_select_the_structure.call_deferred(new_structure)
 	else:
-		flash("The shell's boxes can't be grouped.", true)
+		flash("The shell's boxes can't be joined into a structure.", true)
 
 
-func _select_the_group(group: Structure) -> void:
-	if is_instance_valid(group):
-		select(group.boxes(), [])
+func _select_the_structure(structure: Structure) -> void:
+	if is_instance_valid(structure):
+		select(structure.boxes(), [])
 
 
-func ungroup_selection() -> void:
-	var groups: Array[Structure] = []
-	for group in groups_of(selected_boxes):
-		if group is Structure:
-			groups.append(group)
-	edits.ungroup(groups)
+func split_the_selection() -> void:
+	var structures: Array[Structure] = []
+	for structure in structures_of(selected_boxes):
+		if structure is Structure:
+			structures.append(structure)
+	edits.split_into_one_box_structures(structures)
 
 
-func rename_the_selected_group() -> void:
+func rename_the_selected_structure() -> void:
 	_tabs.current_tab = 0
-	if group_name_field != null and is_instance_valid(group_name_field):
-		group_name_field.grab_focus()
-		group_name_field.select_all()
+	if structure_name_field != null and is_instance_valid(structure_name_field):
+		structure_name_field.grab_focus()
+		structure_name_field.select_all()
 
 
 func copy_selection() -> void:
@@ -1129,11 +1129,11 @@ func repaint_boxes(boxes: Array[Box], brush: BoxBrush) -> void:
 	var allowed := boxes_a_repaint_can_take(boxes, brush)
 	var skipped := boxes.size() - allowed.size()
 	if skipped > 0:
-		flash("%d box%s skipped: a group is either all terrain or holds none, and the room shell is terrain." % [skipped, "" if skipped == 1 else "es"], true)
+		flash("%d box%s skipped: a structure is either all terrain or holds none, and the room shell is terrain." % [skipped, "" if skipped == 1 else "es"], true)
 	edits.repaint(allowed, brush)
 
 
-## Un grupo es todo terreno o nada de terreno: una caja sólo cambia de lado si su grupo entero va con
+## Una Structure es toda terreno o nada de terreno: una caja sólo cambia de lado si su Structure entera va con
 ## ella. La cáscara es terreno siempre: sólo Floor o Wall la repintan.
 func boxes_a_repaint_can_take(boxes: Array[Box], brush: BoxBrush) -> Array[Box]:
 	var repainting: Dictionary[Box, bool] = {}
@@ -1143,27 +1143,27 @@ func boxes_a_repaint_can_take(boxes: Array[Box], brush: BoxBrush) -> Array[Box]:
 	for box in boxes:
 		if not edits.is_in_the_level(box):
 			continue
-		var group := box.get_parent() as Structure
-		if group != null and edits.is_shell_part(group):
+		var structure := box.get_parent() as Structure
+		if structure != null and edits.is_shell_part(structure):
 			if brush.is_terrain():
 				allowed.append(box)
 			continue
-		var whole_group := group == null or group.boxes().all(func(each: Box) -> bool: return repainting.has(each))
-		if whole_group or not LevelEdits.would_mix_terrain(group, brush.is_terrain()):
+		var whole_structure := structure == null or structure.boxes().all(func(each: Box) -> bool: return repainting.has(each))
+		if whole_structure or not LevelEdits.would_mix_terrain(structure, brush.is_terrain()):
 			allowed.append(box)
 	return allowed
 
 
-## Si prender o apagar is_floor o is_wall en esas cajas dejaría un grupo mezclando terreno.
+## Si prender o apagar is_floor o is_wall en esas cajas dejaría una Structure mezclando terreno.
 func would_split_terrain(boxes: Array[Box], flag: StringName, on: bool) -> bool:
 	var changing: Dictionary[Box, bool] = {}
 	for box in boxes:
 		changing[box] = true
-	for group in groups_of(boxes):
-		if not group is Structure:
+	for structure in structures_of(boxes):
+		if not structure is Structure:
 			continue
 		var terrain := 0
-		var all_boxes := (group as Structure).boxes()
+		var all_boxes := (structure as Structure).boxes()
 		for box in all_boxes:
 			var floor_after: bool = on if changing.has(box) and flag == &"is_floor" else box.is_floor
 			var wall_after: bool = on if changing.has(box) and flag == &"is_wall" else box.is_wall
@@ -1174,31 +1174,31 @@ func would_split_terrain(boxes: Array[Box], flag: StringName, on: bool) -> bool:
 	return false
 
 
-func _the_selected_group() -> Structure:
-	var groups := groups_of(selected_boxes)
-	if groups.size() == 1 and groups[0] is Structure:
-		return groups[0]
+func _the_selected_structure() -> Structure:
+	var structures := structures_of(selected_boxes)
+	if structures.size() == 1 and structures[0] is Structure:
+		return structures[0]
 	return null
 
 
 func mark_exposed_tops_walkable() -> void:
-	var group := _the_selected_group()
-	if group == null:
+	var structure := _the_selected_structure()
+	if structure == null:
 		return
 	var cells: Dictionary[Vector3i, bool] = {}
-	for box in group.boxes():
+	for box in structure.boxes():
 		cells[box.world_cell] = true
 	var changes: Dictionary[Box, Dictionary] = {}
-	for box in group.boxes():
+	for box in structure.boxes():
 		changes[box] = {&"walkable": not cells.has(box.world_cell + LevelIndex.GRID_UP)}
 	edits.set_flags_per_box(changes, "Mark exposed tops walkable")
 
 
 func make_unwalkable() -> void:
-	var group := _the_selected_group()
-	if group == null:
+	var structure := _the_selected_structure()
+	if structure == null:
 		return
-	edits.set_box_flags(group.boxes(), {&"walkable": false}, "Make unwalkable")
+	edits.set_box_flags(structure.boxes(), {&"walkable": false}, "Make unwalkable")
 
 
 func grab_every_outer_side() -> void:
@@ -1210,14 +1210,14 @@ func grab_every_outer_edge() -> void:
 
 
 func _grab_the_outside(sides_in_3d: bool) -> void:
-	var group := _the_selected_group()
-	if group == null:
+	var structure := _the_selected_structure()
+	if structure == null:
 		return
 	var cells: Dictionary[Vector3i, bool] = {}
-	for box in group.boxes():
+	for box in structure.boxes():
 		cells[box.world_cell] = true
 	var changes: Dictionary[Box, Dictionary] = {}
-	for box in group.boxes():
+	for box in structure.boxes():
 		if box.is_terrain():
 			continue
 		if not sides_in_3d and cells.has(box.world_cell + LevelIndex.GRID_UP):
@@ -1326,7 +1326,7 @@ func _update_the_status() -> void:
 		_status.text = text if not text.is_empty() else _describe_the_hover()
 		_status.modulate = Color.WHITE
 	var folder := current_folder()
-	_hint.text = current_tool.hint() + ("   ·   new groups go to %s" % folder.name if folder != null else "")
+	_hint.text = current_tool.hint() + ("   ·   new structures go to %s" % folder.name if folder != null else "")
 	_hint.tooltip_text = _hint.text
 	_status.tooltip_text = _status.text
 
@@ -1334,9 +1334,9 @@ func _update_the_status() -> void:
 func _describe_the_hover() -> String:
 	if not _hit.has_box or not is_instance_valid(_hit.box):
 		return ""
-	var group := _hit.box.get_parent()
+	var structure := _hit.box.get_parent()
 	var where := LevelEditorTool.describe(_hit.cell)
-	return "%s · %s" % [group.name if group is Structure else "loose box", where]
+	return "%s · %s" % [structure.name if structure is Structure else "loose box", where]
 
 
 ## Lo que se ve siempre: las puertas aunque estén abiertas, el jugador, y lo que se pidió en la barra.
@@ -1403,7 +1403,7 @@ func _draw_the_beams(overlay: LevelEditorPreview) -> void:
 			overlay.highlight_face(room.index.cell_of(beam.hits.box), beam.hits.face, Color(1.0, 0.2, 0.15, 0.45))
 
 
-## La sombra del grupo, como la dibuja su caja: el naranja si se agarra, el gris si no.
+## La sombra de la Structure, como la dibuja su caja: el naranja si se agarra, el gris si no.
 func shade_of(node: Node) -> Color:
 	var box: Box = null
 	if node is Structure and not (node as Structure).boxes().is_empty():

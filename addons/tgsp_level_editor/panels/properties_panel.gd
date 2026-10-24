@@ -1,7 +1,7 @@
 @tool
 class_name LevelEditorPropertiesPanel
 extends VBoxContainer
-## Lo que está elegido, en palabras: las banderas de las cajas, lo del grupo entero y lo de un
+## Lo que está elegido, en palabras: las banderas de las cajas, lo de la Structure entera y lo de un
 ## powerable. Con varias cosas elegidas, un valor que no coincide dice "mixed" y un cambio va a todas.
 
 var screen: LevelEditorScreen
@@ -10,7 +10,7 @@ const FLAG_TEXT: Array[Array] = [
 	[&"walkable", "Can be stood on", "Its top is a tile the player can stand on."],
 	[&"is_floor", "Floor tile (terrain)", "Terrain drawn with a floor tile on top: always walkable, never moves."],
 	[&"is_wall", "Wall tiles (terrain)", "Terrain drawn with wall tiles: never moves."],
-	[&"keeps_height", "Keeps its height", "In 2D it never drops onto lower ground, and it is held by touching anything, like a shelf. It goes to the whole group: one box is enough for all of it."],
+	[&"keeps_height", "Keeps its height", "In 2D it never drops onto lower ground, and it is held by touching anything, like a shelf. It goes to the whole structure: one box is enough for all of it."],
 	[&"top_half_only", "Draw top half only", "Only a drawing detail: to the rules it is a whole cell."],
 ]
 
@@ -38,7 +38,7 @@ func refresh() -> void:
 	elif not screen.selected_boxes.is_empty():
 		_show_boxes(screen.selected_boxes)
 	else:
-		_note("Nothing selected. Use Select (V) and click a group, or a power tool and click a piece.")
+		_note("Nothing selected. Use Select (V) and click a structure, or a power tool and click a piece.")
 
 
 func _note(text: String) -> Label:
@@ -76,16 +76,16 @@ static func _button(row: Control, text: String, tooltip: String, pressed: Callab
 #==================Cajas==================
 
 func _show_boxes(boxes: Array[Box]) -> void:
-	var groups := screen.groups_of(boxes)
-	var whole_groups := screen.selection_is_whole_groups()
-	if whole_groups and groups.size() == 1 and groups[0] is Structure:
-		_show_group(groups[0] as Structure)
+	var structures := screen.structures_of(boxes)
+	var whole_structures := screen.selection_is_whole_structures()
+	if whole_structures and structures.size() == 1 and structures[0] is Structure:
+		_show_structure(structures[0] as Structure)
 	else:
 		_heading("%d box%s" % [boxes.size(), "" if boxes.size() == 1 else "es"])
-		if groups.size() == 1 and groups[0] is Structure:
-			_note("In %s" % groups[0].name)
-		elif groups.size() > 1:
-			_note("In %d groups" % groups.size())
+		if structures.size() == 1 and structures[0] is Structure:
+			_note("In %s" % structures[0].name)
+		elif structures.size() > 1:
+			_note("In %d structures" % structures.size())
 	add_child(HSeparator.new())
 	_heading("Kind")
 	var kinds := HFlowContainer.new()
@@ -161,22 +161,22 @@ func _set_flag(on: bool, flag: StringName) -> void:
 			continue
 		boxes.append(box)
 	if flag == &"keeps_height":
-		boxes = _boxes_of_their_groups(boxes)
+		boxes = _boxes_of_their_structures(boxes)
 	if (flag == &"is_floor" or flag == &"is_wall") and screen.would_split_terrain(boxes, flag, on):
-		screen.flash("A group is either all terrain or holds none: select the whole group, or group these boxes on their own first.", true)
+		screen.flash("A structure is either all terrain or holds none: select the whole structure, or join these boxes into a structure of their own first.", true)
 		refresh()
 		return
 	screen.edits.set_box_flags(boxes, {flag: on}, "%s: %s" % [flag_label(flag), "on" if on else "off"])
 
 
-## Una Structure mantiene la altura con que una sola caja la mantenga: la bandera va al grupo entero.
-func _boxes_of_their_groups(boxes: Array[Box]) -> Array[Box]:
+## Una Structure mantiene la altura con que una sola caja la mantenga: la bandera va a la Structure entera.
+func _boxes_of_their_structures(boxes: Array[Box]) -> Array[Box]:
 	var all_of_them: Dictionary[Box, bool] = {}
 	for box in boxes:
 		all_of_them[box] = true
-		var group := box.get_parent() as Structure
-		if group != null and not screen.edits.is_shell_part(group):
-			for sibling in group.boxes():
+		var structure := box.get_parent() as Structure
+		if structure != null and not screen.edits.is_shell_part(structure):
+			for sibling in structure.boxes():
 				all_of_them[sibling] = true
 	var result: Array[Box] = []
 	result.assign(all_of_them.keys())
@@ -202,41 +202,41 @@ func _repaint_as(kind: BoxBrush.Kind) -> void:
 	screen.repaint_selection(BoxBrush.for_kind(kind))
 
 
-func _show_group(group: Structure) -> void:
-	_heading("Group")
+func _show_structure(structure: Structure) -> void:
+	_heading("Structure")
 	var name_row := _row()
 	var name_edit := LineEdit.new()
-	name_edit.text = group.name
+	name_edit.text = structure.name
 	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_edit.tooltip_text = "Rename the group (F2). A new name gives it a new shade."
-	name_edit.text_submitted.connect(func(text: String) -> void: screen.edits.rename(group, text))
+	name_edit.tooltip_text = "Rename the structure (F2). A new name gives it a new shade."
+	name_edit.text_submitted.connect(func(text: String) -> void: screen.edits.rename(structure, text))
 	name_edit.focus_exited.connect(func() -> void:
-		if is_instance_valid(group) and is_instance_valid(name_edit) and name_edit.text != group.name:
-			screen.edits.rename(group, name_edit.text)
+		if is_instance_valid(structure) and is_instance_valid(name_edit) and name_edit.text != structure.name:
+			screen.edits.rename(structure, name_edit.text)
 	)
 	name_row.add_child(name_edit)
-	screen.group_name_field = name_edit
+	screen.structure_name_field = name_edit
 	var shade := ColorRect.new()
 	shade.custom_minimum_size = Vector2(screen.scaled(18), screen.scaled(18))
-	shade.color = screen.shade_of(group)
+	shade.color = screen.shade_of(structure)
 	name_row.add_child(shade)
-	var boxes := group.boxes()
-	_note("%d box%s · %s" % [boxes.size(), "" if boxes.size() == 1 else "es", BoxBrush.label_of_group(boxes)])
+	var boxes := structure.boxes()
+	_note("%d box%s · %s" % [boxes.size(), "" if boxes.size() == 1 else "es", BoxBrush.label_of_structure(boxes)])
 	var actions := HFlowContainer.new()
 	add_child(actions)
-	_button(actions, "Exposed tops walkable", "Walkable where no box of the group sits on top.", screen.mark_exposed_tops_walkable)
-	_button(actions, "Make unwalkable", "No box of the group can be stood on.", screen.make_unwalkable)
-	_button(actions, "Grab every outer side (3D)", "A 3D handle on every side of the group that faces out.", screen.grab_every_outer_side)
-	_button(actions, "Grab every outer edge (2D)", "A 2D handle on every top edge of the group that faces out.", screen.grab_every_outer_edge)
+	_button(actions, "Exposed tops walkable", "Walkable where no box of the structure sits on top.", screen.mark_exposed_tops_walkable)
+	_button(actions, "Make unwalkable", "No box of the structure can be stood on.", screen.make_unwalkable)
+	_button(actions, "Grab every outer side (3D)", "A 3D handle on every side of the structure that faces out.", screen.grab_every_outer_side)
+	_button(actions, "Grab every outer edge (2D)", "A 2D handle on every top edge of the structure that faces out.", screen.grab_every_outer_edge)
 	if boxes.size() > 1:
-		_button(actions, "Ungroup", "Every box gets a group of its own (Ctrl + Shift + G).", screen.ungroup_selection)
+		_button(actions, "Split", "Split it into one-box structures: each box then moves alone (Ctrl + Shift + G).", screen.split_the_selection)
 
 
 func _show_faces_if_one(boxes: Array[Box]) -> void:
 	if boxes.size() != 1:
-		if boxes.size() > 1 and not screen.selection_is_whole_groups():
+		if boxes.size() > 1 and not screen.selection_is_whole_structures():
 			var actions := _row()
-			_button(actions, "Group", "Put the selected boxes in one new group (Ctrl + G).", screen.group_selection)
+			_button(actions, "Join", "Join the selected boxes into one new structure, so they move together (Ctrl + G).", screen.join_the_selection)
 		return
 	var box := boxes[0]
 	add_child(HSeparator.new())

@@ -1,7 +1,7 @@
 @tool
 class_name SelectTool
 extends LevelEditorTool
-## Elige: un clic elige el grupo (en la cáscara, sólo la caja), doble clic sólo la caja, Shift suma o
+## Elige: un clic elige la Structure (en la cáscara, sólo la caja), doble clic sólo la caja, Shift suma o
 ## saca. Arrastrar desde el vacío o desde la cáscara (que no se mueve) elige con un rectángulo, que
 ## deja la cáscara afuera; arrastrar algo elegido lo mueve por su capa, y + y − lo suben y bajan mientras.
 
@@ -27,7 +27,7 @@ var _adding_on_press := false
 func _init(the_screen: LevelEditorScreen) -> void:
 	super(the_screen)
 	title = "Select"
-	tooltip = "Click a group to select it, double-click a box for just that box, Shift to add. Drag to move; + and − lift it."
+	tooltip = "Click a structure to select it, double-click a box for just that box, Shift to add. Drag to move; + and − lift it."
 
 
 func plane_z() -> int:
@@ -38,12 +38,12 @@ func hover(hit: GridPicker.Hit) -> void:
 	_hover_hit = hit
 
 
-## Lo que un clic en esa caja elige: su grupo, o ella sola si es de la cáscara o está suelta.
+## Lo que un clic en esa caja elige: su Structure, o ella sola si es de la cáscara o está suelta.
 func what_a_click_selects(box: Box) -> Array[Box]:
-	var group := box.get_parent() as Structure
-	if group == null or edits().is_shell_part(group):
+	var structure := box.get_parent() as Structure
+	if structure == null or edits().is_shell_part(structure):
 		return [box]
-	return group.boxes()
+	return structure.boxes()
 
 
 func press(hit: GridPicker.Hit, event: InputEventMouseButton) -> void:
@@ -170,7 +170,7 @@ func _select_inside(area: Rect2, adding: bool) -> void:
 		screen.select(boxes, [])
 
 
-## Los grupos (y cajas sueltas) con alguna caja a la vista dentro del rectángulo. La cáscara no: un
+## Las Structures (y cajas sueltas) con alguna caja a la vista dentro del rectángulo. La cáscara no: un
 ## rectángulo y Delete harían agujeros en todo el piso.
 func boxes_inside(area: Rect2) -> Array[Box]:
 	var chosen: Dictionary[Box, bool] = {}
@@ -237,15 +237,15 @@ func status() -> String:
 		var piece := _hover_hit.box.powerable_on(_hover_hit.face)
 		if piece != null and Input.is_key_pressed(KEY_CTRL):
 			return "Ctrl + click: select this %s" % LevelEdits.piece_label(LevelEdits.piece_type(piece))
-		var group := _hover_hit.box.get_parent()
+		var structure := _hover_hit.box.get_parent()
 		var boxes := what_a_click_selects(_hover_hit.box)
-		if edits().is_shell_part(group):
-			return "Room shell: %s box at %s · click: just this box · drag: rectangle" % ["floor" if group.name == RoomShell.FLOOR else "wall", describe(_hover_hit.cell)]
-		if group is Structure:
-			return "%s · %d box%s · %s" % [group.name, boxes.size(), "" if boxes.size() == 1 else "es", BoxBrush.label_of_group(boxes)]
+		if edits().is_shell_part(structure):
+			return "Room shell: %s box at %s · click: just this box · drag: rectangle" % ["floor" if structure.name == RoomShell.FLOOR else "wall", describe(_hover_hit.cell)]
+		if structure is Structure:
+			return "%s · %d box%s · %s" % [structure.name, boxes.size(), "" if boxes.size() == 1 else "es", BoxBrush.label_of_structure(boxes)]
 		return "Loose box at %s" % describe(_hover_hit.cell)
 	return ""
 
 
 func hint() -> String:
-	return "Click: group · Double-click: box · Ctrl + click: piece · Shift: add · Drag: move (+ − lift) · Drag on the floor: rectangle · Ctrl + D: deselect"
+	return "Click: structure · Double-click: box · Ctrl + click: piece · Shift: add · Drag: move (+ − lift) · Drag on the floor: rectangle · Ctrl + D: deselect"
