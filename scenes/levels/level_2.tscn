@@ -1,0 +1,3273 @@
+[gd_scene format=3 uid="uid://c056gqi546yhs"]
+
+[ext_resource type="Script" uid="uid://rovbkgf8ri0o" path="res://scripts/level/level.gd" id="1_3p04p"]
+[ext_resource type="Script" uid="uid://c630yislkejxa" path="res://scripts/level/room.gd" id="2_qsp8v"]
+[ext_resource type="Script" uid="uid://cakmikmmduvo3" path="res://scripts/level/room_shell.gd" id="3_nt80m"]
+[ext_resource type="PackedScene" uid="uid://d38ctwehqsiio" path="res://scenes/prefabs/structure.tscn" id="4_brxtv"]
+[ext_resource type="PackedScene" uid="uid://prbqftumc4bt" path="res://scenes/prefabs/box.tscn" id="5_tv7cl"]
+[ext_resource type="Script" uid="uid://c3lpk6otp7ahb" path="res://scripts/level/perspective_manager.gd" id="6_r88tb"]
+[ext_resource type="Script" uid="uid://34nefn2ovu0c" path="res://scripts/level/projective_camera.gd" id="7_1yj8c"]
+[ext_resource type="PackedScene" uid="uid://d1bltup8wtbbj" path="res://scenes/prefabs/powerables/laser_receiver.tscn" id="7_brxtv"]
+[ext_resource type="PackedScene" uid="uid://ddydvmksjpvpe" path="res://scenes/prefabs/powerables/door.tscn" id="7_tv7cl"]
+[ext_resource type="PackedScene" uid="uid://bu0alvofbamij" path="res://scenes/prefabs/colliders_plane.tscn" id="8_ndlae"]
+[ext_resource type="PackedScene" uid="uid://bfoj6bh1nje5" path="res://scenes/prefabs/powerables/exit_door.tscn" id="8_v8d84"]
+[ext_resource type="PackedScene" uid="uid://c642hbaofr5wg" path="res://scenes/prefabs/powerables/wire.tscn" id="9_r88tb"]
+[ext_resource type="PackedScene" uid="uid://khw8mus60h1c" path="res://scenes/prefabs/player.tscn" id="9_v8d84"]
+[ext_resource type="PackedScene" uid="uid://cli7rmi42uttb" path="res://scenes/prefabs/powerables/laser_emitter.tscn" id="12_tv7cl"]
+[ext_resource type="PackedScene" uid="uid://cg1khe0lncw3c" path="res://scenes/prefabs/powerables/pressure_plate.tscn" id="15_1yj8c"]
+
+[sub_resource type="Environment" id="Environment_idocv"]
+background_mode = 1
+background_color = Color(0.12, 0.13, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.45
+
+[node name="Level2" type="Node3D" unique_id=1729581303]
+script = ExtResource("1_3p04p")
+
+[node name="Room" type="Node3D" parent="." unique_id=154406727]
+script = ExtResource("2_qsp8v")
+dimensions = Vector3i(17, 15, 4)
+player_spawn_point = Vector3i(10, 7, 0)
+
+[node name="RoomShell" type="Node3D" parent="Room" unique_id=1359379404]
+script = ExtResource("3_nt80m")
+
+[node name="Floor" parent="Room/RoomShell" unique_id=121214647 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+dimensions = Vector3i(17, 15, 1)
+cell = Vector3i(0, 0, -1)
+
+[node name="Box" parent="Room/RoomShell/Floor" unique_id=1123826767 instance=ExtResource("5_tv7cl")]
+walkable = true
+is_floor = true
+
+[node name="Box2" parent="Room/RoomShell/Floor" unique_id=1768739791 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box3" parent="Room/RoomShell/Floor" unique_id=359609626 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box4" parent="Room/RoomShell/Floor" unique_id=1208989018 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box5" parent="Room/RoomShell/Floor" unique_id=249307342 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 4, 0)
+
+[node name="Box6" parent="Room/RoomShell/Floor" unique_id=772204656 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 5, 0)
+
+[node name="Box7" parent="Room/RoomShell/Floor" unique_id=1792704821 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 6, 0)
+
+[node name="Box8" parent="Room/RoomShell/Floor" unique_id=162402553 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 7, 0)
+
+[node name="Box9" parent="Room/RoomShell/Floor" unique_id=274787723 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Box10" parent="Room/RoomShell/Floor" unique_id=1178414607 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box11" parent="Room/RoomShell/Floor" unique_id=2068761487 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 2, 0)
+
+[node name="Box12" parent="Room/RoomShell/Floor" unique_id=78879846 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 3, 0)
+
+[node name="Box13" parent="Room/RoomShell/Floor" unique_id=1416882312 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 4, 0)
+
+[node name="Box14" parent="Room/RoomShell/Floor" unique_id=513937557 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 5, 0)
+
+[node name="Box15" parent="Room/RoomShell/Floor" unique_id=1071297186 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 6, 0)
+
+[node name="Box16" parent="Room/RoomShell/Floor" unique_id=2008769871 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 7, 0)
+
+[node name="Box17" parent="Room/RoomShell/Floor" unique_id=512062841 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 0, 0)
+
+[node name="Box18" parent="Room/RoomShell/Floor" unique_id=1811667739 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 1, 0)
+
+[node name="Box19" parent="Room/RoomShell/Floor" unique_id=1336968647 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 2, 0)
+
+[node name="Box20" parent="Room/RoomShell/Floor" unique_id=1417281057 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 3, 0)
+
+[node name="Box21" parent="Room/RoomShell/Floor" unique_id=112904099 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 4, 0)
+
+[node name="Box22" parent="Room/RoomShell/Floor" unique_id=1989012150 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 5, 0)
+
+[node name="Box23" parent="Room/RoomShell/Floor" unique_id=1691458632 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 6, 0)
+
+[node name="Box24" parent="Room/RoomShell/Floor" unique_id=795623719 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 7, 0)
+
+[node name="Box25" parent="Room/RoomShell/Floor" unique_id=1059476839 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 0, 0)
+
+[node name="Box26" parent="Room/RoomShell/Floor" unique_id=1698823530 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 1, 0)
+
+[node name="Box27" parent="Room/RoomShell/Floor" unique_id=704855094 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 2, 0)
+
+[node name="Box28" parent="Room/RoomShell/Floor" unique_id=1973191181 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 3, 0)
+
+[node name="Box29" parent="Room/RoomShell/Floor" unique_id=1049905945 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 4, 0)
+
+[node name="Box30" parent="Room/RoomShell/Floor" unique_id=91605109 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 5, 0)
+
+[node name="Box31" parent="Room/RoomShell/Floor" unique_id=154357467 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 6, 0)
+
+[node name="Box32" parent="Room/RoomShell/Floor" unique_id=114219589 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 7, 0)
+
+[node name="Box33" parent="Room/RoomShell/Floor" unique_id=1621908734 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 0, 0)
+
+[node name="Box34" parent="Room/RoomShell/Floor" unique_id=1270249174 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 1, 0)
+
+[node name="Box35" parent="Room/RoomShell/Floor" unique_id=527416182 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 2, 0)
+
+[node name="Box36" parent="Room/RoomShell/Floor" unique_id=1920473049 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 3, 0)
+
+[node name="Box37" parent="Room/RoomShell/Floor" unique_id=977008642 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 4, 0)
+
+[node name="Box38" parent="Room/RoomShell/Floor" unique_id=1916166262 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 5, 0)
+
+[node name="Box39" parent="Room/RoomShell/Floor" unique_id=591425181 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 6, 0)
+
+[node name="Box40" parent="Room/RoomShell/Floor" unique_id=61830677 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 7, 0)
+
+[node name="Box41" parent="Room/RoomShell/Floor" unique_id=1789425959 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 0, 0)
+
+[node name="Box42" parent="Room/RoomShell/Floor" unique_id=73738537 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 1, 0)
+
+[node name="Box43" parent="Room/RoomShell/Floor" unique_id=1121621838 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 2, 0)
+
+[node name="Box44" parent="Room/RoomShell/Floor" unique_id=2022327210 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 3, 0)
+
+[node name="Box45" parent="Room/RoomShell/Floor" unique_id=1689097248 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 4, 0)
+
+[node name="Box46" parent="Room/RoomShell/Floor" unique_id=1255652572 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 5, 0)
+
+[node name="Box47" parent="Room/RoomShell/Floor" unique_id=915463421 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 6, 0)
+
+[node name="Box48" parent="Room/RoomShell/Floor" unique_id=405434354 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 7, 0)
+
+[node name="Box49" parent="Room/RoomShell/Floor" unique_id=962851793 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 0, 0)
+
+[node name="Box50" parent="Room/RoomShell/Floor" unique_id=1443877963 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 1, 0)
+
+[node name="Box51" parent="Room/RoomShell/Floor" unique_id=1247534021 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 2, 0)
+
+[node name="Box52" parent="Room/RoomShell/Floor" unique_id=273449603 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 3, 0)
+
+[node name="Box53" parent="Room/RoomShell/Floor" unique_id=673658444 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 4, 0)
+
+[node name="Box54" parent="Room/RoomShell/Floor" unique_id=1763308369 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 5, 0)
+
+[node name="Box55" parent="Room/RoomShell/Floor" unique_id=2040398907 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 6, 0)
+
+[node name="Box56" parent="Room/RoomShell/Floor" unique_id=171271108 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 7, 0)
+
+[node name="Box57" parent="Room/RoomShell/Floor" unique_id=1078816238 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 0, 0)
+
+[node name="Box58" parent="Room/RoomShell/Floor" unique_id=799685165 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 1, 0)
+
+[node name="Box59" parent="Room/RoomShell/Floor" unique_id=714826811 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 2, 0)
+
+[node name="Box60" parent="Room/RoomShell/Floor" unique_id=818267015 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 3, 0)
+
+[node name="Box61" parent="Room/RoomShell/Floor" unique_id=1767292771 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 4, 0)
+
+[node name="Box62" parent="Room/RoomShell/Floor" unique_id=365817337 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 5, 0)
+
+[node name="Box63" parent="Room/RoomShell/Floor" unique_id=580729429 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 6, 0)
+
+[node name="Box64" parent="Room/RoomShell/Floor" unique_id=1930189816 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 7, 0)
+
+[node name="Box65" parent="Room/RoomShell/Floor" unique_id=1927349107 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 8, 0)
+
+[node name="Box66" parent="Room/RoomShell/Floor" unique_id=926663836 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 9, 0)
+
+[node name="Box67" parent="Room/RoomShell/Floor" unique_id=492085680 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 10, 0)
+
+[node name="Box68" parent="Room/RoomShell/Floor" unique_id=1303867249 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 11, 0)
+
+[node name="Box69" parent="Room/RoomShell/Floor" unique_id=14619033 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 12, 0)
+
+[node name="Box70" parent="Room/RoomShell/Floor" unique_id=2123119580 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 13, 0)
+
+[node name="Box71" parent="Room/RoomShell/Floor" unique_id=1072927269 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(0, 14, 0)
+
+[node name="Box72" parent="Room/RoomShell/Floor" unique_id=709001620 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 8, 0)
+
+[node name="Box73" parent="Room/RoomShell/Floor" unique_id=1387013539 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 9, 0)
+
+[node name="Box74" parent="Room/RoomShell/Floor" unique_id=2079351480 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 10, 0)
+
+[node name="Box75" parent="Room/RoomShell/Floor" unique_id=1916949825 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 11, 0)
+
+[node name="Box76" parent="Room/RoomShell/Floor" unique_id=823702066 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 12, 0)
+
+[node name="Box77" parent="Room/RoomShell/Floor" unique_id=1812229980 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 13, 0)
+
+[node name="Box78" parent="Room/RoomShell/Floor" unique_id=1511515680 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(1, 14, 0)
+
+[node name="Box79" parent="Room/RoomShell/Floor" unique_id=1245497082 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 8, 0)
+
+[node name="Box80" parent="Room/RoomShell/Floor" unique_id=371970794 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 9, 0)
+
+[node name="Box81" parent="Room/RoomShell/Floor" unique_id=1486680130 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 10, 0)
+
+[node name="Box82" parent="Room/RoomShell/Floor" unique_id=1299495733 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 11, 0)
+
+[node name="Box83" parent="Room/RoomShell/Floor" unique_id=898639732 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 12, 0)
+
+[node name="Box84" parent="Room/RoomShell/Floor" unique_id=1541541111 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 13, 0)
+
+[node name="Box85" parent="Room/RoomShell/Floor" unique_id=211566625 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(2, 14, 0)
+
+[node name="Box86" parent="Room/RoomShell/Floor" unique_id=1348237969 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 8, 0)
+
+[node name="Box87" parent="Room/RoomShell/Floor" unique_id=1766364592 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 9, 0)
+
+[node name="Box88" parent="Room/RoomShell/Floor" unique_id=315958787 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 10, 0)
+
+[node name="Box89" parent="Room/RoomShell/Floor" unique_id=665878080 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 11, 0)
+
+[node name="Box90" parent="Room/RoomShell/Floor" unique_id=296269572 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 12, 0)
+
+[node name="Box91" parent="Room/RoomShell/Floor" unique_id=971980202 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 13, 0)
+
+[node name="Box92" parent="Room/RoomShell/Floor" unique_id=294665730 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(3, 14, 0)
+
+[node name="Box93" parent="Room/RoomShell/Floor" unique_id=401730216 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 8, 0)
+
+[node name="Box94" parent="Room/RoomShell/Floor" unique_id=250855989 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 9, 0)
+
+[node name="Box95" parent="Room/RoomShell/Floor" unique_id=1596124582 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 10, 0)
+
+[node name="Box96" parent="Room/RoomShell/Floor" unique_id=1444073151 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 11, 0)
+
+[node name="Box97" parent="Room/RoomShell/Floor" unique_id=325659783 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 12, 0)
+
+[node name="Box98" parent="Room/RoomShell/Floor" unique_id=732402139 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 13, 0)
+
+[node name="Box99" parent="Room/RoomShell/Floor" unique_id=658546350 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(4, 14, 0)
+
+[node name="Box100" parent="Room/RoomShell/Floor" unique_id=1886248729 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 8, 0)
+
+[node name="Box101" parent="Room/RoomShell/Floor" unique_id=508142070 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 9, 0)
+
+[node name="Box102" parent="Room/RoomShell/Floor" unique_id=245083990 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 10, 0)
+
+[node name="Box103" parent="Room/RoomShell/Floor" unique_id=54031970 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 11, 0)
+
+[node name="Box104" parent="Room/RoomShell/Floor" unique_id=773307586 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 12, 0)
+
+[node name="Box105" parent="Room/RoomShell/Floor" unique_id=376235698 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 13, 0)
+
+[node name="Box106" parent="Room/RoomShell/Floor" unique_id=1095813721 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(5, 14, 0)
+
+[node name="Box107" parent="Room/RoomShell/Floor" unique_id=899767794 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 8, 0)
+
+[node name="Box108" parent="Room/RoomShell/Floor" unique_id=542344234 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 9, 0)
+
+[node name="Door" parent="Room/RoomShell/Floor/Box108" unique_id=718444061 instance=ExtResource("7_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box109" parent="Room/RoomShell/Floor" unique_id=998568075 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 10, 0)
+
+[node name="Door" parent="Room/RoomShell/Floor/Box109" unique_id=429266240 instance=ExtResource("7_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box110" parent="Room/RoomShell/Floor" unique_id=779957480 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 11, 0)
+
+[node name="Box111" parent="Room/RoomShell/Floor" unique_id=333892948 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 12, 0)
+
+[node name="Box112" parent="Room/RoomShell/Floor" unique_id=1796688927 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 13, 0)
+
+[node name="Box113" parent="Room/RoomShell/Floor" unique_id=2018001910 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(6, 14, 0)
+
+[node name="Box114" parent="Room/RoomShell/Floor" unique_id=1479244014 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 8, 0)
+
+[node name="Box115" parent="Room/RoomShell/Floor" unique_id=1006915393 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 9, 0)
+
+[node name="Box116" parent="Room/RoomShell/Floor" unique_id=1098600788 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 10, 0)
+
+[node name="Box117" parent="Room/RoomShell/Floor" unique_id=997609148 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 11, 0)
+
+[node name="Box118" parent="Room/RoomShell/Floor" unique_id=1822595624 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 12, 0)
+
+[node name="Box119" parent="Room/RoomShell/Floor" unique_id=1532375573 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 13, 0)
+
+[node name="Box120" parent="Room/RoomShell/Floor" unique_id=565417898 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(7, 14, 0)
+
+[node name="Box121" parent="Room/RoomShell/Floor" unique_id=930430830 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 0, 0)
+
+[node name="Box122" parent="Room/RoomShell/Floor" unique_id=1252934457 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 1, 0)
+
+[node name="Box123" parent="Room/RoomShell/Floor" unique_id=1842518211 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 2, 0)
+
+[node name="Box124" parent="Room/RoomShell/Floor" unique_id=1143228299 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 3, 0)
+
+[node name="Box125" parent="Room/RoomShell/Floor" unique_id=1332270004 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 4, 0)
+
+[node name="Box126" parent="Room/RoomShell/Floor" unique_id=776811030 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 5, 0)
+
+[node name="Box127" parent="Room/RoomShell/Floor" unique_id=910843101 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 6, 0)
+
+[node name="Box128" parent="Room/RoomShell/Floor" unique_id=1859518241 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 7, 0)
+
+[node name="Box129" parent="Room/RoomShell/Floor" unique_id=1463847136 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 8, 0)
+
+[node name="Box130" parent="Room/RoomShell/Floor" unique_id=1083783463 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 9, 0)
+
+[node name="Box131" parent="Room/RoomShell/Floor" unique_id=661816019 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 10, 0)
+
+[node name="Box132" parent="Room/RoomShell/Floor" unique_id=770610498 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 11, 0)
+
+[node name="Box133" parent="Room/RoomShell/Floor" unique_id=1181723505 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 12, 0)
+
+[node name="Box134" parent="Room/RoomShell/Floor" unique_id=1818082293 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 13, 0)
+
+[node name="Box135" parent="Room/RoomShell/Floor" unique_id=387399237 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(8, 14, 0)
+
+[node name="Box136" parent="Room/RoomShell/Floor" unique_id=1291705824 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 0, 0)
+
+[node name="Box137" parent="Room/RoomShell/Floor" unique_id=331895968 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 1, 0)
+
+[node name="Box138" parent="Room/RoomShell/Floor" unique_id=1347666430 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 2, 0)
+
+[node name="Box139" parent="Room/RoomShell/Floor" unique_id=1592869041 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 3, 0)
+
+[node name="Box140" parent="Room/RoomShell/Floor" unique_id=1056880129 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 4, 0)
+
+[node name="Box141" parent="Room/RoomShell/Floor" unique_id=692776432 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 5, 0)
+
+[node name="Box142" parent="Room/RoomShell/Floor" unique_id=1601878686 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 6, 0)
+
+[node name="Box143" parent="Room/RoomShell/Floor" unique_id=1317876205 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 7, 0)
+
+[node name="Box144" parent="Room/RoomShell/Floor" unique_id=1534142935 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 8, 0)
+
+[node name="Box145" parent="Room/RoomShell/Floor" unique_id=353752029 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 9, 0)
+
+[node name="Box146" parent="Room/RoomShell/Floor" unique_id=1337964877 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 10, 0)
+
+[node name="Box147" parent="Room/RoomShell/Floor" unique_id=2097189473 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 11, 0)
+
+[node name="Box148" parent="Room/RoomShell/Floor" unique_id=145296560 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 12, 0)
+
+[node name="Box149" parent="Room/RoomShell/Floor" unique_id=1325445743 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 13, 0)
+
+[node name="Box150" parent="Room/RoomShell/Floor" unique_id=1187721301 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(9, 14, 0)
+
+[node name="Box151" parent="Room/RoomShell/Floor" unique_id=893947088 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 0, 0)
+
+[node name="Box152" parent="Room/RoomShell/Floor" unique_id=234925814 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 1, 0)
+
+[node name="Box153" parent="Room/RoomShell/Floor" unique_id=102122515 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 2, 0)
+
+[node name="Box154" parent="Room/RoomShell/Floor" unique_id=279547612 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 3, 0)
+
+[node name="Box155" parent="Room/RoomShell/Floor" unique_id=582592475 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 4, 0)
+
+[node name="Box156" parent="Room/RoomShell/Floor" unique_id=1275959385 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 5, 0)
+
+[node name="Box157" parent="Room/RoomShell/Floor" unique_id=289991921 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 6, 0)
+
+[node name="Box158" parent="Room/RoomShell/Floor" unique_id=398838255 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 7, 0)
+
+[node name="Box159" parent="Room/RoomShell/Floor" unique_id=1265762397 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 8, 0)
+
+[node name="Box160" parent="Room/RoomShell/Floor" unique_id=997898527 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 9, 0)
+
+[node name="Box161" parent="Room/RoomShell/Floor" unique_id=338131975 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 10, 0)
+
+[node name="Box162" parent="Room/RoomShell/Floor" unique_id=1420981250 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 11, 0)
+
+[node name="Box163" parent="Room/RoomShell/Floor" unique_id=1857848387 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 12, 0)
+
+[node name="Box164" parent="Room/RoomShell/Floor" unique_id=1678189257 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 13, 0)
+
+[node name="Box165" parent="Room/RoomShell/Floor" unique_id=2018835757 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(10, 14, 0)
+
+[node name="Box166" parent="Room/RoomShell/Floor" unique_id=1818487795 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 0, 0)
+
+[node name="Box167" parent="Room/RoomShell/Floor" unique_id=59906075 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 1, 0)
+
+[node name="Box168" parent="Room/RoomShell/Floor" unique_id=709213369 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 2, 0)
+
+[node name="Box169" parent="Room/RoomShell/Floor" unique_id=1481561342 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 3, 0)
+
+[node name="Box170" parent="Room/RoomShell/Floor" unique_id=1152880470 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 4, 0)
+
+[node name="Box171" parent="Room/RoomShell/Floor" unique_id=1846517439 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 5, 0)
+
+[node name="Box172" parent="Room/RoomShell/Floor" unique_id=1423999142 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 6, 0)
+
+[node name="Box173" parent="Room/RoomShell/Floor" unique_id=1992441563 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 7, 0)
+
+[node name="Box174" parent="Room/RoomShell/Floor" unique_id=1633725990 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 8, 0)
+
+[node name="Box175" parent="Room/RoomShell/Floor" unique_id=1311807020 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 9, 0)
+
+[node name="Box176" parent="Room/RoomShell/Floor" unique_id=757957129 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 10, 0)
+
+[node name="Box177" parent="Room/RoomShell/Floor" unique_id=796798221 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 11, 0)
+
+[node name="Box178" parent="Room/RoomShell/Floor" unique_id=1445352697 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 12, 0)
+
+[node name="Box179" parent="Room/RoomShell/Floor" unique_id=27933144 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 13, 0)
+
+[node name="Box180" parent="Room/RoomShell/Floor" unique_id=324559286 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(11, 14, 0)
+
+[node name="Box181" parent="Room/RoomShell/Floor" unique_id=1308649120 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 0, 0)
+
+[node name="Box182" parent="Room/RoomShell/Floor" unique_id=2035349526 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 1, 0)
+
+[node name="Box183" parent="Room/RoomShell/Floor" unique_id=1762190601 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 2, 0)
+
+[node name="Box184" parent="Room/RoomShell/Floor" unique_id=152460703 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 3, 0)
+
+[node name="Box185" parent="Room/RoomShell/Floor" unique_id=636122956 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 4, 0)
+
+[node name="Box186" parent="Room/RoomShell/Floor" unique_id=962490009 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 5, 0)
+
+[node name="Box187" parent="Room/RoomShell/Floor" unique_id=883186787 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 6, 0)
+
+[node name="Box188" parent="Room/RoomShell/Floor" unique_id=1083552806 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 7, 0)
+
+[node name="Box189" parent="Room/RoomShell/Floor" unique_id=1201480912 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 8, 0)
+
+[node name="Box190" parent="Room/RoomShell/Floor" unique_id=210245184 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 9, 0)
+
+[node name="Box191" parent="Room/RoomShell/Floor" unique_id=1299245582 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 10, 0)
+
+[node name="Box192" parent="Room/RoomShell/Floor" unique_id=63661580 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 11, 0)
+
+[node name="Box193" parent="Room/RoomShell/Floor" unique_id=1957285801 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 12, 0)
+
+[node name="Box194" parent="Room/RoomShell/Floor" unique_id=1315879258 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 13, 0)
+
+[node name="Box195" parent="Room/RoomShell/Floor" unique_id=914898352 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(12, 14, 0)
+
+[node name="Box196" parent="Room/RoomShell/Floor" unique_id=1858589921 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 0, 0)
+
+[node name="Box197" parent="Room/RoomShell/Floor" unique_id=337939829 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 1, 0)
+
+[node name="Box198" parent="Room/RoomShell/Floor" unique_id=1528692672 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 2, 0)
+
+[node name="Box199" parent="Room/RoomShell/Floor" unique_id=1991453938 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 3, 0)
+
+[node name="Box200" parent="Room/RoomShell/Floor" unique_id=251912425 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 4, 0)
+
+[node name="Box201" parent="Room/RoomShell/Floor" unique_id=21668939 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 5, 0)
+
+[node name="Box202" parent="Room/RoomShell/Floor" unique_id=1935457001 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 6, 0)
+
+[node name="Box203" parent="Room/RoomShell/Floor" unique_id=837251445 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 7, 0)
+
+[node name="Box204" parent="Room/RoomShell/Floor" unique_id=1838933086 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 8, 0)
+
+[node name="Box205" parent="Room/RoomShell/Floor" unique_id=40549795 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 9, 0)
+
+[node name="Box206" parent="Room/RoomShell/Floor" unique_id=275458629 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 10, 0)
+
+[node name="Box207" parent="Room/RoomShell/Floor" unique_id=1207457469 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 11, 0)
+
+[node name="Box208" parent="Room/RoomShell/Floor" unique_id=635664936 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 12, 0)
+
+[node name="Box209" parent="Room/RoomShell/Floor" unique_id=1968213820 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 13, 0)
+
+[node name="Box210" parent="Room/RoomShell/Floor" unique_id=86879188 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(13, 14, 0)
+
+[node name="Box211" parent="Room/RoomShell/Floor" unique_id=1884511 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 0, 0)
+
+[node name="Box212" parent="Room/RoomShell/Floor" unique_id=1265974540 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 1, 0)
+
+[node name="Box213" parent="Room/RoomShell/Floor" unique_id=1129299190 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 2)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 2, 0)
+
+[node name="Door" parent="Room/RoomShell/Floor/Box213" unique_id=2081589799 instance=ExtResource("7_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+edge = 2
+connects_pos_x = true
+
+[node name="Box214" parent="Room/RoomShell/Floor" unique_id=46455897 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 3, 0)
+
+[node name="Box215" parent="Room/RoomShell/Floor" unique_id=1423084996 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 4)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 4, 0)
+
+[node name="Door" parent="Room/RoomShell/Floor/Box215" unique_id=593923293 instance=ExtResource("7_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+edge = 3
+connects_pos_x = true
+
+[node name="Box216" parent="Room/RoomShell/Floor" unique_id=925538869 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 5, 0)
+
+[node name="Box217" parent="Room/RoomShell/Floor" unique_id=23620629 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 6, 0)
+
+[node name="Box218" parent="Room/RoomShell/Floor" unique_id=165060669 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 7, 0)
+
+[node name="Box219" parent="Room/RoomShell/Floor" unique_id=1553501596 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 8, 0)
+
+[node name="Box220" parent="Room/RoomShell/Floor" unique_id=711524141 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 9, 0)
+
+[node name="Box221" parent="Room/RoomShell/Floor" unique_id=188623922 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 10, 0)
+
+[node name="Box222" parent="Room/RoomShell/Floor" unique_id=1147113263 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 11, 0)
+
+[node name="Box223" parent="Room/RoomShell/Floor" unique_id=830892366 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 12, 0)
+
+[node name="Box224" parent="Room/RoomShell/Floor" unique_id=805524701 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 13, 0)
+
+[node name="Box225" parent="Room/RoomShell/Floor" unique_id=24624191 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(14, 14, 0)
+
+[node name="Box226" parent="Room/RoomShell/Floor" unique_id=1883874175 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 0, 0)
+
+[node name="ExitDoor" parent="Room/RoomShell/Floor/Box226" unique_id=559601785 instance=ExtResource("8_v8d84")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+edge = 3
+always_open = true
+connects_pos_x = true
+connects_neg_x = true
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box227" parent="Room/RoomShell/Floor" unique_id=206128137 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 1, 0)
+
+[node name="Box229" parent="Room/RoomShell/Floor" unique_id=1756137372 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 3, 0)
+
+[node name="Box231" parent="Room/RoomShell/Floor" unique_id=1571529567 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 5, 0)
+
+[node name="Box232" parent="Room/RoomShell/Floor" unique_id=248769061 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 6, 0)
+
+[node name="Box233" parent="Room/RoomShell/Floor" unique_id=851060189 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 7, 0)
+
+[node name="Box234" parent="Room/RoomShell/Floor" unique_id=1051261426 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 8, 0)
+
+[node name="Box235" parent="Room/RoomShell/Floor" unique_id=1323948651 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 9, 0)
+
+[node name="Box236" parent="Room/RoomShell/Floor" unique_id=1447713473 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 10, 0)
+
+[node name="Box237" parent="Room/RoomShell/Floor" unique_id=1616681950 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 11, 0)
+
+[node name="Box238" parent="Room/RoomShell/Floor" unique_id=338315675 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 12, 0)
+
+[node name="Box239" parent="Room/RoomShell/Floor" unique_id=1398165328 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 13, 0)
+
+[node name="Box240" parent="Room/RoomShell/Floor" unique_id=569700009 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(15, 14, 0)
+
+[node name="Box241" parent="Room/RoomShell/Floor" unique_id=1616297193 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 0, 0)
+
+[node name="Box242" parent="Room/RoomShell/Floor" unique_id=790994232 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 1)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 1, 0)
+
+[node name="Box244" parent="Room/RoomShell/Floor" unique_id=331820151 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 3)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 3, 0)
+
+[node name="Box246" parent="Room/RoomShell/Floor" unique_id=150538472 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 5)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 5, 0)
+
+[node name="Box247" parent="Room/RoomShell/Floor" unique_id=1794387090 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 6)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 6, 0)
+
+[node name="Box248" parent="Room/RoomShell/Floor" unique_id=1307086134 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 7)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 7, 0)
+
+[node name="Box249" parent="Room/RoomShell/Floor" unique_id=192136373 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 8)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 8, 0)
+
+[node name="Box250" parent="Room/RoomShell/Floor" unique_id=5139828 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 9)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 9, 0)
+
+[node name="Box251" parent="Room/RoomShell/Floor" unique_id=1228024752 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 10)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 10, 0)
+
+[node name="Box252" parent="Room/RoomShell/Floor" unique_id=1258452854 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 11)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 11, 0)
+
+[node name="Box253" parent="Room/RoomShell/Floor" unique_id=1455846533 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 12)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 12, 0)
+
+[node name="Box254" parent="Room/RoomShell/Floor" unique_id=232252031 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 13)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 13, 0)
+
+[node name="Box255" parent="Room/RoomShell/Floor" unique_id=595040303 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 14)
+walkable = true
+is_floor = true
+cell = Vector3i(16, 14, 0)
+
+[node name="Box230" parent="Room/RoomShell/Floor" unique_id=1745205807 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 4)
+is_wall = true
+cell = Vector3i(15, 4, 0)
+
+[node name="Wire" parent="Room/RoomShell/Floor/Box230" unique_id=1252154467 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box245" parent="Room/RoomShell/Floor" unique_id=886008881 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 4)
+is_wall = true
+cell = Vector3i(16, 4, 0)
+
+[node name="Box228" parent="Room/RoomShell/Floor" unique_id=1287799606 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 2)
+is_wall = true
+cell = Vector3i(15, 2, 0)
+
+[node name="Wire" parent="Room/RoomShell/Floor/Box228" unique_id=283649757 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box243" parent="Room/RoomShell/Floor" unique_id=1279694479 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 2)
+is_wall = true
+cell = Vector3i(16, 2, 0)
+
+[node name="Wire" parent="Room/RoomShell/Floor/Box243" unique_id=416570243 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="WallX" parent="Room/RoomShell" unique_id=1695525665 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, -1, -1)
+dimensions = Vector3i(1, 16, 5)
+cell = Vector3i(-1, -1, -1)
+
+[node name="Box" parent="Room/RoomShell/WallX" unique_id=901390549 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Box2" parent="Room/RoomShell/WallX" unique_id=551149282 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+is_wall = true
+cell = Vector3i(0, 0, 1)
+
+[node name="Box3" parent="Room/RoomShell/WallX" unique_id=1617130775 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+is_wall = true
+cell = Vector3i(0, 0, 2)
+
+[node name="Box4" parent="Room/RoomShell/WallX" unique_id=1260457884 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+is_wall = true
+cell = Vector3i(0, 0, 3)
+
+[node name="Box5" parent="Room/RoomShell/WallX" unique_id=435859699 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+is_wall = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box6" parent="Room/RoomShell/WallX" unique_id=672771062 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1)
+is_wall = true
+cell = Vector3i(0, 1, 1)
+
+[node name="Box7" parent="Room/RoomShell/WallX" unique_id=1316490405 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 1)
+is_wall = true
+cell = Vector3i(0, 1, 2)
+
+[node name="Box8" parent="Room/RoomShell/WallX" unique_id=1436399418 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 1)
+is_wall = true
+cell = Vector3i(0, 1, 3)
+
+[node name="Box9" parent="Room/RoomShell/WallX" unique_id=2066339741 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+is_wall = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box10" parent="Room/RoomShell/WallX" unique_id=980255936 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2)
+is_wall = true
+cell = Vector3i(0, 2, 1)
+
+[node name="Box11" parent="Room/RoomShell/WallX" unique_id=878780328 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 2)
+is_wall = true
+cell = Vector3i(0, 2, 2)
+
+[node name="Box12" parent="Room/RoomShell/WallX" unique_id=1846569024 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 2)
+is_wall = true
+cell = Vector3i(0, 2, 3)
+
+[node name="Box13" parent="Room/RoomShell/WallX" unique_id=1833746267 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+is_wall = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box14" parent="Room/RoomShell/WallX" unique_id=1931887444 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
+is_wall = true
+cell = Vector3i(0, 3, 1)
+
+[node name="Box15" parent="Room/RoomShell/WallX" unique_id=235364550 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 3)
+is_wall = true
+cell = Vector3i(0, 3, 2)
+
+[node name="Box16" parent="Room/RoomShell/WallX" unique_id=1713750892 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 3)
+is_wall = true
+cell = Vector3i(0, 3, 3)
+
+[node name="Box17" parent="Room/RoomShell/WallX" unique_id=1746189992 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+is_wall = true
+cell = Vector3i(0, 4, 0)
+
+[node name="Box18" parent="Room/RoomShell/WallX" unique_id=1594942286 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4)
+is_wall = true
+cell = Vector3i(0, 4, 1)
+
+[node name="Box19" parent="Room/RoomShell/WallX" unique_id=649358958 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 4)
+is_wall = true
+cell = Vector3i(0, 4, 2)
+
+[node name="Box20" parent="Room/RoomShell/WallX" unique_id=1501437718 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 4)
+is_wall = true
+cell = Vector3i(0, 4, 3)
+
+[node name="LaserReceiver" parent="Room/RoomShell/WallX/Box20" unique_id=532264207 instance=ExtResource("7_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+connects_pos_y = true
+
+[node name="Box21" parent="Room/RoomShell/WallX" unique_id=1820938209 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+is_wall = true
+cell = Vector3i(0, 5, 0)
+
+[node name="Box22" parent="Room/RoomShell/WallX" unique_id=1807712811 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 5)
+is_wall = true
+cell = Vector3i(0, 5, 1)
+
+[node name="Box23" parent="Room/RoomShell/WallX" unique_id=1931893285 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 5)
+is_wall = true
+cell = Vector3i(0, 5, 2)
+
+[node name="Box24" parent="Room/RoomShell/WallX" unique_id=1658333844 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 5)
+is_wall = true
+cell = Vector3i(0, 5, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box24" unique_id=786227886 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box25" parent="Room/RoomShell/WallX" unique_id=890091347 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+is_wall = true
+cell = Vector3i(0, 6, 0)
+
+[node name="Box26" parent="Room/RoomShell/WallX" unique_id=1165789082 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 6)
+is_wall = true
+cell = Vector3i(0, 6, 1)
+
+[node name="Box27" parent="Room/RoomShell/WallX" unique_id=1060175646 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 6)
+is_wall = true
+cell = Vector3i(0, 6, 2)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box27" unique_id=724829016 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_up = true
+connects_down = true
+
+[node name="Box28" parent="Room/RoomShell/WallX" unique_id=560994185 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 6)
+is_wall = true
+cell = Vector3i(0, 6, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box28" unique_id=1986941010 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+connects_down = true
+
+[node name="Box29" parent="Room/RoomShell/WallX" unique_id=1839716437 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7)
+is_wall = true
+cell = Vector3i(0, 7, 0)
+
+[node name="Box30" parent="Room/RoomShell/WallX" unique_id=1369163719 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 7)
+is_wall = true
+cell = Vector3i(0, 7, 1)
+
+[node name="Box31" parent="Room/RoomShell/WallX" unique_id=747743871 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 7)
+is_wall = true
+cell = Vector3i(0, 7, 2)
+
+[node name="Box32" parent="Room/RoomShell/WallX" unique_id=1443868735 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 7)
+is_wall = true
+cell = Vector3i(0, 7, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box32" unique_id=1910461905 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box33" parent="Room/RoomShell/WallX" unique_id=2022325258 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+is_wall = true
+cell = Vector3i(0, 8, 0)
+
+[node name="Box34" parent="Room/RoomShell/WallX" unique_id=373809381 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 8)
+is_wall = true
+cell = Vector3i(0, 8, 1)
+
+[node name="Box35" parent="Room/RoomShell/WallX" unique_id=1037721149 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 8)
+is_wall = true
+cell = Vector3i(0, 8, 2)
+
+[node name="Box36" parent="Room/RoomShell/WallX" unique_id=625193402 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 8)
+is_wall = true
+cell = Vector3i(0, 8, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box36" unique_id=1257917508 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box37" parent="Room/RoomShell/WallX" unique_id=1327380045 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+is_wall = true
+cell = Vector3i(0, 0, 4)
+
+[node name="Box38" parent="Room/RoomShell/WallX" unique_id=178367988 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 1)
+is_wall = true
+cell = Vector3i(0, 1, 4)
+
+[node name="Box39" parent="Room/RoomShell/WallX" unique_id=850828710 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 2)
+is_wall = true
+cell = Vector3i(0, 2, 4)
+
+[node name="Box40" parent="Room/RoomShell/WallX" unique_id=192359305 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 3)
+is_wall = true
+cell = Vector3i(0, 3, 4)
+
+[node name="Box41" parent="Room/RoomShell/WallX" unique_id=236039159 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 4)
+is_wall = true
+cell = Vector3i(0, 4, 4)
+
+[node name="Box42" parent="Room/RoomShell/WallX" unique_id=1262486420 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 5)
+is_wall = true
+cell = Vector3i(0, 5, 4)
+
+[node name="Box43" parent="Room/RoomShell/WallX" unique_id=1449407117 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 6)
+is_wall = true
+cell = Vector3i(0, 6, 4)
+
+[node name="Box44" parent="Room/RoomShell/WallX" unique_id=969131676 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 7)
+is_wall = true
+cell = Vector3i(0, 7, 4)
+
+[node name="Box45" parent="Room/RoomShell/WallX" unique_id=708502944 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 8)
+is_wall = true
+cell = Vector3i(0, 8, 4)
+
+[node name="Box46" parent="Room/RoomShell/WallX" unique_id=812789126 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
+is_wall = true
+cell = Vector3i(0, 9, 0)
+
+[node name="Box47" parent="Room/RoomShell/WallX" unique_id=529414620 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 9)
+is_wall = true
+cell = Vector3i(0, 9, 1)
+
+[node name="Box48" parent="Room/RoomShell/WallX" unique_id=1773008688 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 9)
+is_wall = true
+cell = Vector3i(0, 9, 2)
+
+[node name="Box49" parent="Room/RoomShell/WallX" unique_id=1389216438 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 9)
+is_wall = true
+cell = Vector3i(0, 9, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box49" unique_id=670765442 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box50" parent="Room/RoomShell/WallX" unique_id=1478792873 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 9)
+is_wall = true
+cell = Vector3i(0, 9, 4)
+
+[node name="Box51" parent="Room/RoomShell/WallX" unique_id=2004234120 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+is_wall = true
+cell = Vector3i(0, 10, 0)
+
+[node name="Box52" parent="Room/RoomShell/WallX" unique_id=1576320917 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 10)
+is_wall = true
+cell = Vector3i(0, 10, 1)
+
+[node name="Box53" parent="Room/RoomShell/WallX" unique_id=1379886926 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 10)
+is_wall = true
+cell = Vector3i(0, 10, 2)
+
+[node name="Box54" parent="Room/RoomShell/WallX" unique_id=505891665 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 10)
+is_wall = true
+cell = Vector3i(0, 10, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box54" unique_id=1745840994 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box55" parent="Room/RoomShell/WallX" unique_id=815587612 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 10)
+is_wall = true
+cell = Vector3i(0, 10, 4)
+
+[node name="Box56" parent="Room/RoomShell/WallX" unique_id=2091270635 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+is_wall = true
+cell = Vector3i(0, 11, 0)
+
+[node name="Box57" parent="Room/RoomShell/WallX" unique_id=173009542 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 11)
+is_wall = true
+cell = Vector3i(0, 11, 1)
+
+[node name="Box58" parent="Room/RoomShell/WallX" unique_id=1611813672 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 11)
+is_wall = true
+cell = Vector3i(0, 11, 2)
+
+[node name="Box59" parent="Room/RoomShell/WallX" unique_id=1724804986 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 11)
+is_wall = true
+cell = Vector3i(0, 11, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box59" unique_id=1271673965 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box60" parent="Room/RoomShell/WallX" unique_id=1327832961 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 11)
+is_wall = true
+cell = Vector3i(0, 11, 4)
+
+[node name="Box61" parent="Room/RoomShell/WallX" unique_id=1814592685 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+is_wall = true
+cell = Vector3i(0, 12, 0)
+
+[node name="Box62" parent="Room/RoomShell/WallX" unique_id=131652032 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 12)
+is_wall = true
+cell = Vector3i(0, 12, 1)
+
+[node name="Box63" parent="Room/RoomShell/WallX" unique_id=490737535 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 12)
+is_wall = true
+cell = Vector3i(0, 12, 2)
+
+[node name="Box64" parent="Room/RoomShell/WallX" unique_id=418663376 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 12)
+is_wall = true
+cell = Vector3i(0, 12, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box64" unique_id=1126338192 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box65" parent="Room/RoomShell/WallX" unique_id=1918729617 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 12)
+is_wall = true
+cell = Vector3i(0, 12, 4)
+
+[node name="Box66" parent="Room/RoomShell/WallX" unique_id=1202570218 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+is_wall = true
+cell = Vector3i(0, 13, 0)
+
+[node name="Box67" parent="Room/RoomShell/WallX" unique_id=899028505 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 13)
+is_wall = true
+cell = Vector3i(0, 13, 1)
+
+[node name="Box68" parent="Room/RoomShell/WallX" unique_id=6397963 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 13)
+is_wall = true
+cell = Vector3i(0, 13, 2)
+
+[node name="Box69" parent="Room/RoomShell/WallX" unique_id=1976143712 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 13)
+is_wall = true
+cell = Vector3i(0, 13, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box69" unique_id=371117813 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box70" parent="Room/RoomShell/WallX" unique_id=461578468 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 13)
+is_wall = true
+cell = Vector3i(0, 13, 4)
+
+[node name="Box71" parent="Room/RoomShell/WallX" unique_id=1726755522 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+is_wall = true
+cell = Vector3i(0, 14, 0)
+
+[node name="Box72" parent="Room/RoomShell/WallX" unique_id=215484931 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 14)
+is_wall = true
+cell = Vector3i(0, 14, 1)
+
+[node name="Box73" parent="Room/RoomShell/WallX" unique_id=1110388997 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 14)
+is_wall = true
+cell = Vector3i(0, 14, 2)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box73" unique_id=673149070 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_up = true
+connects_down = true
+
+[node name="Box74" parent="Room/RoomShell/WallX" unique_id=814151762 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 14)
+is_wall = true
+cell = Vector3i(0, 14, 3)
+
+[node name="Wire" parent="Room/RoomShell/WallX/Box74" unique_id=954067804 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
+face = 2
+connects_neg_y = true
+connects_down = true
+
+[node name="Box75" parent="Room/RoomShell/WallX" unique_id=1068183109 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 14)
+is_wall = true
+cell = Vector3i(0, 14, 4)
+
+[node name="Box76" parent="Room/RoomShell/WallX" unique_id=1828402661 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 15)
+is_wall = true
+cell = Vector3i(0, 15, 0)
+
+[node name="Box77" parent="Room/RoomShell/WallX" unique_id=919147401 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 15)
+is_wall = true
+cell = Vector3i(0, 15, 1)
+
+[node name="Box78" parent="Room/RoomShell/WallX" unique_id=1159385715 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 15)
+is_wall = true
+cell = Vector3i(0, 15, 2)
+
+[node name="Box79" parent="Room/RoomShell/WallX" unique_id=952848759 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 15)
+is_wall = true
+cell = Vector3i(0, 15, 3)
+
+[node name="Box80" parent="Room/RoomShell/WallX" unique_id=1378151961 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 15)
+is_wall = true
+cell = Vector3i(0, 15, 4)
+
+[node name="WallY" parent="Room/RoomShell" unique_id=1962348578 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -1)
+dimensions = Vector3i(17, 1, 5)
+cell = Vector3i(0, -1, -1)
+
+[node name="Box" parent="Room/RoomShell/WallY" unique_id=2024051015 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Box2" parent="Room/RoomShell/WallY" unique_id=276682679 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+is_wall = true
+cell = Vector3i(0, 0, 1)
+
+[node name="Box3" parent="Room/RoomShell/WallY" unique_id=1144196399 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+is_wall = true
+cell = Vector3i(0, 0, 2)
+
+[node name="Box4" parent="Room/RoomShell/WallY" unique_id=2107811386 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+is_wall = true
+cell = Vector3i(0, 0, 3)
+
+[node name="Box5" parent="Room/RoomShell/WallY" unique_id=350543867 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+is_wall = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Box6" parent="Room/RoomShell/WallY" unique_id=1830384842 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0)
+is_wall = true
+cell = Vector3i(1, 0, 1)
+
+[node name="Box7" parent="Room/RoomShell/WallY" unique_id=594679235 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 0)
+is_wall = true
+cell = Vector3i(1, 0, 2)
+
+[node name="Box8" parent="Room/RoomShell/WallY" unique_id=1168706935 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 3, 0)
+is_wall = true
+cell = Vector3i(1, 0, 3)
+
+[node name="Box9" parent="Room/RoomShell/WallY" unique_id=444847804 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+is_wall = true
+cell = Vector3i(2, 0, 0)
+
+[node name="Box10" parent="Room/RoomShell/WallY" unique_id=484102508 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 0)
+is_wall = true
+cell = Vector3i(2, 0, 1)
+
+[node name="Box11" parent="Room/RoomShell/WallY" unique_id=1896229343 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
+is_wall = true
+cell = Vector3i(2, 0, 2)
+
+[node name="Box12" parent="Room/RoomShell/WallY" unique_id=427915397 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 0)
+is_wall = true
+cell = Vector3i(2, 0, 3)
+
+[node name="Box13" parent="Room/RoomShell/WallY" unique_id=370164484 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+is_wall = true
+cell = Vector3i(3, 0, 0)
+
+[node name="Box14" parent="Room/RoomShell/WallY" unique_id=1334439667 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1, 0)
+is_wall = true
+cell = Vector3i(3, 0, 1)
+
+[node name="Box15" parent="Room/RoomShell/WallY" unique_id=962828468 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2, 0)
+is_wall = true
+cell = Vector3i(3, 0, 2)
+
+[node name="Box16" parent="Room/RoomShell/WallY" unique_id=213180208 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 3, 0)
+is_wall = true
+cell = Vector3i(3, 0, 3)
+
+[node name="Box17" parent="Room/RoomShell/WallY" unique_id=890620900 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+is_wall = true
+cell = Vector3i(4, 0, 0)
+
+[node name="Box18" parent="Room/RoomShell/WallY" unique_id=1516775280 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, 0)
+is_wall = true
+cell = Vector3i(4, 0, 1)
+
+[node name="Box19" parent="Room/RoomShell/WallY" unique_id=311482610 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, 0)
+is_wall = true
+cell = Vector3i(4, 0, 2)
+
+[node name="Box20" parent="Room/RoomShell/WallY" unique_id=2066371088 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 0)
+is_wall = true
+cell = Vector3i(4, 0, 3)
+
+[node name="Box21" parent="Room/RoomShell/WallY" unique_id=1647233809 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+is_wall = true
+cell = Vector3i(5, 0, 0)
+
+[node name="Box22" parent="Room/RoomShell/WallY" unique_id=1973542245 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, 0)
+is_wall = true
+cell = Vector3i(5, 0, 1)
+
+[node name="Box23" parent="Room/RoomShell/WallY" unique_id=1468966037 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2, 0)
+is_wall = true
+cell = Vector3i(5, 0, 2)
+
+[node name="Box24" parent="Room/RoomShell/WallY" unique_id=954694155 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 3, 0)
+is_wall = true
+cell = Vector3i(5, 0, 3)
+
+[node name="Box25" parent="Room/RoomShell/WallY" unique_id=236824716 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+is_wall = true
+cell = Vector3i(6, 0, 0)
+
+[node name="Box26" parent="Room/RoomShell/WallY" unique_id=1410868814 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1, 0)
+is_wall = true
+cell = Vector3i(6, 0, 1)
+
+[node name="Box27" parent="Room/RoomShell/WallY" unique_id=1749424479 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2, 0)
+is_wall = true
+cell = Vector3i(6, 0, 2)
+
+[node name="Box28" parent="Room/RoomShell/WallY" unique_id=69724804 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3, 0)
+is_wall = true
+cell = Vector3i(6, 0, 3)
+
+[node name="Box29" parent="Room/RoomShell/WallY" unique_id=995386691 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)
+is_wall = true
+cell = Vector3i(7, 0, 0)
+
+[node name="Box30" parent="Room/RoomShell/WallY" unique_id=1533383045 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1, 0)
+is_wall = true
+cell = Vector3i(7, 0, 1)
+
+[node name="Box31" parent="Room/RoomShell/WallY" unique_id=492533669 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2, 0)
+is_wall = true
+cell = Vector3i(7, 0, 2)
+
+[node name="Box32" parent="Room/RoomShell/WallY" unique_id=1322174348 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 3, 0)
+is_wall = true
+cell = Vector3i(7, 0, 3)
+
+[node name="Box33" parent="Room/RoomShell/WallY" unique_id=159147714 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+is_wall = true
+cell = Vector3i(0, 0, 4)
+
+[node name="Box34" parent="Room/RoomShell/WallY" unique_id=976477151 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 4, 0)
+is_wall = true
+cell = Vector3i(1, 0, 4)
+
+[node name="Box35" parent="Room/RoomShell/WallY" unique_id=1807685888 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4, 0)
+is_wall = true
+cell = Vector3i(2, 0, 4)
+
+[node name="Box36" parent="Room/RoomShell/WallY" unique_id=1743539458 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 4, 0)
+is_wall = true
+cell = Vector3i(3, 0, 4)
+
+[node name="Box37" parent="Room/RoomShell/WallY" unique_id=603845285 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 4, 0)
+is_wall = true
+cell = Vector3i(4, 0, 4)
+
+[node name="Box38" parent="Room/RoomShell/WallY" unique_id=589064286 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 4, 0)
+is_wall = true
+cell = Vector3i(5, 0, 4)
+
+[node name="Box39" parent="Room/RoomShell/WallY" unique_id=186169407 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4, 0)
+is_wall = true
+cell = Vector3i(6, 0, 4)
+
+[node name="Box40" parent="Room/RoomShell/WallY" unique_id=1505782131 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 4, 0)
+is_wall = true
+cell = Vector3i(7, 0, 4)
+
+[node name="Box41" parent="Room/RoomShell/WallY" unique_id=364969677 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+is_wall = true
+cell = Vector3i(8, 0, 0)
+
+[node name="Box42" parent="Room/RoomShell/WallY" unique_id=28826484 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1, 0)
+is_wall = true
+cell = Vector3i(8, 0, 1)
+
+[node name="Box43" parent="Room/RoomShell/WallY" unique_id=619539855 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0)
+is_wall = true
+cell = Vector3i(8, 0, 2)
+
+[node name="Box44" parent="Room/RoomShell/WallY" unique_id=726162673 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3, 0)
+is_wall = true
+cell = Vector3i(8, 0, 3)
+
+[node name="Box45" parent="Room/RoomShell/WallY" unique_id=775502401 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 4, 0)
+is_wall = true
+cell = Vector3i(8, 0, 4)
+
+[node name="Box46" parent="Room/RoomShell/WallY" unique_id=570190585 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+is_wall = true
+cell = Vector3i(9, 0, 0)
+
+[node name="Box47" parent="Room/RoomShell/WallY" unique_id=525016821 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 1, 0)
+is_wall = true
+cell = Vector3i(9, 0, 1)
+
+[node name="Box48" parent="Room/RoomShell/WallY" unique_id=208057617 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 2, 0)
+is_wall = true
+cell = Vector3i(9, 0, 2)
+
+[node name="Box49" parent="Room/RoomShell/WallY" unique_id=968842545 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 3, 0)
+is_wall = true
+cell = Vector3i(9, 0, 3)
+
+[node name="Box50" parent="Room/RoomShell/WallY" unique_id=1028895684 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 4, 0)
+is_wall = true
+cell = Vector3i(9, 0, 4)
+
+[node name="Box51" parent="Room/RoomShell/WallY" unique_id=1474384772 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+is_wall = true
+cell = Vector3i(10, 0, 0)
+
+[node name="Box52" parent="Room/RoomShell/WallY" unique_id=1760856295 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1, 0)
+is_wall = true
+cell = Vector3i(10, 0, 1)
+
+[node name="Box53" parent="Room/RoomShell/WallY" unique_id=309694922 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2, 0)
+is_wall = true
+cell = Vector3i(10, 0, 2)
+
+[node name="Box54" parent="Room/RoomShell/WallY" unique_id=803143234 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 3, 0)
+is_wall = true
+cell = Vector3i(10, 0, 3)
+
+[node name="Box55" parent="Room/RoomShell/WallY" unique_id=601982714 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 4, 0)
+is_wall = true
+cell = Vector3i(10, 0, 4)
+
+[node name="Box56" parent="Room/RoomShell/WallY" unique_id=680560177 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
+is_wall = true
+cell = Vector3i(11, 0, 0)
+
+[node name="Box57" parent="Room/RoomShell/WallY" unique_id=5272969 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 1, 0)
+is_wall = true
+cell = Vector3i(11, 0, 1)
+
+[node name="Box58" parent="Room/RoomShell/WallY" unique_id=1732076381 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 2, 0)
+is_wall = true
+cell = Vector3i(11, 0, 2)
+
+[node name="Box59" parent="Room/RoomShell/WallY" unique_id=1464915047 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 3, 0)
+is_wall = true
+cell = Vector3i(11, 0, 3)
+
+[node name="Box60" parent="Room/RoomShell/WallY" unique_id=833606393 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 4, 0)
+is_wall = true
+cell = Vector3i(11, 0, 4)
+
+[node name="Box61" parent="Room/RoomShell/WallY" unique_id=430332100 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+is_wall = true
+cell = Vector3i(12, 0, 0)
+
+[node name="Box62" parent="Room/RoomShell/WallY" unique_id=442654458 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1, 0)
+is_wall = true
+cell = Vector3i(12, 0, 1)
+
+[node name="Box63" parent="Room/RoomShell/WallY" unique_id=1185215696 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2, 0)
+is_wall = true
+cell = Vector3i(12, 0, 2)
+
+[node name="Box64" parent="Room/RoomShell/WallY" unique_id=1453889976 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 0)
+is_wall = true
+cell = Vector3i(12, 0, 3)
+
+[node name="Box65" parent="Room/RoomShell/WallY" unique_id=777380730 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 4, 0)
+is_wall = true
+cell = Vector3i(12, 0, 4)
+
+[node name="Box66" parent="Room/RoomShell/WallY" unique_id=1779056399 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+is_wall = true
+cell = Vector3i(13, 0, 0)
+
+[node name="Box67" parent="Room/RoomShell/WallY" unique_id=517780485 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 1, 0)
+is_wall = true
+cell = Vector3i(13, 0, 1)
+
+[node name="Box68" parent="Room/RoomShell/WallY" unique_id=1763522977 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 2, 0)
+is_wall = true
+cell = Vector3i(13, 0, 2)
+
+[node name="Box69" parent="Room/RoomShell/WallY" unique_id=377874461 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 3, 0)
+is_wall = true
+cell = Vector3i(13, 0, 3)
+
+[node name="Box70" parent="Room/RoomShell/WallY" unique_id=180916581 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 4, 0)
+is_wall = true
+cell = Vector3i(13, 0, 4)
+
+[node name="Box71" parent="Room/RoomShell/WallY" unique_id=99461210 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+is_wall = true
+cell = Vector3i(14, 0, 0)
+
+[node name="Box72" parent="Room/RoomShell/WallY" unique_id=374714848 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1, 0)
+is_wall = true
+cell = Vector3i(14, 0, 1)
+
+[node name="Box73" parent="Room/RoomShell/WallY" unique_id=1975391436 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, 0)
+is_wall = true
+cell = Vector3i(14, 0, 2)
+
+[node name="Box74" parent="Room/RoomShell/WallY" unique_id=1437850234 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 3, 0)
+is_wall = true
+cell = Vector3i(14, 0, 3)
+
+[node name="Box75" parent="Room/RoomShell/WallY" unique_id=1041468057 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 4, 0)
+is_wall = true
+cell = Vector3i(14, 0, 4)
+
+[node name="Box76" parent="Room/RoomShell/WallY" unique_id=608377264 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+is_wall = true
+cell = Vector3i(15, 0, 0)
+
+[node name="Box77" parent="Room/RoomShell/WallY" unique_id=400700135 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 1, 0)
+is_wall = true
+cell = Vector3i(15, 0, 1)
+
+[node name="Box78" parent="Room/RoomShell/WallY" unique_id=1093235355 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, 0)
+is_wall = true
+cell = Vector3i(15, 0, 2)
+
+[node name="Box79" parent="Room/RoomShell/WallY" unique_id=1778968190 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 3, 0)
+is_wall = true
+cell = Vector3i(15, 0, 3)
+
+[node name="Box80" parent="Room/RoomShell/WallY" unique_id=1132079233 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 4, 0)
+is_wall = true
+cell = Vector3i(15, 0, 4)
+
+[node name="Box81" parent="Room/RoomShell/WallY" unique_id=1870947452 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
+is_wall = true
+cell = Vector3i(16, 0, 0)
+
+[node name="Box82" parent="Room/RoomShell/WallY" unique_id=1201215643 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 1, 0)
+is_wall = true
+cell = Vector3i(16, 0, 1)
+
+[node name="Box83" parent="Room/RoomShell/WallY" unique_id=796711163 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2, 0)
+is_wall = true
+cell = Vector3i(16, 0, 2)
+
+[node name="Box84" parent="Room/RoomShell/WallY" unique_id=324753978 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 3, 0)
+is_wall = true
+cell = Vector3i(16, 0, 3)
+
+[node name="Box85" parent="Room/RoomShell/WallY" unique_id=1391460849 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, 0)
+is_wall = true
+cell = Vector3i(16, 0, 4)
+
+[node name="PerspectiveManager" type="Node" parent="Room" unique_id=306202701]
+script = ExtResource("6_r88tb")
+
+[node name="ProjectiveCamera" type="Camera3D" parent="Room" unique_id=1009092304 node_paths=PackedStringArray("light")]
+transform = Transform3D(0.70710677, -0.3535534, 0.61237246, 0, 0.86602545, 0.50000006, -0.70710677, -0.3535534, 0.61237246, 71.23724, 52.500008, 68.73724)
+projection = 1
+current = true
+size = 30.087393
+script = ExtResource("7_1yj8c")
+light = NodePath("../../Sun")
+
+[node name="CollidersPlane" parent="Room" unique_id=1058661855 instance=ExtResource("8_ndlae")]
+
+[node name="Player" parent="Room/CollidersPlane" unique_id=1121856134 node_paths=PackedStringArray("camera") instance=ExtResource("9_v8d84")]
+camera = NodePath("../../ProjectiveCamera")
+
+[node name="Walkable" parent="Room" unique_id=1763072260 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+dimensions = Vector3i(2, 4, 1)
+cell = Vector3i(0, 8, 0)
+
+[node name="Box" parent="Room/Walkable" unique_id=142715299 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+walkable = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box3" parent="Room/Walkable" unique_id=2142283366 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+walkable = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box5" parent="Room/Walkable" unique_id=1551788460 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+walkable = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box7" parent="Room/Walkable" unique_id=1679545008 instance=ExtResource("5_tv7cl")]
+walkable = true
+
+[node name="Box9" parent="Room/Walkable" unique_id=622770519 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+walkable = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Box11" parent="Room/Walkable" unique_id=385978511 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+walkable = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box13" parent="Room/Walkable" unique_id=1251402202 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+walkable = true
+cell = Vector3i(1, 2, 0)
+
+[node name="Box15" parent="Room/Walkable" unique_id=177568968 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 3)
+walkable = true
+cell = Vector3i(1, 3, 0)
+
+[node name="Block2" parent="Room" unique_id=77696638 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+dimensions = Vector3i(7, 9, 1)
+cell = Vector3i(0, 5, 0)
+
+[node name="Box20" parent="Room/Block2" unique_id=1851718014 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+cell = Vector3i(0, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box20" unique_id=785021235 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box19" parent="Room/Block2" unique_id=1197588725 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
+cell = Vector3i(5, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box19" unique_id=760300855 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box18" parent="Room/Block2" unique_id=254130971 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 3)
+cell = Vector3i(6, 3, 0)
+
+[node name="Wire" parent="Room/Block2/Box18" unique_id=1339411698 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Wire2" parent="Room/Block2/Box18" unique_id=465932341 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 1)
+face = 4
+connects_up = true
+connects_down = true
+
+[node name="Box17" parent="Room/Block2" unique_id=907089987 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 1)
+cell = Vector3i(6, 1, 0)
+
+[node name="Wire" parent="Room/Block2/Box17" unique_id=1991118926 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box16" parent="Room/Block2" unique_id=154047968 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2)
+cell = Vector3i(6, 2, 0)
+
+[node name="Wire" parent="Room/Block2/Box16" unique_id=1907919333 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box15" parent="Room/Block2" unique_id=532341818 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+cell = Vector3i(6, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box15" unique_id=537381435 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_neg_x = true
+connects_pos_y = true
+
+[node name="Box14" parent="Room/Block2" unique_id=414413559 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+cell = Vector3i(5, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box14" unique_id=624989418 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box" parent="Room/Block2" unique_id=73682929 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+cell = Vector3i(4, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box" unique_id=2057179114 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box13" parent="Room/Block2" unique_id=181701903 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+cell = Vector3i(3, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box13" unique_id=319573734 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box12" parent="Room/Block2" unique_id=177590446 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+cell = Vector3i(2, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box12" unique_id=1733914513 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box11" parent="Room/Block2" unique_id=1266324602 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 8)
+cell = Vector3i(6, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box11" unique_id=963890268 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_neg_x = true
+connects_neg_y = true
+
+[node name="Box2" parent="Room/Block2" unique_id=1763503458 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 8)
+cell = Vector3i(1, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box2" unique_id=1656990396 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box10" parent="Room/Block2" unique_id=671869499 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 7)
+cell = Vector3i(6, 7, 0)
+
+[node name="Wire" parent="Room/Block2/Box10" unique_id=1887125500 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Box9" parent="Room/Block2" unique_id=1460457534 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+cell = Vector3i(1, 0, 0)
+
+[node name="Wire" parent="Room/Block2/Box9" unique_id=1440909162 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box3" parent="Room/Block2" unique_id=756570835 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 8)
+cell = Vector3i(2, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box3" unique_id=1761373264 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box8" parent="Room/Block2" unique_id=128728248 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+cell = Vector3i(6, 6, 0)
+
+[node name="Wire" parent="Room/Block2/Box8" unique_id=497932582 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_y = true
+connects_neg_y = true
+
+[node name="Wire2" parent="Room/Block2/Box8" unique_id=1079387292 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0)
+face = 5
+connects_up = true
+connects_down = true
+
+[node name="Box4" parent="Room/Block2" unique_id=2107577915 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 8)
+cell = Vector3i(3, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box4" unique_id=653161893 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box7" parent="Room/Block2" unique_id=1487761401 instance=ExtResource("5_tv7cl")]
+
+[node name="Wire" parent="Room/Block2/Box7" unique_id=1343739988 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box5" parent="Room/Block2" unique_id=2118752074 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 8)
+cell = Vector3i(4, 8, 0)
+
+[node name="Wire" parent="Room/Block2/Box5" unique_id=1100545178 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Walkable4" parent="Room" unique_id=302651629 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2, 3)
+cell = Vector3i(7, 3, 2)
+
+[node name="Box7" parent="Room/Walkable4" unique_id=627146249 instance=ExtResource("5_tv7cl")]
+walkable = true
+
+[node name="Movable2" parent="Room" unique_id=1999642806 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 10)
+dimensions = Vector3i(1, 1, 2)
+cell = Vector3i(10, 10, 0)
+
+[node name="Box" parent="Room/Movable2" unique_id=349565384 instance=ExtResource("5_tv7cl")]
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+
+[node name="Box2" parent="Room/Movable2" unique_id=1236391927 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+cell = Vector3i(0, 0, 1)
+
+[node name="Movable3D3" parent="Room" unique_id=3848744 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 12)
+dimensions = Vector3i(2, 1, 1)
+cell = Vector3i(8, 12, 0)
+
+[node name="Box" parent="Room/Movable3D3" unique_id=192266431 instance=ExtResource("5_tv7cl")]
+walkable = true
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+
+[node name="Box2" parent="Room/Movable3D3" unique_id=1147314994 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+walkable = true
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Movable3" parent="Room" unique_id=1105821282 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 4)
+cell = Vector3i(19, 4, 0)
+
+[node name="Box" parent="Room/Movable3" unique_id=1256358793 instance=ExtResource("5_tv7cl")]
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_whole_face = true
+
+[node name="Wall2" parent="Room" unique_id=1703766260 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, -1, 4)
+dimensions = Vector3i(3, 1, 1)
+cell = Vector3i(17, 4, -1)
+
+[node name="Box" parent="Room/Wall2" unique_id=1260064304 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Wire" parent="Room/Wall2/Box" unique_id=2105068398 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box2" parent="Room/Wall2" unique_id=1091838459 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+is_wall = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Wire" parent="Room/Wall2/Box2" unique_id=1235030295 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box3" parent="Room/Wall2" unique_id=1973886996 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+is_wall = true
+cell = Vector3i(2, 0, 0)
+
+[node name="PressurePlate" parent="Room/Wall2/Box3" unique_id=284517106 instance=ExtResource("15_1yj8c")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_neg_x = true
+
+[node name="Wall6" parent="Room" unique_id=2072106084 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, -1, 2)
+dimensions = Vector3i(3, 1, 1)
+cell = Vector3i(17, 2, -1)
+
+[node name="Box2" parent="Room/Wall6" unique_id=970001987 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Wire" parent="Room/Wall6/Box2" unique_id=815093811 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box" parent="Room/Wall6" unique_id=2060992586 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+is_wall = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Wire" parent="Room/Wall6/Box" unique_id=1874557901 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Box3" parent="Room/Wall6" unique_id=1416260103 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+is_wall = true
+cell = Vector3i(2, 0, 0)
+
+[node name="PressurePlate" parent="Room/Wall6/Box3" unique_id=672707467 instance=ExtResource("15_1yj8c")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_neg_x = true
+
+[node name="Movable4" parent="Room" unique_id=1199864042 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 2)
+cell = Vector3i(19, 2, 0)
+
+[node name="Box" parent="Room/Movable4" unique_id=149564958 instance=ExtResource("5_tv7cl")]
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_whole_face = true
+
+[node name="Wall4" parent="Room" unique_id=835673447 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+dimensions = Vector3i(1, 5, 1)
+cell = Vector3i(13, 0, 0)
+
+[node name="Box5" parent="Room/Wall4" unique_id=1222351088 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Box4" parent="Room/Wall4" unique_id=2008242450 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+is_wall = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box3" parent="Room/Wall4" unique_id=952837510 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+is_wall = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box2" parent="Room/Wall4" unique_id=1938260563 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+is_wall = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box" parent="Room/Wall4" unique_id=169686934 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+is_wall = true
+cell = Vector3i(0, 4, 0)
+
+[node name="Wall" parent="Room" unique_id=1898660386 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 4)
+cell = Vector3i(16, 4, 0)
+
+[node name="Box" parent="Room/Wall" unique_id=918674608 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Wire" parent="Room/Wall/Box" unique_id=582318342 instance=ExtResource("9_r88tb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
+connects_pos_x = true
+connects_neg_x = true
+
+[node name="Wall3" parent="Room" unique_id=360342639 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 4, -1)
+dimensions = Vector3i(1, 16, 1)
+cell = Vector3i(-1, -1, 4)
+
+[node name="Box" parent="Room/Wall3" unique_id=752837541 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Box2" parent="Room/Wall3" unique_id=748145899 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+is_wall = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box3" parent="Room/Wall3" unique_id=646336763 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+is_wall = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box4" parent="Room/Wall3" unique_id=383544647 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+is_wall = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box5" parent="Room/Wall3" unique_id=273440065 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+is_wall = true
+cell = Vector3i(0, 4, 0)
+
+[node name="Box6" parent="Room/Wall3" unique_id=464675397 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+is_wall = true
+cell = Vector3i(0, 5, 0)
+
+[node name="Box7" parent="Room/Wall3" unique_id=508944951 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+is_wall = true
+cell = Vector3i(0, 6, 0)
+
+[node name="Box8" parent="Room/Wall3" unique_id=1949234055 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7)
+is_wall = true
+cell = Vector3i(0, 7, 0)
+
+[node name="Box9" parent="Room/Wall3" unique_id=469560235 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+is_wall = true
+cell = Vector3i(0, 8, 0)
+
+[node name="Box10" parent="Room/Wall3" unique_id=918266987 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
+is_wall = true
+cell = Vector3i(0, 9, 0)
+
+[node name="Box11" parent="Room/Wall3" unique_id=1872866212 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+is_wall = true
+cell = Vector3i(0, 10, 0)
+
+[node name="Box12" parent="Room/Wall3" unique_id=211806911 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11)
+is_wall = true
+cell = Vector3i(0, 11, 0)
+
+[node name="Box13" parent="Room/Wall3" unique_id=1596924317 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+is_wall = true
+cell = Vector3i(0, 12, 0)
+
+[node name="Box14" parent="Room/Wall3" unique_id=803497396 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+is_wall = true
+cell = Vector3i(0, 13, 0)
+
+[node name="Box15" parent="Room/Wall3" unique_id=558920969 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+is_wall = true
+cell = Vector3i(0, 14, 0)
+
+[node name="Box16" parent="Room/Wall3" unique_id=43101772 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 15)
+is_wall = true
+cell = Vector3i(0, 15, 0)
+
+[node name="Wall5" parent="Room" unique_id=868804608 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -1)
+dimensions = Vector3i(17, 1, 1)
+cell = Vector3i(0, -1, 4)
+
+[node name="Box" parent="Room/Wall5" unique_id=634388750 instance=ExtResource("5_tv7cl")]
+is_wall = true
+
+[node name="Box2" parent="Room/Wall5" unique_id=1447130802 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+is_wall = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Box3" parent="Room/Wall5" unique_id=1499703496 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+is_wall = true
+cell = Vector3i(2, 0, 0)
+
+[node name="Box4" parent="Room/Wall5" unique_id=883797563 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0)
+is_wall = true
+cell = Vector3i(3, 0, 0)
+
+[node name="Box5" parent="Room/Wall5" unique_id=417281148 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+is_wall = true
+cell = Vector3i(4, 0, 0)
+
+[node name="Box6" parent="Room/Wall5" unique_id=274862807 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0)
+is_wall = true
+cell = Vector3i(5, 0, 0)
+
+[node name="Box7" parent="Room/Wall5" unique_id=1990826441 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+is_wall = true
+cell = Vector3i(6, 0, 0)
+
+[node name="Box8" parent="Room/Wall5" unique_id=2077275224 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)
+is_wall = true
+cell = Vector3i(7, 0, 0)
+
+[node name="Box9" parent="Room/Wall5" unique_id=1189190575 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+is_wall = true
+cell = Vector3i(8, 0, 0)
+
+[node name="Box10" parent="Room/Wall5" unique_id=1385519032 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+is_wall = true
+cell = Vector3i(9, 0, 0)
+
+[node name="Box11" parent="Room/Wall5" unique_id=824217943 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+is_wall = true
+cell = Vector3i(10, 0, 0)
+
+[node name="Box12" parent="Room/Wall5" unique_id=2536422 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
+is_wall = true
+cell = Vector3i(11, 0, 0)
+
+[node name="Box13" parent="Room/Wall5" unique_id=914689851 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+is_wall = true
+cell = Vector3i(12, 0, 0)
+
+[node name="Box14" parent="Room/Wall5" unique_id=1615627303 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+is_wall = true
+cell = Vector3i(13, 0, 0)
+
+[node name="Box15" parent="Room/Wall5" unique_id=911933168 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+is_wall = true
+cell = Vector3i(14, 0, 0)
+
+[node name="Box16" parent="Room/Wall5" unique_id=1771972979 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 0)
+is_wall = true
+cell = Vector3i(15, 0, 0)
+
+[node name="Box17" parent="Room/Wall5" unique_id=1908335062 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
+is_wall = true
+cell = Vector3i(16, 0, 0)
+
+[node name="HangingPlatform9" parent="Room" unique_id=1077548265 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 8)
+dimensions = Vector3i(2, 4, 1)
+cell = Vector3i(0, 8, 4)
+
+[node name="Box" parent="Room/HangingPlatform9" unique_id=1192561346 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(0, 3, 0)
+
+[node name="Box2" parent="Room/HangingPlatform9" unique_id=819805249 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 3)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(1, 3, 0)
+
+[node name="Box3" parent="Room/HangingPlatform9" unique_id=921415748 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(1, 2, 0)
+
+[node name="Box4" parent="Room/HangingPlatform9" unique_id=1255783453 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Box5" parent="Room/HangingPlatform9" unique_id=965309495 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box6" parent="Room/HangingPlatform9" unique_id=372623449 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(1, 1, 0)
+
+[node name="Box7" parent="Room/HangingPlatform9" unique_id=1590040324 instance=ExtResource("5_tv7cl")]
+walkable = true
+keeps_height = true
+top_half_only = true
+
+[node name="Box8" parent="Room/HangingPlatform9" unique_id=275688984 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(1, 0, 0)
+
+[node name="Movable5" parent="Room" unique_id=1580431772 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 9)
+dimensions = Vector3i(1, 2, 2)
+cell = Vector3i(0, 9, 1)
+
+[node name="Box2" parent="Room/Movable5" unique_id=13444982 instance=ExtResource("5_tv7cl")]
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_whole_face = true
+
+[node name="Box" parent="Room/Movable5" unique_id=729905915 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_whole_face = true
+cell = Vector3i(0, 0, 1)
+
+[node name="Box3" parent="Room/Movable5" unique_id=154484035 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+movable_3d_pos_x = true
+movable_3d_neg_x = true
+movable_3d_pos_y = true
+movable_3d_neg_y = true
+movable_2d_whole_face = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Walkable5" parent="Room" unique_id=791021773 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
+dimensions = Vector3i(1, 1, 3)
+cell = Vector3i(7, 4, 0)
+
+[node name="Box4" parent="Room/Walkable5" unique_id=1643039620 instance=ExtResource("5_tv7cl")]
+
+[node name="Box5" parent="Room/Walkable5" unique_id=836285127 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+cell = Vector3i(0, 0, 1)
+
+[node name="Box6" parent="Room/Walkable5" unique_id=1571448443 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+walkable = true
+cell = Vector3i(0, 0, 2)
+
+[node name="Block8" parent="Room" unique_id=1922768248 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 3)
+dimensions = Vector3i(3, 1, 3)
+cell = Vector3i(12, 3, 0)
+
+[node name="Box3" parent="Room/Block8" unique_id=1069801966 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+cell = Vector3i(0, 0, 2)
+
+[node name="LaserEmitter" parent="Room/Block8/Box3" unique_id=1342087778 instance=ExtResource("12_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.5)
+always_on = true
+face = 3
+
+[node name="Box2" parent="Room/Block8" unique_id=562809476 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+cell = Vector3i(0, 0, 1)
+
+[node name="Box" parent="Room/Block8" unique_id=508842288 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 0)
+cell = Vector3i(1, 0, 2)
+
+[node name="Box4" parent="Room/Block8" unique_id=890005818 instance=ExtResource("5_tv7cl")]
+
+[node name="Box5" parent="Room/Block8" unique_id=835723837 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
+cell = Vector3i(2, 0, 2)
+
+[node name="HangingPlatform" parent="Room" unique_id=479197177 instance=ExtResource("4_brxtv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2, 0)
+dimensions = Vector3i(1, 3, 1)
+cell = Vector3i(16, 0, 2)
+
+[node name="Box" parent="Room/HangingPlatform" unique_id=1105599399 instance=ExtResource("5_tv7cl")]
+walkable = true
+keeps_height = true
+top_half_only = true
+
+[node name="Box3" parent="Room/HangingPlatform" unique_id=3194029 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(0, 1, 0)
+
+[node name="Box4" parent="Room/HangingPlatform" unique_id=1819148820 instance=ExtResource("5_tv7cl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+walkable = true
+keeps_height = true
+top_half_only = true
+cell = Vector3i(0, 2, 0)
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1551773380]
+transform = Transform3D(0.97040796, 0.19780174, -0.13850231, 0.068258576, 0.32547945, 0.9430821, 0.23162296, -0.9246283, 0.30234617, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1364180049]
+environment = SubResource("Environment_idocv")
