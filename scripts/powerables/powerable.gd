@@ -165,6 +165,7 @@ static func _paint(material: StandardMaterial3D, colour: Color, glowing: bool) -
 	material.albedo_color = colour
 	material.emission_enabled = glowing
 	material.emission = colour
+	material.emission_energy_multiplier = 2.5 if glowing else 1.0
 
 
 #==================Cosas del editor==================

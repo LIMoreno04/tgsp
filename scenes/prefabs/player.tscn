@@ -14,5 +14,7 @@ shape = SubResource("BoxShape3D_tou0u")
 
 [node name="Model" type="Node3D" parent="." unique_id=1712082176]
 
-[node name="Personaje_gramm" parent="Model" unique_id=1395247209 instance=ExtResource("2_gramm")]
+[node name="Body" type="Node3D" parent="Model" unique_id=1849204721]
+
+[node name="Personaje_gramm" parent="Model/Body" unique_id=1395247209 instance=ExtResource("2_gramm")]
 transform = Transform3D(0, 0, 0.368, 0, 0.368, 0, -0.368, 0, 0, 0, 0.3876, 0)

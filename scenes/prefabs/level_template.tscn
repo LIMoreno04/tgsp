@@ -9,6 +9,8 @@
 [ext_resource type="Script" uid="uid://34nefn2ovu0c" path="res://scripts/level/projective_camera.gd" id="9_6stb2"]
 [ext_resource type="PackedScene" uid="uid://bu0alvofbamij" path="res://scenes/prefabs/colliders_plane.tscn" id="10_nstku"]
 [ext_resource type="PackedScene" uid="uid://khw8mus60h1c" path="res://scenes/prefabs/player.tscn" id="12_vkuyy"]
+[ext_resource type="PackedScene" path="res://scenes/prefabs/snow_particles.tscn" id="13_snow"]
+[ext_resource type="Environment" path="res://scenes/prefabs/winter_environment.tres" id="14_env"]
 
 [sub_resource type="Environment" id="Environment_idocv"]
 background_mode = 1
@@ -777,9 +779,15 @@ light = NodePath("../../Sun")
 [node name="Player" parent="Room/CollidersPlane" unique_id=1121856134 node_paths=PackedStringArray("camera") instance=ExtResource("12_vkuyy")]
 camera = NodePath("../../ProjectiveCamera")
 
+[node name="SnowParticles" parent="Room" unique_id=1778921495 instance=ExtResource("13_snow")]
+
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1551773380]
 transform = Transform3D(0.97040796, 0.19780174, -0.13850231, 0.068258576, 0.32547945, 0.9430821, 0.23162296, -0.9246283, 0.30234617, 0, 0, 0)
+light_color = Color(1, 0.968627, 0.921569, 1)
+light_energy = 1.15
 shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_blend_splits = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1364180049]
-environment = SubResource("Environment_idocv")
+environment = ExtResource("14_env")

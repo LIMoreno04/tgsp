@@ -19,6 +19,7 @@ static var _cached_beam_mesh: ArrayMesh
 
 var _lens := StandardMaterial3D.new()
 var _beam: MeshInstance3D
+var _sparks: GPUParticles3D
 
 
 func _init() -> void:
@@ -32,15 +33,21 @@ func activation_condition(inputs: Inputs) -> bool:
 func turn_on() -> void:
 	_paint(_lens, LIT_RED, true)
 	_beam.visible = true
+	if is_instance_valid(_sparks):
+		_sparks.emitting = true
 
 func turn_off() -> void:
 	_paint(_lens, DIM_RED, false)
 	_beam.visible = false
+	if is_instance_valid(_sparks):
+		_sparks.emitting = false
 
 ## El largo se calcula en levelindex
 func show_beam(length: float) -> void:
 	_beam.scale.y = maxf(length, 0.001)
 	_beam.position = Vector3(GridCoordsProvider.grid_to_godot(normal())) * length / 2.0
+	if is_instance_valid(_sparks):
+		_sparks.position = Vector3(GridCoordsProvider.grid_to_godot(normal())) * length
 
 
 func _build_look() -> void:
@@ -53,7 +60,45 @@ func _build_look() -> void:
 	lens.height = LENS_DEPTH
 	_add_part(lens, _lens, HOUSING_DEPTH + LENS_DEPTH / 2.0)
 	_beam = _add_part(_unit_beam_mesh(), null, 0.0)
+	_build_sparks()
 	turn_off()
+
+
+func _build_sparks() -> void:
+	if Engine.is_editor_hint():
+		return
+	_sparks = GPUParticles3D.new()
+	_sparks.amount = 8
+	_sparks.lifetime = 0.25
+	_sparks.explosiveness = 0.5
+
+	var mat := ParticleProcessMaterial.new()
+	var normal_dir := Vector3(GridCoordsProvider.grid_to_godot(normal()))
+	mat.direction = -normal_dir + Vector3(0, 0.6, 0)
+	mat.spread = 50.0
+	mat.initial_velocity_min = 1.2
+	mat.initial_velocity_max = 2.4
+	mat.gravity = Vector3(0, -3.5, 0)
+	mat.scale_min = 0.02
+	mat.scale_max = 0.04
+	mat.color = Color(1.0, 0.3, 0.1, 1.0)
+	_sparks.process_material = mat
+
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.04, 0.04)
+	var smat := StandardMaterial3D.new()
+	smat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	smat.albedo_color = Color(1.0, 0.4, 0.15, 1.0)
+	smat.emission_enabled = true
+	smat.emission = Color(1.0, 0.3, 0.1, 1.0)
+	smat.emission_energy_multiplier = 3.0
+	quad.material = smat
+	_sparks.draw_pass_1 = quad
+
+	_sparks.emitting = false
+	add_child(_sparks)
 
 
 static func _unit_beam_mesh() -> ArrayMesh:

@@ -15,6 +15,8 @@
 [ext_resource type="PackedScene" uid="uid://khw8mus60h1c" path="res://scenes/prefabs/player.tscn" id="11_lxl1u"]
 [ext_resource type="Script" uid="uid://jwcabsk2nx86" path="res://scripts/core/grid_entity.gd" id="12_grid"]
 [ext_resource type="Script" uid="uid://rovbkgf8ri0o" path="res://scripts/level/level.gd" id="13_level"]
+[ext_resource type="PackedScene" path="res://scenes/prefabs/snow_particles.tscn" id="16_snow"]
+[ext_resource type="Environment" path="res://scenes/prefabs/winter_environment.tres" id="17_env"]
 
 [sub_resource type="Environment" id="Environment_owgeq"]
 background_mode = 1
@@ -75,8 +77,8 @@ cell = Vector3i(0, 8, 0)
 
 [node name="Wire" parent="Room/RoomShell/Floor/Box6" unique_id=1437699273 instance=ExtResource("6_3ay3b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
-connects_neg_x = true
 connects_pos_x = true
+connects_neg_x = true
 
 [node name="Box7" parent="Room/RoomShell/Floor" unique_id=1403119061 instance=ExtResource("5_hppjq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
@@ -1121,8 +1123,8 @@ cell = Vector3i(0, 9, 1)
 [node name="Wire" parent="Room/RoomShell/WallX/Box38" unique_id=337072572 instance=ExtResource("6_3ay3b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
 face = 2
-connects_down = true
 connects_up = true
+connects_down = true
 
 [node name="Box39" parent="Room/RoomShell/WallX" unique_id=797111665 instance=ExtResource("5_hppjq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 9)
@@ -1132,8 +1134,8 @@ cell = Vector3i(0, 9, 2)
 [node name="Wire" parent="Room/RoomShell/WallX/Box39" unique_id=1323800752 instance=ExtResource("6_3ay3b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
 face = 2
-connects_down = true
 connects_up = true
+connects_down = true
 
 [node name="Box40" parent="Room/RoomShell/WallX" unique_id=961790647 instance=ExtResource("5_hppjq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 9)
@@ -1143,8 +1145,8 @@ cell = Vector3i(0, 9, 3)
 [node name="Wire" parent="Room/RoomShell/WallX/Box40" unique_id=1251547218 instance=ExtResource("6_3ay3b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0.5)
 face = 2
-connects_down = true
 connects_neg_y = true
+connects_down = true
 
 [node name="Box41" parent="Room/RoomShell/WallX" unique_id=1744907603 instance=ExtResource("5_hppjq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
@@ -1508,8 +1510,8 @@ cell = Vector3i(0, 0, 1)
 
 [node name="ExitDoor" parent="Room/Zona 1 - Plataforma colgada y salida/ExitIsland/Box2" unique_id=1923306010 instance=ExtResource("10_upsmr")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
-edge = 3
 next_level = "res://scenes/levels/test_level.tscn"
+edge = 3
 connects_neg_x = true
 
 [node name="Zona 2 - Dividir y unir" type="Node3D" parent="Room" unique_id=741085498]
@@ -1698,9 +1700,9 @@ movable_3d_neg_y = true
 script = ExtResource("7_v6k17")
 
 [node name="ProjectiveCamera" type="Camera3D" parent="Room" unique_id=14245458 node_paths=PackedStringArray("light")]
-transform = Transform3D(0.70710677, -0.3535534, 0.61237246, 0, 0.86602545, 0.50000006, -0.70710677, -0.3535534, 0.61237246, 35, 25, 30)
+transform = Transform3D(0.70710677, -0.3535534, 0.61237246, 0, 0.86602545, 0.50000006, -0.70710677, -0.3535534, 0.61237246, 68.73724, 51.500008, 66.23724)
 projection = 1
-size = 20
+size = 21.955666
 script = ExtResource("8_upsmr")
 light = NodePath("../../Sun")
 
@@ -1709,9 +1711,15 @@ light = NodePath("../../Sun")
 [node name="Player" parent="Room/CollidersPlane" unique_id=22149707 node_paths=PackedStringArray("camera") instance=ExtResource("11_lxl1u")]
 camera = NodePath("../../ProjectiveCamera")
 
+[node name="SnowParticles" parent="Room" unique_id=2015519828 instance=ExtResource("16_snow")]
+
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1797611932]
 transform = Transform3D(0.97040796, 0.19780174, -0.13850231, 0.068258576, 0.32547945, 0.9430821, 0.23162296, -0.9246283, 0.30234617, 0, 0, 0)
+light_color = Color(1, 0.968627, 0.921569, 1)
+light_energy = 1.15
 shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_blend_splits = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=178418787]
-environment = SubResource("Environment_owgeq")
+environment = ExtResource("17_env")
