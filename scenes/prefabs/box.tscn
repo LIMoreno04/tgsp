@@ -3,13 +3,9 @@
 [ext_resource type="Script" uid="uid://cmmo5v2esadxy" path="res://scripts/objects/box.gd" id="1_y1l2d"]
 [ext_resource type="Script" uid="uid://c6ory3pccr7vf" path="res://scripts/objects/box_mesh.gd" id="1_clw8d"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y1l2d"]
-vertex_color_use_as_albedo = true
-
 [node name="Box" type="Node3D" unique_id=1123826767]
 script = ExtResource("1_y1l2d")
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=1775709227]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0.5)
-material_override = SubResource("StandardMaterial3D_y1l2d")
 script = ExtResource("1_clw8d")

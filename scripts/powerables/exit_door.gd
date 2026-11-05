@@ -18,6 +18,10 @@ func _ready() -> void:
 func _colour() -> Color:
 	return GREEN
 
+func _is_exit() -> bool:
+	return true
+
+
 
 ## El Level arma su jugador en su propio _ready, después de este, así que se busca en diferido.
 ## Fuera de un Level (en las pruebas) no hay a quién escuchar.
