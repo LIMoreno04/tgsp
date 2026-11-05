@@ -1,21 +1,10 @@
 [gd_scene format=3 uid="uid://khw8mus60h1c"]
 
 [ext_resource type="Script" uid="uid://b4q365iald0el" path="res://scripts/player/player.gd" id="1_06qtw"]
+[ext_resource type="PackedScene" uid="uid://bnnk10fqxxkq8" path="res://art/player/Personaje_gramm.glb" id="2_gramm"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_tou0u"]
 size = Vector3(0.6, 0.9, 0.6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n0leu"]
-albedo_color = Color(0.25, 0.55, 0.95, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_8cdkg"]
-size = Vector3(0.6, 0.9, 0.6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_56dyf"]
-albedo_color = Color(0.95, 0.85, 0.3, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_6o77n"]
-size = Vector3(0.18, 0.18, 0.16)
 
 [node name="Player" type="CharacterBody3D" unique_id=1121856134]
 script = ExtResource("1_06qtw")
@@ -25,12 +14,5 @@ shape = SubResource("BoxShape3D_tou0u")
 
 [node name="Model" type="Node3D" parent="." unique_id=1712082176]
 
-[node name="Body" type="MeshInstance3D" parent="Model" unique_id=1395247209]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-material_override = SubResource("StandardMaterial3D_n0leu")
-mesh = SubResource("BoxMesh_8cdkg")
-
-[node name="Nose" type="MeshInstance3D" parent="Model" unique_id=811646184]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, -0.37)
-material_override = SubResource("StandardMaterial3D_56dyf")
-mesh = SubResource("BoxMesh_6o77n")
+[node name="Personaje_gramm" parent="Model" unique_id=1395247209 instance=ExtResource("2_gramm")]
+transform = Transform3D(0, 0, 0.368, 0, 0.368, 0, -0.368, 0, 0, 0, 0.3876, 0)
