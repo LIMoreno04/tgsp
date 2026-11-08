@@ -58,7 +58,6 @@ cell = Vector3i(0, 1, 0)
 [node name="ExitDoor" parent="Room/RoomShell/Floor/Box2" unique_id=559601785 instance=ExtResource("6_kk2ik")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
 next_level = "res://scenes/levels/level_10.tscn"
-edge = 1
 connects_pos_x = true
 connects_neg_x = true
 connects_pos_y = true
