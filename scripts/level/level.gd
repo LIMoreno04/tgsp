@@ -4,6 +4,9 @@ extends Node3D
 const SKIP_TIME := 60.0
 
 const UPDATE_POWER_AFTER_PERSPECTIVE_TURN := false
+const WINTER_ENVIRONMENT: Environment = preload("res://scenes/prefabs/winter_environment.tres")
+const SNOW_PARTICLES_SCENE: PackedScene = preload("res://scenes/prefabs/snow_particles.tscn")
+const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/pause_menu.tscn")
 
 class Moment:
 	var box_cells: Dictionary[Box, Vector3i]
@@ -21,9 +24,14 @@ class Moment:
 var _history: Array[Moment] = []
 var _blockers := []
 var _power_update_pending := false
+var _save_pending := false
+var _pause_menu: PauseMenu = null
 
 
 func _ready() -> void:
+	GameManager.ensure_settings_loaded()
+	AudioManager.play_ambient_music()
+	_setup_winter_atmosphere()
 	room.moved.connect(request_power_update)
 	room.buttons_changed.connect(request_power_update)
 	player.cell_changed.connect(request_power_update.unbind(2))
@@ -31,7 +39,28 @@ func _ready() -> void:
 		player.camera.perspective_change_finished.connect(request_power_update)
 	else:
 		room.perspective_manager.perspective_changed.connect(request_power_update.unbind(1))
+	if GameManager.consume_restore_request(scene_file_path):
+		GameManager.restore_level_state(self)
+	elif not scene_file_path.is_empty():
+		GameManager.save_level_state(self)
 	request_power_update()
+
+
+func _setup_winter_atmosphere() -> void:
+	var world_env := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_env != null:
+		world_env.environment = WINTER_ENVIRONMENT
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun != null:
+		sun.light_color = Color(1.0, 0.968627, 0.921569, 1.0)
+		sun.light_energy = 1.15
+		sun.shadow_blur = 1.5
+		sun.directional_shadow_blend_splits = true
+	if room != null and room.get_node_or_null("SnowParticles") == null and get_node_or_null("SnowParticles") == null:
+		var snow := SNOW_PARTICLES_SCENE.instantiate() as SnowParticles
+		snow.auto_fit_room = false
+		add_child(snow)
+		snow.fit_to_room(room)
 
 ## Lo único que cambia sin avisar es dónde está el cuerpo del jugador: si dejó una puerta que
 ## sostenía, o entró o salió de un laser, hace falta calcular de nuevo. Los rayos lo siguen en cada frame.
@@ -43,12 +72,26 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_cancel"):
+		_toggle_pause()
+		return
 	if is_locked() and not _is_playing_an_undo():
 		return
 	if event.is_action_pressed(&"undo"):
 		undo()
 	elif event.is_action_pressed(&"restart"):
+		GameManager.save_clean_level(scene_file_path)
 		get_tree().reload_current_scene()
+
+
+func _toggle_pause() -> void:
+	if _pause_menu != null and _pause_menu.is_open:
+		_pause_menu.close()
+	else:
+		if _pause_menu == null or not is_instance_valid(_pause_menu):
+			_pause_menu = PAUSE_MENU_SCENE.instantiate() as PauseMenu
+			add_child(_pause_menu)
+		_pause_menu.open(self)
 
 
 #==================Undo==================
@@ -67,6 +110,7 @@ func moment_now() -> Moment:
 
 func remember(moment: Moment) -> void:
 	_history.append(moment)
+	_request_save()
 
 
 func undo() -> void:
@@ -79,6 +123,19 @@ func undo() -> void:
 	room.perspective_manager.restore(moment.perspective, moment.height)
 	player.restore(moment.player_cell, moment.facing, moment.grabbed)
 	_hold_the_lock_for(ProjectiveCamera.TURN_SECONDS if turns_back else GridEntity.SLIDE_SECONDS)
+	_request_save()
+
+
+func _request_save() -> void:
+	if _save_pending:
+		return
+	_save_pending = true
+	_save_progress.call_deferred()
+
+
+func _save_progress() -> void:
+	_save_pending = false
+	GameManager.save_level_state(self)
 
 func _finish_every_animation_now() -> void:
 	for animation in get_tree().get_processed_tweens():

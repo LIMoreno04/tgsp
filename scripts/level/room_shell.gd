@@ -4,10 +4,15 @@ extends Node3D
 
 
 const STRUCTURE_SCENE: PackedScene = preload("res://scenes/prefabs/structure.tscn")
+const WATER_MODEL: PackedScene = preload("res://art/boxes/Cubo_Agua.glb")
 
 const FLOOR := "Floor"
 const WALL_X := "WallX" # la pared en x = -1; se queda con la columna de la esquina (-1, -1)
 const WALL_Y := "WallY" # la pared en y = -1
+const WATER_Z := -2
+
+static var _water_unit_mesh: ArrayMesh
+static var _water_shader_material: ShaderMaterial
 
 ## Lo que un achique le sacó al marco en una celda: la caja, con sus ediciones y sus powerables, o
 ## null si la celda era un agujero.
@@ -27,6 +32,7 @@ class Trimmed:
 ## deshacer, y se libera con la cáscara.
 var _trimmed: Dictionary[Vector3i, Array] = {}
 var _room_size_laid_out: Vector3i
+var _water_instances: MultiMeshInstance3D
 
 func on_dimensions_change():
 	var frame_before := _frame_laid_out_last_time()
@@ -39,6 +45,7 @@ func on_dimensions_change():
 	_fill_part(_part(WALL_Y), &"is_wall", frame_before)
 	_trim_what_fell_outside(frame_before)
 	_room_size_laid_out = room.dimensions
+	_rebuild_water()
 	update_configuration_warnings()
 
 func _init() -> void:
@@ -57,6 +64,8 @@ func _notification(what: int) -> void:
 func _ready() -> void:
 	_room_size_laid_out = room.dimensions
 	room.dimensions_changed.connect(on_dimensions_change)
+	_rebuild_water()
+	_rebuild_water.call_deferred()
 
 
 func _lay_out() -> void:
@@ -189,6 +198,154 @@ func _create_part(part_name: String) -> void:
 	part.name = part_name
 	add_child(part)
 	part.owner = get_tree().edited_scene_root
+
+
+func _rebuild_water() -> void:
+	if room == null or room.dimensions.x <= 0 or room.dimensions.y <= 0:
+		return
+	if _water_instances == null:
+		_water_instances = MultiMeshInstance3D.new()
+		_water_instances.name = "WaterBase"
+		var multimesh := MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.mesh = _get_water_unit_mesh()
+		_water_instances.multimesh = multimesh
+		_water_instances.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Nodo interno para no aparecer en get_children() ni guardarse en el .tscn.
+		add_child(_water_instances, false, Node.INTERNAL_MODE_BACK)
+
+	var bounds := _calculate_water_bounds()
+	var x_start := bounds.position.x
+	var x_end := bounds.position.x + bounds.size.x
+	var y_start := bounds.position.y
+	var y_end := bounds.position.y + bounds.size.y
+	var width := bounds.size.x
+	var length := bounds.size.y
+	var multimesh := _water_instances.multimesh
+	multimesh.instance_count = width * length
+	var idx := 0
+	for x in range(x_start, x_end):
+		for y in range(y_start, y_end):
+			var pos := GridCoordsProvider.grid_to_godot(Vector3i(x, y, WATER_Z)) + Vector3(0.5, 0.5, 0.5)
+			multimesh.set_instance_transform(idx, Transform3D(Basis.IDENTITY, pos))
+			idx += 1
+
+
+func _calculate_water_bounds() -> Rect2i:
+	var x_min := -2
+	var x_max := room.dimensions.x + 1
+	var y_min := -2
+	var y_max := room.dimensions.y + 1
+
+	if room != null:
+		if room.index != null and not room.index.cells_3D.is_empty():
+			for cell: Vector3i in room.index.cells_3D:
+				x_min = mini(x_min, cell.x - 2)
+				y_min = mini(y_min, cell.y - 2)
+				x_max = maxi(x_max, cell.x + 2)
+				y_max = maxi(y_max, cell.y + 2)
+		for child in room.get_children():
+			if child is Structure:
+				x_min = mini(x_min, child.cell.x - 2)
+				y_min = mini(y_min, child.cell.y - 2)
+				x_max = maxi(x_max, child.cell.x + child.dimensions.x + 1)
+				y_max = maxi(y_max, child.cell.y + child.dimensions.y + 1)
+				for box in child.boxes():
+					var wc: Vector3i = child.cell + box.cell
+					x_min = mini(x_min, wc.x - 2)
+					y_min = mini(y_min, wc.y - 2)
+					x_max = maxi(x_max, wc.x + 2)
+					y_max = maxi(y_max, wc.y + 2)
+			elif child is Box:
+				x_min = mini(x_min, child.world_cell.x - 2)
+				y_min = mini(y_min, child.world_cell.y - 2)
+				x_max = maxi(x_max, child.world_cell.x + 2)
+				y_max = maxi(y_max, child.world_cell.y + 2)
+
+	return Rect2i(x_min, y_min, x_max - x_min + 1, y_max - y_min + 1)
+
+
+static func _get_water_unit_mesh() -> ArrayMesh:
+	if _water_unit_mesh != null:
+		return _water_unit_mesh
+	var root := WATER_MODEL.instantiate()
+	var source := (root.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
+	var aabb := source.get_aabb()
+	var unit_scale := Basis.from_scale(Vector3.ONE / aabb.size)
+	var fit := Transform3D(unit_scale, -(unit_scale * aabb.get_center()))
+	var assembled := ArrayMesh.new()
+	var base_mat := source.surface_get_material(0) as StandardMaterial3D
+	var water_mat := _get_water_shader_material(base_mat)
+	for surface in source.get_surface_count():
+		var st := SurfaceTool.new()
+		st.append_from(source, surface, fit)
+		st.set_material(water_mat)
+		st.commit(assembled)
+	root.free()
+	_water_unit_mesh = assembled
+	return _water_unit_mesh
+
+
+static func _get_water_shader_material(base_mat: StandardMaterial3D) -> ShaderMaterial:
+	if _water_shader_material != null:
+		return _water_shader_material
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode cull_back;
+
+uniform vec4 albedo : source_color = vec4(0.0, 0.6057, 0.9063, 1.0);
+uniform float roughness : hint_range(0.0, 1.0) = 0.25;
+uniform float metallic : hint_range(0.0, 1.0) = 0.0;
+uniform float wave_height = 0.22;
+uniform float wave_half_width = 0.75;
+uniform float wave_narrowness = 2.6;
+uniform float wave_speed = 0.9;
+uniform vec2 wave_origin = vec2(-5.0, -4.0);
+
+varying float v_wave_ratio;
+
+float wave_at(vec2 p, float t) {
+	float period = wave_half_width * 2.0;
+	float dist = length(p - wave_origin);
+	float u = mod(dist - t * wave_speed, period) - wave_half_width;
+	float x = u * wave_narrowness;
+	float edge = wave_half_width * wave_narrowness;
+	float bell = exp(-x * x) - exp(-edge * edge);
+	float norm = 1.0 - exp(-edge * edge);
+	return wave_height * (bell / norm);
+}
+
+void vertex() {
+	v_wave_ratio = 0.0;
+	if (VERTEX.y > 0.0) {
+		vec2 world_xz = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+		float h = wave_at(world_xz, TIME);
+		VERTEX.y += h - wave_height;
+		if (NORMAL.y > 0.5) {
+			v_wave_ratio = h / max(wave_height, 0.001);
+			float eps = 0.02;
+			float hx = wave_at(world_xz + vec2(eps, 0.0), TIME) - h;
+			float hz = wave_at(world_xz + vec2(0.0, eps), TIME) - h;
+			NORMAL = normalize(vec3(-hx / eps, 1.0, -hz / eps));
+		}
+	}
+}
+
+void fragment() {
+	ALBEDO = mix(albedo.rgb, min(albedo.rgb * 1.28 + vec3(0.06, 0.10, 0.12), vec3(1.0)), v_wave_ratio * 0.55);
+	ROUGHNESS = roughness;
+	METALLIC = metallic;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	if base_mat != null:
+		mat.set_shader_parameter("albedo", base_mat.albedo_color)
+		mat.set_shader_parameter("roughness", base_mat.roughness)
+		mat.set_shader_parameter("metallic", base_mat.metallic)
+	_water_shader_material = mat
+	return _water_shader_material
 
 
 func _get_configuration_warnings() -> PackedStringArray:

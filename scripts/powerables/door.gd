@@ -27,6 +27,13 @@ static var _cached_exit_door_mesh: ArrayMesh
 var _slab: MeshInstance3D
 var _door_leaf: MeshInstance3D
 var _tween: Tween
+var _is_open := false
+var _ready_for_audio := false
+
+
+func _ready() -> void:
+	super()
+	_ready_for_audio = true
 
 
 func activation_condition(inputs: Inputs) -> bool:
@@ -34,12 +41,17 @@ func activation_condition(inputs: Inputs) -> bool:
 
 
 func turn_on() -> void:
+	var was_open := _is_open
+	_is_open = true
 	if _slab != null:
 		_slab.visible = false
 	if _door_leaf != null:
 		_rotate_to(_closed_angle() + PI / 2.0)
+	if not Engine.is_editor_hint() and is_inside_tree() and not was_open and _ready_for_audio:
+		AudioManager.play_door_open()
 
 func turn_off() -> void:
+	_is_open = false
 	if _slab != null:
 		_slab.visible = true
 	if _door_leaf != null:

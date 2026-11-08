@@ -19,6 +19,8 @@ func activation_condition(inputs: Inputs) -> bool:
 
 func turn_on() -> void:
 	_paint(_pad, LIT_RED, true)
+	if not Engine.is_editor_hint() and is_inside_tree():
+		AudioManager.play_pressure_plate()
 
 func turn_off() -> void:
 	_paint(_pad, DIM_RED, false)

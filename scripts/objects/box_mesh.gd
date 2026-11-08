@@ -284,8 +284,8 @@ static func _handle_mesh(top_half_only: bool, on_walkable: bool, facing: Box.Fac
 	var root := HANDLE_MODEL.instantiate()
 	var source := (root.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
 	var bottom_y := 0.0 if top_half_only else -0.5
-	var horizontal_scale := 0.58 if on_walkable else 0.501
-	var y_lift := 0.022 if on_walkable else 0.0
+	var horizontal_scale := 0.585 if on_walkable else 0.56
+	var y_lift := 0.022 if on_walkable else 0.012
 	var scale_vec := Vector3(horizontal_scale, (0.5 - bottom_y) / 2.0, horizontal_scale)
 	var offset := Vector3(0.0, (0.5 + bottom_y) / 2.0 + y_lift, 0.0)
 	var base_transform := Transform3D(Basis.from_scale(scale_vec), offset)

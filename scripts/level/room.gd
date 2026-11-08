@@ -153,6 +153,7 @@ func restore(cells: Dictionary[Box, Vector3i], switched_on: Dictionary[ButtonPow
 ## Solo Room cambia el estado de un powerable, como los movimientos
 func press(button: ButtonPowerable) -> void:
 	button.switched_on = not button.switched_on
+	AudioManager.play_button()
 	buttons_changed.emit()
 
 
