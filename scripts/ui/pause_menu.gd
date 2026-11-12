@@ -12,13 +12,16 @@ var _dim_overlay: ColorRect
 var _card_panel: PanelContainer
 var _main_view: VBoxContainer
 var _options_view: VBoxContainer
+var _controls_view: VBoxContainer
 var _level_name_lbl: Label
 var _status_lbl: Label
 var _resume_button: Button
 var _save_button: Button
 var _options_button: Button
 var _quit_button: Button
+var _controls_button: Button
 var _back_button: Button
+var _controls_back_button: Button
 var _fullscreen_button: Button
 var _windowed_button: Button
 var _borderless_button: Button
@@ -93,7 +96,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
-		if _options_view.visible:
+		if _controls_view != null and _controls_view.visible:
+			_show_options_view()
+		elif _options_view.visible:
 			_show_main_view()
 		else:
 			close()
@@ -340,6 +345,20 @@ func _build_ui() -> void:
 	)
 	volume_box.add_child(_volume_slider)
 
+	# Botón Controles
+	_controls_button = _create_cute_button(
+		"Controles",
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.74, 0.84, 0.92, 1.0),
+		Color(0.14, 0.44, 0.72, 1.0),
+		Color(0.16, 0.32, 0.50, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.08, 0.30, 0.54, 1.0)
+	)
+	_controls_button.custom_minimum_size = Vector2(0, 48)
+	_controls_button.pressed.connect(_show_controls_view)
+	_options_view.add_child(_controls_button)
+
 	# Botón Volver
 	_back_button = _create_cute_button(
 		"Volver",
@@ -350,8 +369,51 @@ func _build_ui() -> void:
 		Color(1.0, 1.0, 1.0, 1.0),
 		Color(0.08, 0.30, 0.54, 1.0)
 	)
+	_back_button.custom_minimum_size = Vector2(0, 48)
 	_back_button.pressed.connect(_show_main_view)
 	_options_view.add_child(_back_button)
+
+	# Vista de Controles
+	_controls_view = VBoxContainer.new()
+	_controls_view.name = "ControlsView"
+	_controls_view.visible = false
+	_controls_view.add_theme_constant_override("separation", 10)
+	card_vbox.add_child(_controls_view)
+
+	var controls_title := Label.new()
+	controls_title.text = "CONTROLES"
+	controls_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	controls_title.add_theme_font_size_override("font_size", 22)
+	controls_title.add_theme_color_override("font_color", Color(0.14, 0.30, 0.48, 1.0))
+	_controls_view.add_child(controls_title)
+
+	var controls_list := VBoxContainer.new()
+	controls_list.add_theme_constant_override("separation", 6)
+	_controls_view.add_child(controls_list)
+
+	var bindings := [
+		["W A S D / ↑↓←→", "Moverse"],
+		["E", "Agarrar / Interactuar"],
+		["Espacio", "Vista 2D / 3D"],
+		["Z", "Deshacer"],
+		["R", "Reiniciar nivel"],
+		["Esc", "Pausa"],
+	]
+	for entry: Array in bindings:
+		controls_list.add_child(_create_control_row(str(entry[0]), str(entry[1])))
+
+	_controls_back_button = _create_cute_button(
+		"Volver",
+		Color(0.38, 0.76, 0.96, 1.0),
+		Color(0.18, 0.54, 0.78, 1.0),
+		Color(0.14, 0.44, 0.72, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.08, 0.30, 0.54, 1.0)
+	)
+	_controls_back_button.custom_minimum_size = Vector2(0, 48)
+	_controls_back_button.pressed.connect(_show_options_view)
+	_controls_view.add_child(_controls_back_button)
 
 
 func _update_level_label() -> void:
@@ -391,14 +453,88 @@ func _on_quit_pressed() -> void:
 func _show_main_view() -> void:
 	_main_view.visible = true
 	_options_view.visible = false
+	if _controls_view != null:
+		_controls_view.visible = false
 	_resume_button.grab_focus.call_deferred()
 
 
 func _show_options_view() -> void:
 	_main_view.visible = false
+	if _controls_view != null:
+		_controls_view.visible = false
 	_options_view.visible = true
 	_refresh_options_ui()
 	_back_button.grab_focus.call_deferred()
+
+
+func _show_controls_view() -> void:
+	_main_view.visible = false
+	_options_view.visible = false
+	if _controls_view != null:
+		_controls_view.visible = true
+	if _controls_back_button != null:
+		_controls_back_button.grab_focus.call_deferred()
+
+
+func _create_control_row(keys_text: String, action_text: String) -> Control:
+	var row_panel := PanelContainer.new()
+	var row_style := StyleBoxFlat.new()
+	row_style.bg_color = Color(0.88, 0.95, 0.99, 0.72)
+	row_style.border_color = Color(0.68, 0.85, 0.96, 0.9)
+	row_style.border_width_left = 2
+	row_style.border_width_top = 2
+	row_style.border_width_right = 2
+	row_style.border_width_bottom = 4
+	row_style.corner_radius_top_left = 10
+	row_style.corner_radius_top_right = 10
+	row_style.corner_radius_bottom_left = 10
+	row_style.corner_radius_bottom_right = 10
+	row_style.content_margin_left = 12
+	row_style.content_margin_right = 14
+	row_style.content_margin_top = 5
+	row_style.content_margin_bottom = 6
+	row_panel.add_theme_stylebox_override("panel", row_style)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 10)
+	row_panel.add_child(hbox)
+
+	var key_badge := PanelContainer.new()
+	var key_style := StyleBoxFlat.new()
+	key_style.bg_color = Color(1.0, 1.0, 1.0, 1.0)
+	key_style.border_color = Color(0.56, 0.78, 0.92, 1.0)
+	key_style.border_width_left = 2
+	key_style.border_width_top = 2
+	key_style.border_width_right = 2
+	key_style.border_width_bottom = 4
+	key_style.corner_radius_top_left = 7
+	key_style.corner_radius_top_right = 7
+	key_style.corner_radius_bottom_left = 7
+	key_style.corner_radius_bottom_right = 7
+	key_style.content_margin_left = 10
+	key_style.content_margin_right = 10
+	key_style.content_margin_top = 3
+	key_style.content_margin_bottom = 4
+	key_badge.add_theme_stylebox_override("panel", key_style)
+	hbox.add_child(key_badge)
+
+	var key_lbl := Label.new()
+	key_lbl.text = keys_text
+	key_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key_lbl.add_theme_font_size_override("font_size", 14)
+	key_lbl.add_theme_color_override("font_color", Color(0.12, 0.36, 0.62, 1.0))
+	key_badge.add_child(key_lbl)
+
+	var action_lbl := Label.new()
+	action_lbl.text = action_text
+	action_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	action_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	action_lbl.add_theme_font_size_override("font_size", 15)
+	action_lbl.add_theme_color_override("font_color", Color(0.16, 0.32, 0.50, 1.0))
+	hbox.add_child(action_lbl)
+
+	return row_panel
 
 
 func _show_status(text_msg: String) -> void:

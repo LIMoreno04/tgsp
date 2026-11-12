@@ -26,12 +26,14 @@ var _blockers := []
 var _power_update_pending := false
 var _save_pending := false
 var _pause_menu: PauseMenu = null
+var _hud: LevelHUD = null
 
 
 func _ready() -> void:
 	GameManager.ensure_settings_loaded()
 	AudioManager.play_ambient_music()
 	_setup_winter_atmosphere()
+	_setup_hud()
 	room.moved.connect(request_power_update)
 	room.buttons_changed.connect(request_power_update)
 	player.cell_changed.connect(request_power_update.unbind(2))
@@ -44,6 +46,14 @@ func _ready() -> void:
 	elif not scene_file_path.is_empty():
 		GameManager.save_level_state(self)
 	request_power_update()
+
+
+func _setup_hud() -> void:
+	_hud = LevelHUD.new()
+	_hud.name = "LevelHUD"
+	add_child(_hud)
+	_hud.pause_requested.connect(_toggle_pause)
+	_hud.setup_for_level(scene_file_path, true)
 
 
 func _setup_winter_atmosphere() -> void:
@@ -91,6 +101,8 @@ func _toggle_pause() -> void:
 		if _pause_menu == null or not is_instance_valid(_pause_menu):
 			_pause_menu = PAUSE_MENU_SCENE.instantiate() as PauseMenu
 			add_child(_pause_menu)
+			if _hud != null and is_instance_valid(_hud):
+				_pause_menu.saved.connect(func() -> void: _hud.show_save_indicator())
 		_pause_menu.open(self)
 
 

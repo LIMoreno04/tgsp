@@ -45,11 +45,21 @@ static func get_saved_level_label() -> String:
 	var path := get_saved_level_path()
 	if path.is_empty():
 		return ""
+	return format_level_name(path)
+
+
+static func format_level_name(path: String) -> String:
+	if path.is_empty():
+		return "Nivel 1"
 	var file := path.get_file().get_basename()
 	if file.begins_with("level_"):
 		var num := file.trim_prefix("level_").to_int()
 		if num > 0:
 			return "Nivel %d" % num
+	if file == "test_level":
+		return "Nivel de Prueba"
+	if file == "test_level_2":
+		return "Nivel de Prueba 2"
 	return file.capitalize()
 
 

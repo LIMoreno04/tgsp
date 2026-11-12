@@ -53,10 +53,13 @@ var windowed_button: Button
 var borderless_button: Button
 var volume_slider: HSlider
 var volume_value_label: Label
+var controls_button: Button
 var back_button: Button
+var controls_back_button: Button
 
 var _main_view: Control
 var _options_view: Control
+var _controls_view: Control
 var _card_panel: PanelContainer
 var _camera: Camera3D
 var _camera_base_pos: Vector3
@@ -104,9 +107,13 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"ui_cancel") and is_instance_valid(_options_view) and _options_view.visible:
-		_show_main_view()
-		get_viewport().set_input_as_handled()
+	if event.is_action_pressed(&"ui_cancel"):
+		if is_instance_valid(_controls_view) and _controls_view.visible:
+			_show_options_view()
+			get_viewport().set_input_as_handled()
+		elif is_instance_valid(_options_view) and _options_view.visible:
+			_show_main_view()
+			get_viewport().set_input_as_handled()
 
 
 #==================3D Low-Poly Cute Diorama==================
@@ -676,6 +683,20 @@ func _build_ui() -> void:
 	volume_slider.value_changed.connect(_on_volume_changed)
 	volume_box.add_child(volume_slider)
 
+	# Botón Controles
+	controls_button = _create_cute_button(
+		"Controles",
+		Color(0.38, 0.76, 0.96, 1.0),
+		Color(0.18, 0.54, 0.78, 1.0),
+		Color(0.14, 0.44, 0.72, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.08, 0.30, 0.54, 1.0)
+	)
+	controls_button.custom_minimum_size = Vector2(0, 52)
+	controls_button.pressed.connect(_show_controls_view)
+	options_vbox.add_child(controls_button)
+
 	# Botón Volver (Blanco con hover a celeste más oscuro)
 	back_button = _create_cute_button(
 		"Volver",
@@ -686,8 +707,52 @@ func _build_ui() -> void:
 		Color(1.0, 1.0, 1.0, 1.0),
 		Color(0.08, 0.30, 0.54, 1.0)
 	)
+	back_button.custom_minimum_size = Vector2(0, 52)
 	back_button.pressed.connect(_show_main_view)
 	options_vbox.add_child(back_button)
+
+	# Vista 3: Controles del Juego
+	var controls_vbox := VBoxContainer.new()
+	controls_vbox.name = "ControlsView"
+	controls_vbox.visible = false
+	controls_vbox.add_theme_constant_override("separation", 12)
+	card_vbox.add_child(controls_vbox)
+	_controls_view = controls_vbox
+
+	var controls_title := Label.new()
+	controls_title.text = "CONTROLES"
+	controls_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	controls_title.add_theme_font_size_override("font_size", 24)
+	controls_title.add_theme_color_override("font_color", Color(0.14, 0.30, 0.48, 1.0))
+	controls_vbox.add_child(controls_title)
+
+	var controls_list := VBoxContainer.new()
+	controls_list.add_theme_constant_override("separation", 8)
+	controls_vbox.add_child(controls_list)
+
+	var bindings := [
+		["W A S D / ↑↓←→", "Moverse"],
+		["E", "Agarrar / Interactuar"],
+		["Espacio", "Vista 2D / 3D"],
+		["Z", "Deshacer"],
+		["R", "Reiniciar nivel"],
+		["Esc", "Pausa"],
+	]
+	for entry: Array in bindings:
+		controls_list.add_child(_create_control_row(str(entry[0]), str(entry[1])))
+
+	controls_back_button = _create_cute_button(
+		"Volver",
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.74, 0.84, 0.92, 1.0),
+		Color(0.14, 0.44, 0.72, 1.0),
+		Color(0.16, 0.32, 0.50, 1.0),
+		Color(1.0, 1.0, 1.0, 1.0),
+		Color(0.08, 0.30, 0.54, 1.0)
+	)
+	controls_back_button.custom_minimum_size = Vector2(0, 52)
+	controls_back_button.pressed.connect(_show_options_view)
+	controls_vbox.add_child(controls_back_button)
 
 
 func _create_cute_button(
@@ -874,9 +939,82 @@ func _refresh_options_ui() -> void:
 			volume_value_label.text = "%d%%" % pct
 
 
+func _create_control_row(keys_text: String, action_text: String) -> Control:
+	var row_panel := PanelContainer.new()
+	var row_style := StyleBoxFlat.new()
+	row_style.bg_color = Color(0.88, 0.95, 0.99, 0.72)
+	row_style.border_color = Color(0.68, 0.85, 0.96, 0.9)
+	row_style.border_width_left = 2
+	row_style.border_width_top = 2
+	row_style.border_width_right = 2
+	row_style.border_width_bottom = 4
+	row_style.corner_radius_top_left = 12
+	row_style.corner_radius_top_right = 12
+	row_style.corner_radius_bottom_left = 12
+	row_style.corner_radius_bottom_right = 12
+	row_style.content_margin_left = 14
+	row_style.content_margin_right = 16
+	row_style.content_margin_top = 6
+	row_style.content_margin_bottom = 8
+	row_panel.add_theme_stylebox_override("panel", row_style)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 12)
+	row_panel.add_child(hbox)
+
+	var key_badge := PanelContainer.new()
+	var key_style := StyleBoxFlat.new()
+	key_style.bg_color = Color(1.0, 1.0, 1.0, 1.0)
+	key_style.border_color = Color(0.56, 0.78, 0.92, 1.0)
+	key_style.border_width_left = 2
+	key_style.border_width_top = 2
+	key_style.border_width_right = 2
+	key_style.border_width_bottom = 5
+	key_style.corner_radius_top_left = 8
+	key_style.corner_radius_top_right = 8
+	key_style.corner_radius_bottom_left = 8
+	key_style.corner_radius_bottom_right = 8
+	key_style.content_margin_left = 12
+	key_style.content_margin_right = 12
+	key_style.content_margin_top = 4
+	key_style.content_margin_bottom = 5
+	key_badge.add_theme_stylebox_override("panel", key_style)
+	hbox.add_child(key_badge)
+
+	var key_lbl := Label.new()
+	key_lbl.text = keys_text
+	key_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key_lbl.add_theme_font_size_override("font_size", 16)
+	key_lbl.add_theme_color_override("font_color", Color(0.12, 0.36, 0.62, 1.0))
+	key_badge.add_child(key_lbl)
+
+	var action_lbl := Label.new()
+	action_lbl.text = action_text
+	action_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	action_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	action_lbl.add_theme_font_size_override("font_size", 17)
+	action_lbl.add_theme_color_override("font_color", Color(0.16, 0.32, 0.50, 1.0))
+	hbox.add_child(action_lbl)
+
+	return row_panel
+
+
+func _show_controls_view() -> void:
+	_main_view.visible = false
+	_options_view.visible = false
+	if is_instance_valid(_controls_view):
+		_controls_view.visible = true
+	_wave_timer = 0.65
+	if is_instance_valid(controls_back_button):
+		controls_back_button.grab_focus()
+
+
 func _show_options_view() -> void:
 	_refresh_options_ui()
 	_main_view.visible = false
+	if is_instance_valid(_controls_view):
+		_controls_view.visible = false
 	_options_view.visible = true
 	_wave_timer = 0.65
 	if is_instance_valid(fullscreen_button):
@@ -886,6 +1024,8 @@ func _show_options_view() -> void:
 func _show_main_view() -> void:
 	_refresh_load_button()
 	_options_view.visible = false
+	if is_instance_valid(_controls_view):
+		_controls_view.visible = false
 	_main_view.visible = true
 	_wave_timer = 0.65
 	if is_instance_valid(new_game_button):
