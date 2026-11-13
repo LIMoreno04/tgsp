@@ -14,8 +14,11 @@ var _level_small_lbl: Label
 var _pause_button: Button
 var _save_badge: PanelContainer
 var _save_spinner: _SaveSpinnerIcon
+var _tutorial_banner: Control
+var _tutorial_lbl: RichTextLabel
 var _save_tween: Tween
 var _intro_tween: Tween
+var _tutorial_tween: Tween
 
 
 class _SaveSpinnerIcon extends Control:
@@ -187,6 +190,48 @@ func show_save_indicator(duration: float = SAVE_INDICATOR_DURATION) -> void:
 	_save_tween.tween_property(_save_badge, "modulate:a", 0.0, fade_out_time)
 	_save_tween.tween_callback(func() -> void:
 		_save_badge.visible = false
+	)
+
+
+func show_tutorial(message: String) -> void:
+	if _tutorial_banner == null or _tutorial_lbl == null:
+		return
+	if is_instance_valid(_tutorial_tween):
+		_tutorial_tween.kill()
+
+	var formatted := "[center]%s[/center]" % message
+	if _tutorial_banner.visible and _tutorial_banner.modulate.a > 0.05:
+		_tutorial_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		if _tutorial_tween == null:
+			return
+		_tutorial_tween.tween_property(_tutorial_banner, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		_tutorial_tween.tween_callback(func() -> void:
+			_tutorial_lbl.text = formatted
+		)
+		_tutorial_tween.tween_property(_tutorial_banner, "modulate:a", 1.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	else:
+		_tutorial_lbl.text = formatted
+		_tutorial_banner.visible = true
+		_tutorial_banner.modulate.a = 0.0
+		_tutorial_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		if _tutorial_tween == null:
+			return
+		_tutorial_tween.tween_property(_tutorial_banner, "modulate:a", 1.0, 0.32).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func hide_tutorial() -> void:
+	if _tutorial_banner == null or not _tutorial_banner.visible:
+		return
+	if is_instance_valid(_tutorial_tween):
+		_tutorial_tween.kill()
+
+	_tutorial_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	if _tutorial_tween == null:
+		_tutorial_banner.visible = false
+		return
+	_tutorial_tween.tween_property(_tutorial_banner, "modulate:a", 0.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_tutorial_tween.tween_callback(func() -> void:
+		_tutorial_banner.visible = false
 	)
 
 
@@ -377,6 +422,57 @@ func _build_ui() -> void:
 	_souls_title_lbl.add_theme_constant_override("shadow_offset_y", 3)
 	_souls_title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_vbox.add_child(_souls_title_lbl)
+
+	# 4b. Caja de tutorial en la parte inferior
+	var tutorial_center := CenterContainer.new()
+	tutorial_center.name = "TutorialBanner"
+	tutorial_center.anchor_left = 0.14
+	tutorial_center.anchor_right = 0.86
+	tutorial_center.anchor_top = 0.83
+	tutorial_center.anchor_bottom = 0.95
+	tutorial_center.offset_left = 0
+	tutorial_center.offset_right = 0
+	tutorial_center.offset_top = 0
+	tutorial_center.offset_bottom = 0
+	tutorial_center.visible = false
+	tutorial_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(tutorial_center)
+	_tutorial_banner = tutorial_center
+
+	var tutorial_box := PanelContainer.new()
+	tutorial_box.name = "TutorialBox"
+	tutorial_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tutorial_style := StyleBoxFlat.new()
+	tutorial_style.bg_color = Color(0.05, 0.09, 0.16, 0.86)
+	tutorial_style.border_color = Color(0.56, 0.82, 0.98, 0.55)
+	tutorial_style.set_border_width_all(2)
+	tutorial_style.set_corner_radius_all(10)
+	tutorial_style.content_margin_left = 22
+	tutorial_style.content_margin_right = 22
+	tutorial_style.content_margin_top = 10
+	tutorial_style.content_margin_bottom = 10
+	tutorial_style.shadow_color = Color(0.01, 0.03, 0.08, 0.5)
+	tutorial_style.shadow_size = 8
+	tutorial_style.shadow_offset = Vector2(0, 3)
+	tutorial_box.add_theme_stylebox_override("panel", tutorial_style)
+	tutorial_center.add_child(tutorial_box)
+
+	_tutorial_lbl = RichTextLabel.new()
+	_tutorial_lbl.name = "TutorialLabel"
+	_tutorial_lbl.bbcode_enabled = true
+	_tutorial_lbl.fit_content = true
+	_tutorial_lbl.scroll_active = false
+	_tutorial_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_tutorial_lbl.text = ""
+	_tutorial_lbl.add_theme_font_size_override("normal_font_size", 17)
+	_tutorial_lbl.add_theme_font_size_override("bold_font_size", 18)
+	_tutorial_lbl.add_theme_color_override("default_color", Color(0.92, 0.96, 1.0, 1.0))
+	var bold_font := FontVariation.new()
+	bold_font.base_font = _tutorial_lbl.get_theme_font("normal_font")
+	bold_font.variation_embolden = 0.85
+	_tutorial_lbl.add_theme_font_override("bold_font", bold_font)
+	_tutorial_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tutorial_box.add_child(_tutorial_lbl)
 
 	# 5. Capa de Fade-In suave a pantalla completa al cambiar de nivel
 	_fade_overlay = ColorRect.new()

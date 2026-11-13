@@ -27,6 +27,8 @@ var _power_update_pending := false
 var _save_pending := false
 var _pause_menu: PauseMenu = null
 var _hud: LevelHUD = null
+var _tutorial_level := 0
+var _tutorial_step := 0
 
 
 func _ready() -> void:
@@ -34,6 +36,7 @@ func _ready() -> void:
 	AudioManager.play_ambient_music()
 	_setup_winter_atmosphere()
 	_setup_hud()
+	_setup_tutorials()
 	room.moved.connect(request_power_update)
 	room.buttons_changed.connect(request_power_update)
 	player.cell_changed.connect(request_power_update.unbind(2))
@@ -81,6 +84,15 @@ func _physics_process(_delta: float) -> void:
 	room.show_the_beams(perspective, player.cell().z, player.body_on_grid())
 
 
+func _input(event: InputEvent) -> void:
+	if get_tree().paused:
+		return
+	if _tutorial_level == 1 and _tutorial_step == 2 and not is_locked() and event.is_action_pressed(&"grab"):
+		_tutorial_step = 3
+		if _hud != null:
+			_hud.hide_tutorial()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
 		_toggle_pause()
@@ -92,6 +104,47 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"restart"):
 		GameManager.save_clean_level(scene_file_path)
 		get_tree().reload_current_scene()
+
+
+func _setup_tutorials() -> void:
+	if _hud == null:
+		return
+	var file := scene_file_path.get_file().get_basename()
+	match file:
+		"level_01":
+			_tutorial_level = 1
+			_tutorial_step = 1
+			_hud.show_tutorial("¡Bienvenido! Presiona [b]ESPACIO[/b] para cambiar de perspectiva.")
+			room.perspective_manager.perspective_changed.connect(_on_tutorial_perspective_changed)
+		"level_02":
+			_tutorial_level = 2
+			_tutorial_step = 1
+			_hud.show_tutorial("Consejo: cambiar de perspectiva también puede activar o desactivar mecanismos.")
+			room.perspective_manager.perspective_changed.connect(_on_tutorial_perspective_changed)
+		"level_03":
+			_tutorial_level = 3
+			_tutorial_step = 1
+			_hud.show_tutorial("Tip: los bloques de hielo del mismo color se unen al tocarse y se mueven juntos.")
+			room.moved.connect(_on_tutorial_room_moved)
+
+
+func _on_tutorial_perspective_changed(_perspective: Room.Perspective) -> void:
+	if _hud == null:
+		return
+	if _tutorial_level == 1 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.show_tutorial("¡Genial! Ahora usa [b]E[/b] para agarrar objetos o activar interactuables.")
+	elif _tutorial_level == 2 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.hide_tutorial()
+
+
+func _on_tutorial_room_moved() -> void:
+	if _hud == null:
+		return
+	if _tutorial_level == 3 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.hide_tutorial()
 
 
 func _toggle_pause() -> void:
