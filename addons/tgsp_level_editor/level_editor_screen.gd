@@ -11,7 +11,6 @@ signal open_requested(path: String)
 signal new_level_requested(path: String, dimensions: Vector3i)
 signal selection_changed
 
-const BOX_MESH := preload("res://scripts/objects/box_mesh.gd")
 const KIND_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8]
 const FLASH_MILLISECONDS := 2500
 ## El acento del editor de Godot, para la herramienta elegida en la paleta.
@@ -1403,7 +1402,7 @@ func _draw_the_beams(overlay: LevelEditorPreview) -> void:
 			overlay.highlight_face(room.index.cell_of(beam.hits.box), beam.hits.face, Color(1.0, 0.2, 0.15, 0.45))
 
 
-## La sombra de la Structure, como la dibuja su caja: el naranja si se agarra, el gris si no.
+## El color de la Structure, el de la paleta del Room: hielo si se agarra, piedra si no.
 func shade_of(node: Node) -> Color:
 	var box: Box = null
 	if node is Structure and not (node as Structure).boxes().is_empty():
@@ -1414,10 +1413,8 @@ func shade_of(node: Node) -> Color:
 		return Color(0.4, 0.4, 0.42)
 	if box.is_terrain():
 		return Color(0.92, 0.92, 0.9)
-	var mesh := box.get_node_or_null(^"Mesh")
 	var movable := box.movable_3d_from_any_side() or box.movable_2d_whole_face
-	var base := BOX_MESH.COLOUR_MOVABLE if movable else BOX_MESH.COLOUR_STATIC
-	var tint := BOX_MESH.MAX_STRUCTURE_TINT_MOVABLE if movable else BOX_MESH.MAX_STRUCTURE_TINT_STATIC
-	if mesh != null and mesh.has_method(&"_tinted"):
-		return mesh.call(&"_tinted", base, tint)
-	return base
+	var structure := StructurePalette.structure_of(box)
+	if room == null:
+		return StructurePalette.ICE[0] if movable else StructurePalette.stone_from(StructurePalette.ICE[0])
+	return room.structure_palette.ice_colour_of(structure) if movable else room.structure_palette.stone_colour_of(structure)

@@ -2,12 +2,15 @@
 class_name GridEntity
 extends Node3D
 
+signal cell_changed
+
 const SLIDE_SECONDS := 0.12
 
 @export var cell := Vector3i.ZERO:
 	set(value):
 		cell = value
 		_slide_to(GridCoordsProvider.grid_to_godot(cell))
+		cell_changed.emit()
 
 var _slide: Tween
 
