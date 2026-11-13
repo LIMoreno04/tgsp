@@ -263,7 +263,7 @@ cell = Vector3i(4, 0, 0)
 [node name="ExitDoor" parent="Room/RoomShell/Floor/Box33" unique_id=559601785 instance=ExtResource("6_josfm")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1, 0.5)
 next_level = "res://scenes/levels/level_09.tscn"
-edge = 3
+edge = 2
 connects_pos_x = true
 connects_neg_x = true
 connects_pos_y = true
@@ -2136,10 +2136,6 @@ cell = Vector3i(4, 0, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, 0)
 is_wall = true
 cell = Vector3i(4, 0, 1)
-
-[node name="Wire" parent="Room/RoomShell/WallY/Box18" unique_id=1984555558 instance=ExtResource("7_josfm")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 1)
-face = 4
 
 [node name="Box19" parent="Room/RoomShell/WallY" unique_id=311482610 instance=ExtResource("5_f6egh")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, 0)
