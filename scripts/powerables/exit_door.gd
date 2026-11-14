@@ -18,6 +18,10 @@ func _ready() -> void:
 func _colour() -> Color:
 	return GREEN
 
+func _is_exit() -> bool:
+	return true
+
+
 
 ## El Level arma su jugador en su propio _ready, después de este, así que se busca en diferido.
 ## Fuera de un Level (en las pruebas) no hay a quién escuchar.
@@ -46,8 +50,15 @@ func _crosses_its_edge(from: Vector3i, to: Vector3i) -> bool:
 
 func _finish_the_level() -> void:
 	if next_level.is_empty():
-		get_tree().reload_current_scene()
+		var level := _room().get_parent() as Level
+		if level != null and level.scene_file_path.begins_with("res://scenes/levels/level_"):
+			# El último nivel: la partida queda guardada en su final, y el final del juego lleva al menú.
+			GameManager.save_level_state(level)
+			level.add_child(EndScreen.new())
+		else:
+			get_tree().reload_current_scene()
 	else:
+		GameManager.save_clean_level(next_level)
 		get_tree().change_scene_to_file(next_level)
 
 

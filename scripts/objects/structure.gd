@@ -2,6 +2,9 @@
 class_name Structure
 extends GridEntity
 
+## Una de sus cajas cambió de celda, entró o salió: las que se tocan ya no son las mismas.
+signal layout_changed
+
 const BOX_SCENE: PackedScene = preload("res://scenes/prefabs/box.tscn")
 
 @export var dimensions := Vector3i.ONE:
@@ -71,11 +74,27 @@ func _is_in_the_prism(cell_in_structure: Vector3i) -> bool:
 	return cell_in_structure.clamp(Vector3i.ZERO, dimensions - Vector3i.ONE) == cell_in_structure
 
 
+func _init() -> void:
+	super()
+	child_entered_tree.connect(_listen_to_a_new_box)
+
+
+## Una caja puede volver a entrar (deshacer en el editor); se la escucha una sola vez.
+func _listen_to_a_new_box(child: Node) -> void:
+	if child is Box and not child.cell_changed.is_connected(_on_a_box_changing_cell):
+		child.cell_changed.connect(_on_a_box_changing_cell)
+
+func _on_a_box_changing_cell() -> void:
+	layout_changed.emit()
+
+
 ## Una caja que entra, sale o cambia de lugar entre sus hermanas (Fill, Delete excess, Clear, o a mano
 ## en el dock: duplicada, borrada, arrastrada) cambia lo que avisa. Sólo en el editor, como el aviso.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_CHILD_ORDER_CHANGED and Engine.is_editor_hint():
-		update_configuration_warnings()
+	if what == NOTIFICATION_CHILD_ORDER_CHANGED:
+		layout_changed.emit()
+		if Engine.is_editor_hint():
+			update_configuration_warnings()
 
 
 func _cells_with_a_box() -> Dictionary[Vector3i, bool]:

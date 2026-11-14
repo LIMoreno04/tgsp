@@ -54,6 +54,14 @@ static func is_2d(perspective: Perspective) -> bool:
 ## El mapa del nivel
 var index := LevelIndex.new()
 
+## El color de cada estructura. Sólo para dibujar; se arma con el nivel recién cargado, la primera
+## vez que una caja lo pide, y después no cambia.
+var structure_palette: StructurePalette:
+	get:
+		if structure_palette == null:
+			structure_palette = StructurePalette.new(self)
+		return structure_palette
+
 func rebuild_index() -> void:
 	var closed_doors := index.closed_doors
 	index = _index_of_the_boxes_in_the_tree()
@@ -153,6 +161,7 @@ func restore(cells: Dictionary[Box, Vector3i], switched_on: Dictionary[ButtonPow
 ## Solo Room cambia el estado de un powerable, como los movimientos
 func press(button: ButtonPowerable) -> void:
 	button.switched_on = not button.switched_on
+	AudioManager.play_button()
 	buttons_changed.emit()
 
 

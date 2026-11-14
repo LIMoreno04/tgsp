@@ -4,6 +4,9 @@ extends Node3D
 const SKIP_TIME := 60.0
 
 const UPDATE_POWER_AFTER_PERSPECTIVE_TURN := false
+const WINTER_ENVIRONMENT: Environment = preload("res://scenes/prefabs/winter_environment.tres")
+const SNOW_PARTICLES_SCENE: PackedScene = preload("res://scenes/prefabs/snow_particles.tscn")
+const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/pause_menu.tscn")
 
 class Moment:
 	var box_cells: Dictionary[Box, Vector3i]
@@ -21,9 +24,21 @@ class Moment:
 var _history: Array[Moment] = []
 var _blockers := []
 var _power_update_pending := false
+var _save_pending := false
+var _pause_menu: PauseMenu = null
+var _hud: LevelHUD = null
+var _tutorial_level := 0
+var _tutorial_step := 0
+## Sobrevive al reinicio del nivel, para no repetir los consejos de Z y R después de usar R.
+static var _undo_and_restart_were_taught := false
 
 
 func _ready() -> void:
+	GameManager.ensure_settings_loaded()
+	AudioManager.play_ambient_music()
+	_setup_winter_atmosphere()
+	_setup_hud()
+	_setup_tutorials()
 	room.moved.connect(request_power_update)
 	room.buttons_changed.connect(request_power_update)
 	player.cell_changed.connect(request_power_update.unbind(2))
@@ -31,7 +46,36 @@ func _ready() -> void:
 		player.camera.perspective_change_finished.connect(request_power_update)
 	else:
 		room.perspective_manager.perspective_changed.connect(request_power_update.unbind(1))
+	if GameManager.consume_restore_request(scene_file_path):
+		GameManager.restore_level_state(self)
+	elif not scene_file_path.is_empty():
+		GameManager.save_level_state(self)
 	request_power_update()
+
+
+func _setup_hud() -> void:
+	_hud = LevelHUD.new()
+	_hud.name = "LevelHUD"
+	add_child(_hud)
+	_hud.pause_requested.connect(_toggle_pause)
+	_hud.setup_for_level(scene_file_path, true)
+
+
+func _setup_winter_atmosphere() -> void:
+	var world_env := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_env != null:
+		world_env.environment = WINTER_ENVIRONMENT
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun != null:
+		sun.light_color = Color(1.0, 0.968627, 0.921569, 1.0)
+		sun.light_energy = 1.15
+		sun.shadow_blur = 1.5
+		sun.directional_shadow_blend_splits = true
+	if room != null and room.get_node_or_null("SnowParticles") == null and get_node_or_null("SnowParticles") == null:
+		var snow := SNOW_PARTICLES_SCENE.instantiate() as SnowParticles
+		snow.auto_fit_room = false
+		add_child(snow)
+		snow.fit_to_room(room)
 
 ## Lo único que cambia sin avisar es dónde está el cuerpo del jugador: si dejó una puerta que
 ## sostenía, o entró o salió de un laser, hace falta calcular de nuevo. Los rayos lo siguen en cada frame.
@@ -42,13 +86,94 @@ func _physics_process(_delta: float) -> void:
 	room.show_the_beams(perspective, player.cell().z, player.body_on_grid())
 
 
+func _input(event: InputEvent) -> void:
+	if get_tree().paused:
+		return
+	if _tutorial_level == 1 and _tutorial_step == 2 and not is_locked() and event.is_action_pressed(&"grab"):
+		_tutorial_step = 3
+		if _hud != null:
+			_hud.hide_tutorial()
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_cancel"):
+		_toggle_pause()
+		return
 	if is_locked() and not _is_playing_an_undo():
 		return
 	if event.is_action_pressed(&"undo"):
 		undo()
+		if _tutorial_level == 4 and _tutorial_step == 2 and _hud != null:
+			_tutorial_step = 3
+			_undo_and_restart_were_taught = true
+			_hud.show_tutorial("Y si te quedas atascado, presiona [b]R[/b] para reiniciar el nivel.")
 	elif event.is_action_pressed(&"restart"):
+		GameManager.save_clean_level(scene_file_path)
 		get_tree().reload_current_scene()
+
+
+func _setup_tutorials() -> void:
+	if _hud == null:
+		return
+	var file := scene_file_path.get_file().get_basename()
+	match file:
+		"level_01":
+			_tutorial_level = 1
+			_tutorial_step = 1
+			_hud.show_tutorial("¡Bienvenido! Presiona [b]ESPACIO[/b] para cambiar de perspectiva.")
+			room.perspective_manager.perspective_changed.connect(_on_tutorial_perspective_changed)
+		"level_02":
+			_tutorial_level = 2
+			_tutorial_step = 1
+			_hud.show_tutorial("Consejo: cambiar de perspectiva también puede activar o desactivar mecanismos.")
+			room.perspective_manager.perspective_changed.connect(_on_tutorial_perspective_changed)
+		"level_03":
+			_tutorial_level = 3
+			_tutorial_step = 1
+			_hud.show_tutorial("Tip: los bloques de hielo del mismo color se unen al tocarse y se mueven juntos.")
+			room.moved.connect(_on_tutorial_room_moved)
+		"level_04":
+			if not _undo_and_restart_were_taught:
+				_tutorial_level = 4
+				_tutorial_step = 1
+				room.moved.connect(_on_tutorial_room_moved)
+
+
+func _on_tutorial_perspective_changed(_perspective: Room.Perspective) -> void:
+	if _hud == null:
+		return
+	if _tutorial_level == 1 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.show_tutorial("¡Genial! Ahora usa [b]E[/b] para agarrar objetos o activar interactuables.")
+	elif _tutorial_level == 2 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.hide_tutorial()
+
+
+func _on_tutorial_room_moved() -> void:
+	if _hud == null:
+		return
+	if _tutorial_level == 3 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.hide_tutorial()
+	elif _tutorial_level == 4 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.show_tutorial("¿Te equivocaste? Presiona [b]Z[/b] para deshacer la última acción.")
+	elif _tutorial_level == 4 and _tutorial_step == 3:
+		_tutorial_step = 4
+		_hud.hide_tutorial()
+
+
+func _toggle_pause() -> void:
+	if _pause_menu != null and _pause_menu.is_open:
+		_pause_menu.close()
+	else:
+		if _pause_menu == null or not is_instance_valid(_pause_menu):
+			_pause_menu = PAUSE_MENU_SCENE.instantiate() as PauseMenu
+			add_child(_pause_menu)
+			if _hud != null and is_instance_valid(_hud):
+				_pause_menu.saved.connect(func() -> void: _hud.show_save_indicator())
+		_pause_menu.open(self)
 
 
 #==================Undo==================
@@ -67,6 +192,7 @@ func moment_now() -> Moment:
 
 func remember(moment: Moment) -> void:
 	_history.append(moment)
+	_request_save()
 
 
 func undo() -> void:
@@ -79,6 +205,19 @@ func undo() -> void:
 	room.perspective_manager.restore(moment.perspective, moment.height)
 	player.restore(moment.player_cell, moment.facing, moment.grabbed)
 	_hold_the_lock_for(ProjectiveCamera.TURN_SECONDS if turns_back else GridEntity.SLIDE_SECONDS)
+	_request_save()
+
+
+func _request_save() -> void:
+	if _save_pending:
+		return
+	_save_pending = true
+	_save_progress.call_deferred()
+
+
+func _save_progress() -> void:
+	_save_pending = false
+	GameManager.save_level_state(self)
 
 func _finish_every_animation_now() -> void:
 	for animation in get_tree().get_processed_tweens():

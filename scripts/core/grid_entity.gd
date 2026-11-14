@@ -2,12 +2,15 @@
 class_name GridEntity
 extends Node3D
 
+signal cell_changed
+
 const SLIDE_SECONDS := 0.12
 
 @export var cell := Vector3i.ZERO:
 	set(value):
 		cell = value
 		_slide_to(GridCoordsProvider.grid_to_godot(cell))
+		cell_changed.emit()
 
 var _slide: Tween
 
@@ -87,7 +90,18 @@ func _slide_to(destination: Vector3) -> void:
 	_slide = create_tween().set_parallel()
 	_slide.tween_property(self, "position:x", destination.x, SLIDE_SECONDS)
 	_slide.tween_property(self, "position:z", destination.z, SLIDE_SECONDS)
-	_slide.chain().tween_callback(func() -> void: position.y = destination.y)
+	_slide.chain().tween_callback(func() -> void:
+		position.y = destination.y
+		_on_slide_finished()
+	)
+
+
+func _on_slide_finished() -> void:
+	if not is_inside_tree() or get_viewport() == null:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam != null and cam.has_method(&"shake"):
+		cam.call(&"shake", 0.035, 0.1)
 
 func _init() -> void:
 	set_notify_local_transform(true)

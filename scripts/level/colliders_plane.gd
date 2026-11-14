@@ -51,7 +51,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_debug_view.visible = not _debug_view.visible
 
 func _process(_delta: float) -> void:
-	if _debug_view.visible:
+	if _debug_view != null and _debug_view.visible:
 		_draw_debug_view()
 
 

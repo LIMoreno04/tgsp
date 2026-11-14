@@ -77,6 +77,22 @@ func _finish_turn() -> void:
 	perspective_change_finished.emit()
 
 
+var _shake_tween: Tween
+
+
+## Sacudón suave de pantalla (usado para impactos de cajas, caídas, etc.)
+func shake(intensity: float = 0.04, duration: float = 0.12) -> void:
+	if is_transitioning:
+		return
+	if is_instance_valid(_shake_tween):
+		_shake_tween.kill()
+	_shake_tween = create_tween()
+	_shake_tween.tween_property(self, "h_offset", intensity, duration * 0.25)
+	_shake_tween.tween_property(self, "h_offset", -intensity * 0.6, duration * 0.25)
+	_shake_tween.tween_property(self, "h_offset", intensity * 0.2, duration * 0.25)
+	_shake_tween.tween_property(self, "h_offset", 0.0, duration * 0.25)
+
+
 func _frame(pose: Basis) -> void:
 	frame(self, pose, _room_reach, _room_centre, get_viewport().get_visible_rect().size.aspect())
 
