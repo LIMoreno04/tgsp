@@ -198,8 +198,12 @@ func riders_3d() -> void:
 	section("3D: riders come if they can, stay if they cannot")
 
 	unit_size("a crate on a platform rides", [[c(0,0,0), c(1,0,0)], [c(0,0,1)]], c(0,0,0), E, D3, 3)
-	unit_size("one box of contact is enough, the pillar is left behind",
-		[[c(0,0,0), c(1,0,0)], [c(3,0,0)], [c(1,0,1), c(2,0,1), c(3,0,1)]], c(0,0,0), E, D3, 5)
+	unit_size("a crate that also rests on a pillar standing on the ground does not ride",
+		[[c(0,0,0), c(1,0,0)], [c(3,0,0)], [c(1,0,1), c(2,0,1), c(3,0,1)]], c(0,0,0), E, D3, 2)
+	unit_size("a crate resting on two riders rides once both have joined",
+		[[c(0,0,0), c(1,0,0)], [c(0,0,1)], [c(1,0,1)], [c(0,0,2), c(1,0,2)]], c(0,0,0), E, D3, 6)
+	unit_size("a crate resting on a rider and on a blocked one stays",
+		[[c(0,0,0)], [c(0,0,1)], [c(1,0,0)], [c(0,0,2), c(1,0,2)], [c(1,0,1)]], c(0,0,0), S, D3, 2)
 	unit_size("a clear tower rides all the way up",
 		[[c(0,0,0)], [c(0,0,1)], [c(0,0,2)], [c(0,0,3)]], c(0,0,0), E, D3, 4)
 	unit_size("a blocked rider is dropped", [[c(0,0,0)], [c(0,0,1)], [c(1,0,1)]], c(0,0,0), E, D3, 1)
@@ -224,8 +228,14 @@ func riders_3d() -> void:
 	is_true("  but not all the way out", not r.try_to_move_grabbed_box(at(r,1,0,0), E, D3))
 	free_room(r)
 
+	r = room([[c(0,0,0)], [c(2,0,0)], [c(0,0,1), c(1,0,1), c(2,0,1)]])
+	is_true("a box slides out from under a structure that also stands on something else", r.try_to_move_grabbed_box(at(r,0,0,0), S, D3))
+	is_true("  and the structure stayed where it was",
+		r.index.cells_3D.has(c(0,1,0)) and r.index.cells_3D.has(c(0,0,1)) and r.index.cells_3D.has(c(2,0,1)) and not r.index.cells_3D.has(c(0,1,1)))
+	free_room(r)
+
 	r = room([[c(0,0,0), c(1,0,0)], [c(1,0,1), c(1,1,1)], [c(0,1,0), c(1,1,0), c(2,1,0), c(2,1,1)]], [2])
-	is_true("unloading: a crate also resting on a ledge is caught by the ledge's end", r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
+	is_true("unloading: a crate also resting on a ledge stays on it", r.try_to_move_grabbed_box(at(r,0,0,0), E, D3))
 	is_true("  and the platform can leave it on the ledge",
 		r.try_to_move_grabbed_box(at(r,1,0,0), E, D3) and r.index.cells_3D.has(c(1,0,1)) and not r.index.cells_3D.has(c(1,0,0)))
 	free_room(r)
@@ -1423,15 +1433,15 @@ func doors_in_the_move_rules() -> void:
 	is_true("  and then holds it open", not r.index.closed_doors.has(d))
 	free_room(r)
 
-	# Plataforma, pilar, un jinete apoyado en los dos, y una caja con una puerta al lado del pilar.
-	r = room([[c(4,2,0)], [c(3,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
+	# Plataforma de dos, un jinete que sobresale de ella, y una caja con una puerta al lado, bajo donde iría el saliente.
+	r = room([[c(4,1,0), c(4,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
 	d = door(r, c(3,3,0), Box.Facing.POS_Y, [])
 	r.update_power(D3, NOBODY, NO_BODY)
 	is_true("a rider that would enter it stays behind", r.try_to_move_grabbed_box(at(r,4,2,0), S, D3))
 	is_true("  the platform moved and the rider did not", r.index.cells_3D.has(c(4,3,0)) and r.index.cells_3D.has(c(3,2,1)) and r.index.cells_3D.has(c(4,2,1)))
 	free_room(r)
 
-	r = room([[c(4,2,0)], [c(3,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
+	r = room([[c(4,1,0), c(4,2,0)], [c(3,2,1), c(4,2,1)], [c(3,3,0)]])
 	d = door(r, c(3,3,0), Box.Facing.POS_Y, [])
 	d.always_open = true
 	r.update_power(D3, NOBODY, NO_BODY)

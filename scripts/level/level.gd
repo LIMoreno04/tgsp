@@ -29,6 +29,8 @@ var _pause_menu: PauseMenu = null
 var _hud: LevelHUD = null
 var _tutorial_level := 0
 var _tutorial_step := 0
+## Sobrevive al reinicio del nivel, para no repetir los consejos de Z y R después de usar R.
+static var _undo_and_restart_were_taught := false
 
 
 func _ready() -> void:
@@ -101,6 +103,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"undo"):
 		undo()
+		if _tutorial_level == 4 and _tutorial_step == 2 and _hud != null:
+			_tutorial_step = 3
+			_undo_and_restart_were_taught = true
+			_hud.show_tutorial("Y si te quedas atascado, presiona [b]R[/b] para reiniciar el nivel.")
 	elif event.is_action_pressed(&"restart"):
 		GameManager.save_clean_level(scene_file_path)
 		get_tree().reload_current_scene()
@@ -126,6 +132,11 @@ func _setup_tutorials() -> void:
 			_tutorial_step = 1
 			_hud.show_tutorial("Tip: los bloques de hielo del mismo color se unen al tocarse y se mueven juntos.")
 			room.moved.connect(_on_tutorial_room_moved)
+		"level_04":
+			if not _undo_and_restart_were_taught:
+				_tutorial_level = 4
+				_tutorial_step = 1
+				room.moved.connect(_on_tutorial_room_moved)
 
 
 func _on_tutorial_perspective_changed(_perspective: Room.Perspective) -> void:
@@ -144,6 +155,12 @@ func _on_tutorial_room_moved() -> void:
 		return
 	if _tutorial_level == 3 and _tutorial_step == 1:
 		_tutorial_step = 2
+		_hud.hide_tutorial()
+	elif _tutorial_level == 4 and _tutorial_step == 1:
+		_tutorial_step = 2
+		_hud.show_tutorial("¿Te equivocaste? Presiona [b]Z[/b] para deshacer la última acción.")
+	elif _tutorial_level == 4 and _tutorial_step == 3:
+		_tutorial_step = 4
 		_hud.hide_tutorial()
 
 

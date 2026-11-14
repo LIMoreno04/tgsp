@@ -849,6 +849,7 @@ movable_3d_pos_x = true
 movable_3d_neg_x = true
 movable_3d_pos_y = true
 movable_3d_neg_y = true
+movable_2d_whole_face = true
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1551773380]
 transform = Transform3D(0.97040796, 0.19780174, -0.13850231, 0.068258576, 0.32547945, 0.9430821, 0.23162296, -0.9246283, 0.30234617, 0, 0, 0)

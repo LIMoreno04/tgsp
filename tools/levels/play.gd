@@ -46,6 +46,24 @@ func _run() -> void:
 			"at", "walk":
 				player.position = player._centre_of(Vector2i(int(p[1]), int(p[2])))
 				await _frames(12)
+			"go":
+				# Un paso honesto: a una columna vecina donde se puede estar, sin cruzar una franja ni una puerta cerrada.
+				var from: Vector3i = player.cell()
+				var to := Vector3i(int(p[1]), int(p[2]), from.z)
+				var step := Vector2i(to.x - from.x, to.y - from.y)
+				var persp = room.perspective_manager.current
+				var ok: bool = step.length_squared() == 1 and room.index.can_player_be_on(to, persp)
+				if ok and room.index.has_barrier_on(Vector2i(from.x, from.y), load("res://scripts/objects/box.gd").facing_toward(step), persp, from.z):
+					ok = false
+				if ok and room.index.has_barrier_on(Vector2i(to.x, to.y), load("res://scripts/objects/box.gd").facing_toward(-step), persp, from.z):
+					ok = false
+				if ok and room.index.has_button_on(Vector2i(to.x, to.y), persp, from.z):
+					ok = false
+				if ok:
+					player.position = player._centre_of(Vector2i(to.x, to.y))
+					await _frames(12)
+				else:
+					print("  !! cannot go to ", to, " from ", from)
 			"face":
 				player.facing = Vector2(float(p[1]), float(p[2]))
 			"E":
@@ -59,6 +77,12 @@ func _run() -> void:
 				player._toggle_perspective(); await _frames(60)
 			"shot":
 				await _shot(out)
+			"col":
+				var stack := []
+				for z in range(-1, 8):
+					var b = room.index.cells_3D.get(Vector3i(int(p[1]), int(p[2]), z))
+					if b != null: stack.append("z%d:%s%s" % [z, b.get_parent().name, "(walk)" if b.walkable else ""])
+				print("  column ", p[1], ",", p[2], ": ", stack)
 			"doors":
 				var closed := []
 				for d in room.index.closed_doors: closed.append(str(d.get_path()).get_file() + "@" + str(room.index.cell_of(d.box)))

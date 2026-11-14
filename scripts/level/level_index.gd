@@ -148,7 +148,7 @@ func boxes_grabbed_along_with(box: Box, perspective: Room.Perspective) -> Array[
 				structure.append(hidden)
 	return structure
 
-## En 3D, también las estructuras apoyadas encima que pueden venir.
+## En 3D, también las estructuras apoyadas sólo encima de la unidad que pueden venir.
 func boxes_that_would_move(box: Box, direction: Vector2i, perspective: Room.Perspective) -> Array[Box]:
 	var unit := boxes_grabbed_along_with(box, perspective)
 	if Room.is_2d(perspective):
@@ -162,6 +162,8 @@ func boxes_that_would_move(box: Box, direction: Vector2i, perspective: Room.Pers
 			if above == null or unit.has(above):
 				continue
 			var rider := boxes_of_same_structure_connected_to(above, perspective)
+			if without(unit).rests_on_something(rider):
+				continue
 			if not can_move_one_cell(rider, unit, direction, perspective):
 				continue
 			for rider_box in rider:
