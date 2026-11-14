@@ -3,6 +3,9 @@ extends MeshInstance3D
 ## Dibuja una caja a partir de sus propios flags, y de su estructura: las cajas de una misma
 ## estructura que se tocan cara a cara se funden en un solo bloque (los biseles de la unión
 ## desaparecen), y cada estructura tiene su color de la paleta.
+## Una caja es de roca, y cada flag le pone lo suyo: hielo en cada cara lateral con agarre 3D, una
+## franja de hielo sobre cada borde de la tapa con agarre 2D (la tapa entera si es toda agarre 2D)
+## y una capa de nieve si se puede caminar.
 
 
 var box: Box:
@@ -21,6 +24,28 @@ const BOX_BEVEL_DEPTH := 0.075
 ## Hasta dónde llega la meseta de la tapa de nieve antes de redondearse y caer por los lados.
 const SNOW_CAP_LIP_DEPTH := 0.02
 const SEAM_EPSILON := 0.0001
+## La franja de agarre 2D: hielo sobre el borde de la tapa, que cuelga un poco por el lado. Va en
+## tramos de distinto ancho y distinto largo, como termina la nieve, para que no corte en línea recta.
+const STRIPE_SEGMENTS := 6
+const STRIPE_THICKNESS := 0.015
+## Cuánto sale de la caja lo que cuelga. Sobre una tapa de nieve, más, para pasar por fuera de la
+## nieve que cae por el lado, que sale 0.08.
+const STRIPE_HANG_OUT := 0.02
+const STRIPE_HANG_OUT_OVER_SNOW := 0.09
+## Lo que se le suma a MOVABLE_STRIPE_WIDTH en cada tramo.
+const STRIPE_WIDTH_STEPS: Array[float] = [-0.03, 0.0, 0.03]
+## Cuánto cuelga cada tramo, como fracción del alto de la caja.
+const STRIPE_HANG_LENGTHS: Array[float] = [0.10, 0.16, 0.22]
+const STRIPE_VARIANTS := 4
+## Hasta dónde es plana una cara de los modelos de caja antes de empezar el bisel, como fracción
+## de la mitad de su tamaño.
+const BOX_FLAT_PART := 0.865
+## Donde una cara de hielo se encuentra con una de roca, la roca entra un poco en la de hielo, en
+## dientes de distinto largo (fracciones del tamaño de la caja; 0 es sin diente), para que el borde
+## no sea una línea recta. Siempre dentro de la cara de hielo: en la otra se leería como un agarre.
+const ROCK_TEETH_PER_EDGE := 6
+const ROCK_TEETH_LENGTHS: Array[float] = [0.0, 0.03, 0.06]
+const ROCK_TEETH_LIFT := 0.002
 
 ## Los seis lados de una caja, en direcciones de grilla. En una máscara de lados, el bit i es el lado i.
 const SIDES: Array[Vector3i] = [
@@ -31,20 +56,23 @@ const SIDES: Array[Vector3i] = [
 const HORIZONTAL_SIDES := 0b001111
 const SIDE_UP := 0b010000
 const SIDE_DOWN := 0b100000
+const EVERY_SIDE := 0b111111
+## Para _fitted_copy: copiar el modelo entero, sin elegir entre hielo y roca.
+const WHOLE_MODEL := -1
 
 const FLOOR_MODEL: PackedScene = preload("res://art/boxes/Suelo_nieve_hielo.glb")
 const WALL_MODEL: PackedScene = preload("res://art/boxes/Pared_Nieve.glb")
 const INTERACTABLE_MODEL: PackedScene = preload("res://art/boxes/Caja_interactuable_Hielo.glb")
 const STONE_MODEL: PackedScene = preload("res://art/boxes/Caja_inamovible_Piedra.glb")
 const SNOW_MODEL: PackedScene = preload("res://art/boxes/Walkable_Nieve.glb")
-const HANDLE_MODEL: PackedScene = preload("res://art/boxes/Handle_Hielo.glb")
 
 static var _floor_meshes: Dictionary[Vector2i, ArrayMesh] = {}
 static var _wall_meshes: Dictionary[Vector4i, ArrayMesh] = {}
-static var _interactable_meshes: Dictionary[Array, ArrayMesh] = {}
-static var _stone_meshes: Dictionary[Array, ArrayMesh] = {}
+static var _body_meshes: Dictionary[Array, ArrayMesh] = {}
 static var _snow_meshes: Dictionary[Vector2i, ArrayMesh] = {}
-static var _handle_meshes: Dictionary[Vector3i, ArrayMesh] = {}
+static var _stripe_meshes: Dictionary[Array, ArrayMesh] = {}
+static var _rock_teeth_meshes: Dictionary[Array, ArrayMesh] = {}
+static var _unit_cube := BoxMesh.new()
 ## Los materiales de cada modelo, tomados una vez: todas las copias los comparten, y así una
 ## superficie dice de qué modelo y de qué parte es (0 el cuerpo, 1 el detalle).
 static var _model_materials: Dictionary[PackedScene, Array] = {}
@@ -61,6 +89,7 @@ var _fused_sides_wanted := 0
 
 func _ready() -> void:
 	box.appearance_changed.connect(_request_rebuild)
+	box.appearance_changed.connect(_request_fusion_check) # El terreno no se funde, y eso también es un flag.
 	_fused_sides_wanted = _sides_touching_the_same_structure()
 	_fused_sides_shown = _fused_sides_wanted
 	_request_rebuild()
@@ -127,8 +156,12 @@ func _sides_touching_the_same_structure() -> int:
 	return sides
 
 func _is_fused_toward(facing: Box.Facing) -> bool:
+	return _fused_sides_shown & _side_toward(facing) != 0
+
+## El lado de SIDES hacia donde mira `facing`, como máscara.
+static func _side_toward(facing: Box.Facing) -> int:
 	var direction := Box.FACING_DIRECTION[facing]
-	return _fused_sides_shown & (1 << SIDES.find(Vector3i(direction.x, direction.y, 0))) != 0
+	return 1 << SIDES.find(Vector3i(direction.x, direction.y, 0))
 
 
 # --- Geometría ---------------------------------------------------------------
@@ -168,38 +201,45 @@ func _rebuild() -> void:
 	random.seed = hash(box.name) ^ _seed_of(structure)
 	var turns := Vector3i(random.randi_range(0, 3), random.randi_range(0, 3), random.randi_range(0, 3))
 
-	var is_interactable := _is_interactable()
+	var stripe_variant := random.randi_range(0, STRIPE_VARIANTS - 1)
+
 	var fused := _fused_sides_shown
 	if box.top_half_only:
 		fused &= ~SIDE_DOWN # Media caja no llega a tocar a la de abajo.
-	var base_mesh: ArrayMesh = _interactable_mesh(box.top_half_only, turns, fused) if is_interactable else _stone_mesh(box.top_half_only, turns, fused)
+	# Los lados que no se ven: no deciden de qué es el bisel que los une con otro.
+	var unseen := fused | SIDE_DOWN
+	if box.walkable:
+		unseen |= SIDE_UP
 
 	var assembled := ArrayMesh.new()
-	_append_mesh(assembled, base_mesh)
+	_append_mesh(assembled, _body_mesh(box.top_half_only, turns, fused, _ice_sides(), unseen))
+	_append_mesh(assembled, _rock_teeth_mesh(box.top_half_only, _ice_sides(), unseen, stripe_variant))
 	if box.walkable:
 		_append_mesh(assembled, _snow_mesh(box.top_half_only, fused & HORIZONTAL_SIDES))
-	if is_interactable:
-		for facing: Box.Facing in Box.Facing.values():
-			if _has_handle_on(facing) and not _is_fused_toward(facing):
-				_append_mesh(assembled, _handle_mesh(box.top_half_only, box.walkable, facing))
+	for facing: Box.Facing in Box.Facing.values():
+		if _has_stripe_on(facing):
+			_append_mesh(assembled, _stripe_mesh(box.top_half_only, box.walkable, facing, _is_fused_toward(facing), (stripe_variant + facing) % STRIPE_VARIANTS))
 	mesh = assembled
-	_paint_with_the_colour_of(structure, is_interactable)
+	_paint_with_the_colour_of(structure)
 
 
-## El cuerpo y el detalle (escarcha o vetas) de la caja y de sus asas, del color de su estructura.
-func _paint_with_the_colour_of(structure: GridEntity, is_interactable: bool) -> void:
+## El hielo y su escarcha, la roca y sus vetas, del color de su estructura.
+func _paint_with_the_colour_of(structure: GridEntity) -> void:
 	var ice := _ice_colour_of(structure)
-	var body := ice if is_interactable else StructurePalette.stone_from(ice)
-	var detail := StructurePalette.frost_colour(ice) if is_interactable else StructurePalette.vein_colour(ice)
+	var ice_materials := _materials_of(INTERACTABLE_MODEL)
+	var stone_materials := _materials_of(STONE_MODEL)
+	var colours: Dictionary[Material, Color] = {
+		ice_materials[0]: ice,
+		ice_materials[1]: StructurePalette.frost_colour(ice),
+		stone_materials[0]: StructurePalette.stone_from(ice),
+		stone_materials[1]: StructurePalette.vein_colour(ice),
+	}
 	for surface in mesh.get_surface_count():
 		var material := mesh.surface_get_material(surface)
-		match _part_drawn_by(material):
-			&"body":
-				set_surface_override_material(surface, _coloured(material, body))
-			&"detail":
-				set_surface_override_material(surface, _coloured(material, detail))
-			_:
-				set_surface_override_material(surface, null)
+		if colours.has(material):
+			set_surface_override_material(surface, _coloured(material, colours[material]))
+		else:
+			set_surface_override_material(surface, null)
 
 func _ice_colour_of(structure: GridEntity) -> Color:
 	var room := structure.room_above()
@@ -207,15 +247,6 @@ func _ice_colour_of(structure: GridEntity) -> Color:
 		return StructurePalette.ICE[0]
 	var palette: StructurePalette = room.get(&"structure_palette")
 	return palette.ice_colour_of(structure)
-
-static func _part_drawn_by(material: Material) -> StringName:
-	for model in [INTERACTABLE_MODEL, STONE_MODEL, HANDLE_MODEL]:
-		var materials := _materials_of(model)
-		if material == materials[0]:
-			return &"body"
-		if material == materials[1]:
-			return &"detail"
-	return &""
 
 static func _coloured(base: Material, colour: Color) -> StandardMaterial3D:
 	if not _coloured_materials.has(base):
@@ -257,28 +288,24 @@ static func _floor_mesh(top_half_only: bool, quarter_turns: int) -> ArrayMesh:
 	return assembled
 
 
-func _is_interactable() -> bool:
-	if box.movable_3d_from_any_side():
-		return true
+## Una máscara de SIDES: las caras de hielo. Cada cara lateral con agarre 3D, y la tapa si toda ella
+## es agarre 2D.
+func _ice_sides() -> int:
+	var sides := 0
 	for facing: Box.Facing in Box.Facing.values():
-		if box.movable_2d_from(facing):
-			return true
-	return false
+		if box.movable_3d_from(facing):
+			sides |= _side_toward(facing)
+	if box.movable_2d_from_every_side():
+		sides |= SIDE_UP
+	return sides
 
 
-func _is_movable_3d_all_sides() -> bool:
-	for facing: Box.Facing in Box.Facing.values():
-		if not box.movable_3d_from(facing):
-			return false
-	return true
-
-
-func _has_handle_on(facing: Box.Facing) -> bool:
-	if not box.movable_2d_whole_face and box.movable_2d_from(facing):
-		return true
-	if box.movable_3d_from(facing) and (box.walkable or not _is_movable_3d_all_sides()):
-		return true
-	return false
+## Una tapa que es toda agarre 2D ya es de hielo entera. En un lado fundido no hay de dónde agarrar,
+## y la franja sólo importa sobre una tapa caminable, donde en 2D es una barrera entre las dos baldosas.
+func _has_stripe_on(facing: Box.Facing) -> bool:
+	if box.movable_2d_whole_face or not box.movable_2d_from(facing):
+		return false
+	return box.walkable or not _is_fused_toward(facing)
 
 
 static func _wall_mesh(top_half_only: bool, quarter_turns: Vector3i) -> ArrayMesh:
@@ -303,22 +330,20 @@ static func _wall_mesh(top_half_only: bool, quarter_turns: Vector3i) -> ArrayMes
 	return assembled
 
 
-static func _interactable_mesh(top_half_only: bool, quarter_turns: Vector3i, fused_sides := 0) -> ArrayMesh:
-	return _box_model_mesh(INTERACTABLE_MODEL, _interactable_meshes, top_half_only, quarter_turns, fused_sides)
-
-static func _stone_mesh(top_half_only: bool, quarter_turns: Vector3i, fused_sides := 0) -> ArrayMesh:
-	return _box_model_mesh(STONE_MODEL, _stone_meshes, top_half_only, quarter_turns, fused_sides)
-
-static func _box_model_mesh(model: PackedScene, cache: Dictionary[Array, ArrayMesh], top_half_only: bool, quarter_turns: Vector3i, fused_sides: int) -> ArrayMesh:
-	var key := [top_half_only, quarter_turns, fused_sides]
-	if cache.has(key):
-		return cache[key]
-	var source := _source_mesh_of(model)
-	var fit := _fit_of_a_box_model(source.get_aabb(), top_half_only, quarter_turns)
+## El cuerpo de una caja: de roca, con las caras de `ice_sides` de hielo. Los dos modelos tienen la
+## misma forma, así que cada triángulo se toma de uno o del otro.
+static func _body_mesh(top_half_only: bool, quarter_turns: Vector3i, fused_sides: int, ice_sides: int, unseen_sides: int) -> ArrayMesh:
+	var key := [top_half_only, quarter_turns, fused_sides, ice_sides, unseen_sides]
+	if _body_meshes.has(key):
+		return _body_meshes[key]
 	var bottom_y := 0.0 if top_half_only else -0.5
 	var depths := Vector3(BOX_BEVEL_DEPTH, BOX_BEVEL_DEPTH * (0.5 - bottom_y), BOX_BEVEL_DEPTH)
-	var assembled := _fitted_copy(source, fit, _materials_of(model), fused_sides, bottom_y, depths)
-	cache[key] = assembled
+	var assembled := ArrayMesh.new()
+	for model: PackedScene in [STONE_MODEL, INTERACTABLE_MODEL]:
+		var source := _source_mesh_of(model)
+		var fit := _fit_of_a_box_model(source.get_aabb(), top_half_only, quarter_turns)
+		_append_mesh(assembled, _fitted_copy(source, fit, _materials_of(model), fused_sides, bottom_y, depths, ice_sides, unseen_sides, model == INTERACTABLE_MODEL))
+	_body_meshes[key] = assembled
 	return assembled
 
 ## Lleva un modelo de caja (un cubo de 2 de lado centrado en el origen) a la celda: 1 de lado, o la
@@ -358,39 +383,102 @@ static func _snow_mesh(top_half_only: bool, fused_sides := 0) -> ArrayMesh:
 	return assembled
 
 
-static func _handle_mesh(top_half_only: bool, on_walkable: bool, facing: Box.Facing) -> ArrayMesh:
-	var key := Vector3i(int(top_half_only), int(on_walkable), facing)
-	if _handle_meshes.has(key):
-		return _handle_meshes[key]
-	var source := _source_mesh_of(HANDLE_MODEL)
-	var bottom_y := 0.0 if top_half_only else -0.5
-	var horizontal_scale := 0.585 if on_walkable else 0.56
-	var y_lift := 0.022 if on_walkable else 0.012
-	var scale_vec := Vector3(horizontal_scale, (0.5 - bottom_y) / 2.0, horizontal_scale)
-	var offset := Vector3(0.0, (0.5 + bottom_y) / 2.0 + y_lift, 0.0)
-	var base_transform := Transform3D(Basis.from_scale(scale_vec), offset)
+## La franja de agarre 2D de un borde, hecha de tramos: cada uno es una losa sobre la tapa, que
+## también rellena el bisel, y un trozo que cuelga por la cara lateral. `variant` elige los anchos y
+## los largos. En un lado fundido termina en la unión y no cuelga.
+static func _stripe_mesh(top_half_only: bool, on_snow: bool, facing: Box.Facing, is_fused: bool, variant: int) -> ArrayMesh:
+	var key := [top_half_only, on_snow, facing, is_fused, variant]
+	if _stripe_meshes.has(key):
+		return _stripe_meshes[key]
+	var height := 0.5 if top_half_only else 1.0
+	var hang_out := 0.0
+	var past_the_ends := 0.0
+	if not is_fused:
+		hang_out = STRIPE_HANG_OUT_OVER_SNOW if on_snow else STRIPE_HANG_OUT
+		past_the_ends = STRIPE_HANG_OUT
+	var slab_top := 0.5 + STRIPE_THICKNESS
+	var slab_bottom := 0.5 - BOX_BEVEL_DEPTH * height
+	var segment_length := (1.0 + 2.0 * past_the_ends) / STRIPE_SEGMENTS
+	# Se arma mirando hacia +x y se gira hacia su lado.
 	var direction := Box.FACING_DIRECTION[facing]
-	var angle := atan2(-direction.y, direction.x)
-	var fit := Transform3D(Basis(Vector3.UP, angle), Vector3.ZERO) * base_transform
-	var materials := _materials_of(HANDLE_MODEL)
-	var assembled := ArrayMesh.new()
-	for surface in source.get_surface_count():
-		var st := SurfaceTool.new()
-		st.append_from(source, surface, fit)
-		st.deindex()
-		st.generate_normals()
-		st.set_material(materials[surface])
-		st.commit(assembled)
-	_handle_meshes[key] = assembled
+	var turn := Basis(Vector3.UP, atan2(-direction.y, direction.x))
+	var random := RandomNumberGenerator.new()
+	random.seed = hash(variant)
+
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for segment in STRIPE_SEGMENTS:
+		var from := -0.5 - past_the_ends + segment * segment_length
+		var to := from + segment_length
+		var width := MOVABLE_STRIPE_WIDTH + STRIPE_WIDTH_STEPS[random.randi() % STRIPE_WIDTH_STEPS.size()]
+		var hang := STRIPE_HANG_LENGTHS[random.randi() % STRIPE_HANG_LENGTHS.size()] * height
+		_add_cuboid(st, Vector3(0.5 - width, slab_bottom, from), Vector3(0.5 + hang_out, slab_top, to), turn)
+		if not is_fused:
+			_add_cuboid(st, Vector3(0.5, 0.5 - hang, from), Vector3(0.5 + hang_out, slab_bottom, to), turn)
+	st.set_material(_materials_of(INTERACTABLE_MODEL)[0]) # Sin generate_normals: las del cubo ya son planas, y suavizadas parecerían almohadones.
+	var assembled := st.commit()
+	_stripe_meshes[key] = assembled
 	return assembled
+
+## Los dientes de roca de una caja: por cada cara de hielo, a lo largo de cada borde que comparte
+## con una cara de roca que se ve, unas placas finas de roca apoyadas sobre la cara de hielo, desde
+## donde empieza el bisel (que ahí ya es de roca) hacia adentro.
+static func _rock_teeth_mesh(top_half_only: bool, ice_sides: int, unseen_sides: int, variant: int) -> ArrayMesh:
+	var key := [top_half_only, ice_sides, unseen_sides, variant]
+	if _rock_teeth_meshes.has(key):
+		return _rock_teeth_meshes[key]
+	var bottom_y := 0.0 if top_half_only else -0.5
+	var centre := Vector3(0.0, (0.5 + bottom_y) / 2.0, 0.0)
+	var half_size := Vector3(0.5, (0.5 - bottom_y) / 2.0, 0.5)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var teeth := 0
+	for ice in SIDES.size():
+		if ice_sides & (1 << ice) == 0 or unseen_sides & (1 << ice) != 0:
+			continue
+		for rock in SIDES.size():
+			if (ice_sides | unseen_sides) & (1 << rock) != 0 or SIDES[rock] == SIDES[ice] or SIDES[rock] == -SIDES[ice]:
+				continue
+			# Tres ejes: hacia afuera de la cara de hielo, hacia la cara de roca y a lo largo del borde.
+			var outward := GridCoordsProvider.grid_to_godot(SIDES[ice])
+			var toward_the_rock := GridCoordsProvider.grid_to_godot(SIDES[rock])
+			var along := outward.cross(toward_the_rock)
+			var on_the_face := centre + outward * absf(outward.dot(half_size))
+			var where_the_bevel_starts := toward_the_rock * absf(toward_the_rock.dot(half_size)) * BOX_FLAT_PART
+			var half_edge := along * absf(along.dot(half_size)) * BOX_FLAT_PART
+			var random := RandomNumberGenerator.new()
+			random.seed = hash([variant, ice, rock])
+			for tooth in ROCK_TEETH_PER_EDGE:
+				var length := ROCK_TEETH_LENGTHS[random.randi() % ROCK_TEETH_LENGTHS.size()] * 2.0 * absf(toward_the_rock.dot(half_size))
+				if length == 0.0:
+					continue
+				var from := -1.0 + 2.0 * tooth / ROCK_TEETH_PER_EDGE
+				var to := -1.0 + 2.0 * (tooth + 1) / ROCK_TEETH_PER_EDGE
+				var one_corner := on_the_face + where_the_bevel_starts - toward_the_rock * length + half_edge * from
+				var other_corner := on_the_face + outward * ROCK_TEETH_LIFT + where_the_bevel_starts + half_edge * to
+				_add_cuboid(st, one_corner.min(other_corner), one_corner.max(other_corner), Basis.IDENTITY)
+				teeth += 1
+	var assembled := ArrayMesh.new()
+	if teeth > 0:
+		st.set_material(_materials_of(STONE_MODEL)[0])
+		st.commit(assembled)
+	_rock_teeth_meshes[key] = assembled
+	return assembled
+
+## Un prisma alineado a los ejes, de la esquina `lo` a la esquina `hi`, girado por `turn`.
+static func _add_cuboid(st: SurfaceTool, lo: Vector3, hi: Vector3, turn: Basis) -> void:
+	st.append_from(_unit_cube, 0, Transform3D(turn * Basis.from_scale(hi - lo), turn * ((lo + hi) / 2.0)))
 
 
 ## Copia `source` llevada por `fit`, con `materials` por superficie. En cada lado fundido, lo que
 ## está a menos de `depths` (por eje) del borde se aplana contra el plano de la unión, así las caras
 ## vecinas siguen planas de una caja a la otra. La cara que queda sobre ese plano no se copia, porque
 ## la caja vecina la tapa; tampoco los triángulos que el aplanado dejó sin área.
-static func _fitted_copy(source: Mesh, fit: Transform3D, materials: Array, fused_sides: int, bottom_y: float, depths: Vector3) -> ArrayMesh:
+## Con `ice_sides` (una máscara de SIDES) sólo se copia la parte del modelo que va de hielo, o la que
+## no, según `the_part_in_ice`: así una caja se arma con un modelo para cada parte.
+static func _fitted_copy(source: Mesh, fit: Transform3D, materials: Array, fused_sides: int, bottom_y: float, depths: Vector3, ice_sides := WHOLE_MODEL, unseen_sides := 0, the_part_in_ice := false) -> ArrayMesh:
 	var seams := _seams(fused_sides, bottom_y)
+	var every_side := _seams(EVERY_SIDE, bottom_y)
 	var assembled := ArrayMesh.new()
 	for surface in source.get_surface_count():
 		var arrays := source.surface_get_arrays(surface)
@@ -402,7 +490,11 @@ static func _fitted_copy(source: Mesh, fit: Transform3D, materials: Array, fused
 		for first in range(0, indices.size(), 3):
 			var corners: Array[Vector3] = []
 			for k in 3:
-				corners.append(_flattened_onto_the_seams(fit * vertices[indices[first + k]], seams, depths))
+				corners.append(fit * vertices[indices[first + k]])
+			if ice_sides != WHOLE_MODEL and _is_drawn_in_ice(corners, every_side, depths, ice_sides, unseen_sides) != the_part_in_ice:
+				continue
+			for k in 3:
+				corners[k] = _flattened_onto_the_seams(corners[k], seams, depths)
 			if _has_no_area(corners) or _lies_on_a_seam(corners, seams):
 				continue
 			for corner in corners:
@@ -414,6 +506,27 @@ static func _fitted_copy(source: Mesh, fit: Transform3D, materials: Array, fused
 		st.set_material(materials[surface])
 		st.commit(assembled)
 	return assembled
+
+## Un triángulo de una cara es de hielo si lo es esa cara. Uno de un bisel, si lo son todas las caras
+## que el bisel une, sin contar las que no se ven.
+static func _is_drawn_in_ice(corners: Array[Vector3], every_side: Array[Vector3], depths: Vector3, ice_sides: int, unseen_sides: int) -> bool:
+	var sides := _sides_of_a_triangle(corners, every_side, depths) & ~unseen_sides
+	return sides != 0 and sides & ~ice_sides == 0
+
+## Una máscara de SIDES: la cara sobre la que está el triángulo o, si es de un bisel, las que une.
+## `every_side` son los seis lados como planos, en el orden de SIDES.
+static func _sides_of_a_triangle(corners: Array[Vector3], every_side: Array[Vector3], depths: Vector3) -> int:
+	var centre := (corners[0] + corners[1] + corners[2]) / 3.0
+	var near := 0
+	for i in every_side.size():
+		var axis := int(every_side[i].x)
+		var sign := every_side[i].y
+		var extent := every_side[i].z
+		if is_equal_approx(corners[0][axis], extent) and is_equal_approx(corners[1][axis], extent) and is_equal_approx(corners[2][axis], extent):
+			return 1 << i
+		if centre[axis] * sign >= extent * sign - depths[axis]:
+			near |= 1 << i
+	return near
 
 ## Cada lado fundido como un plano: el eje (0 x, 1 y, 2 z), el signo hacia afuera y dónde está.
 static func _seams(fused_sides: int, bottom_y: float) -> Array[Vector3]:

@@ -144,7 +144,7 @@ func _build_3d_diorama() -> void:
 	add_child(_diorama_root)
 
 	var floor_mesh := _extract_scaled_mesh(SUELO_NIEVE, Vector3.ZERO)
-	var ice_mesh: ArrayMesh = BOX_MESH._interactable_mesh(false, Vector3i.ZERO)
+	var ice_mesh: ArrayMesh = BOX_MESH._body_mesh(false, Vector3i.ZERO, 0, BOX_MESH.EVERY_SIDE, 0)
 	var snow_box_mesh := _extract_snow_box_mesh()
 	var wall_mesh := _extract_wall_mesh()
 	var water_mesh := _extract_water_mesh()
@@ -401,7 +401,7 @@ func _extract_scaled_mesh(scene: PackedScene, offset: Vector3) -> ArrayMesh:
 
 func _extract_snow_box_mesh() -> ArrayMesh:
 	var out := ArrayMesh.new()
-	BOX_MESH._append_mesh(out, BOX_MESH._interactable_mesh(false, Vector3i.ZERO))
+	BOX_MESH._append_mesh(out, BOX_MESH._body_mesh(false, Vector3i.ZERO, 0, BOX_MESH.EVERY_SIDE, 0))
 	BOX_MESH._append_mesh(out, BOX_MESH._snow_mesh(false))
 	return out
 
