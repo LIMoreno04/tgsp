@@ -52,7 +52,9 @@ func _finish_the_level() -> void:
 	if next_level.is_empty():
 		var level := _room().get_parent() as Level
 		if level != null and level.scene_file_path.begins_with("res://scenes/levels/level_"):
-			get_tree().change_scene_to_file(GameManager.MAIN_MENU_PATH)
+			# El último nivel: la partida queda guardada en su final, y el final del juego lleva al menú.
+			GameManager.save_level_state(level)
+			level.add_child(EndScreen.new())
 		else:
 			get_tree().reload_current_scene()
 	else:
